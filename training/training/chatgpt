@@ -1,1 +1,69 @@
+using System;
+using System.Configuration;
 
+namespace SampleConApp{
+    interface Emp
+    {
+        void AddEmployee(Employee employee);
+        void RemoveEmp(int empID);
+        void UpdateEmp(int empID, Employee employee);
+        Array GetAllEmp();
+    }
+    class OracleDbEmp : Emp{
+        public void AddEmployee(Employee employee){
+            System.Console.WriteLine("Employee added to OracleDb");
+        }
+        public Array GetAllEmp(){
+            System.Console.WriteLine("All employee have been retrived from the OracleDB");
+            return new Employee[0];
+        }
+        public void RemoveEmp(int empID){
+            System.Console.WriteLine("Employe removed from the Oracle Server");
+        }
+        public void UpdateEmp(int empID, Employee employee){
+                System.Console.WriteLine("Employee with id" +empID "is updated to Oracle Server dataBase");
+            }
+        }
+    class SQLDbEmp : Emp{
+        public void AddEmployee(Employee employee){
+            System.Console.WriteLine("Employee added to SQLDB");
+        }
+        public Array GetAllEmp(){
+            System.Console.WriteLine("All employee have been retrived from the SQLDB");
+            return new Employee[0];
+        }
+        public void RemoveEmp(int empID){
+            System.Console.WriteLine("Employe removed from the SQLDB Server");
+        }
+        public void UpdateEmp(int empID, Employee employee){
+                System.Console.WriteLine("Employee with id" +empID "is updated to SQLDB Server dataBase");
+            }
+        }
+    class EmployeeFactory
+    {
+        public static Emp CreateEMPMang()
+        {
+            string type = ConfigurationManager.AppSettings["DbType"];
+            switch (type)
+            {
+                case "Sql":return new SQLDbEmp();
+                case "Oracle":return new OracleDbEmp();
+                default: throw new NotImplementedException();
+            }
+        }
+    }
+    internal class ExInterface
+    {
+        static Emp mgr;
+        static void Main(string[] args)
+        {
+            mgr = EmployeeFactory.CreateEMPMang();
+            mgr.AddEmployee(new Employee());
+            mgr.AddEmployee(new Employee());
+            mgr.AddEmployee(new Employee());
+            mgr.AddEmployee(new Employee());
+            Console.ReadLine();
+        }
+    }
+    
+    }
