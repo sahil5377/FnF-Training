@@ -1,0 +1,9 @@
+{
+  "FileOptions": {
+    "LogDir": "C:\\Example\\FnFTraining",
+    "FilePath": "C:\\Example\\SampleFile.txt"
+  }
+}
+
+C:\Users\6147955\source\repos\WritetoFile\WritetoFile\appsettings.json
+main path for write the file C:\Example
