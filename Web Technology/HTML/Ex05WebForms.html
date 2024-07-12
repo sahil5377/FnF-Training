@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/mainStyle.css">
+    <title>WebForm 5.0</title>
+</head>
+<body>
+    <nav>
+        <ul>
+            <li><a href="Ex01Basics.html">HTML BASICS</a></li>
+            <li><a href="Ex02Lists.html">Current page</a></li>
+            <li><a href="Ex03Tables.html">Table page</a></li>
+            <li><a href="Ex04Images.html">Images page</a></li>
+            <li><a href="Ex05WebForms.html">Forms page</a></li>
+            <li><a href="Ex06MediaExample.html">Media page</a></li>
+        </ul>
+    </nav>
+    <h2>Using Forms of 5.0</h2>
+    <article>
+        <h2>Using Html Forms</h2>
+        <p>Forms are used to take inputs from the user and process it to storage location</p>
+    </article>
+    <form>
+        <h1>Student Registration Form</h1>
+        <hr>
+        <p>Name:<input type="text"placeholder = "Name Please!" required</p>
+        <p>Email:<input type="email"placeholder = "Enter Email Please!" required</p>
+        <p>DOB:<input type="date"placeholder = "Date of Birth!"required</p>
+        <p>AGE:<input type="range" name="Age" min="10" max="80" step="1" value="80"</p>     
+        <output name="res" for="Age">80</output>
+        <p>
+            Select the Qualification:
+            <select>
+                <option>Grad</option>
+                <option>Under Grad</option>
+                <option>Post Grad</option>
+                <option>Not Educated</option>
+            </select>
+        </p>
+        <p>Select the Home City:
+            <datalist id="dtCities">
+                <option>Pune</option>
+                <option>Bangalore</option>
+                <option>Mumbai</option>
+                <option>Belgaum</option>
+            </datalist>
+            <input list="dtCities" placeholder="City Name"/>
+
+        </p>
+        <p>
+            Enter the gender:
+            <input type="radio" name="rdGender" id="rdGender">Male
+            <input type="radio" name="rdGender" id="rdGender">FeMale
+            <input type="radio" name="rdGender" id="rdGender">Others
+        </p>
+        <input type="button" value="Register"
+    </form>
+    
+</body>
+</html>
