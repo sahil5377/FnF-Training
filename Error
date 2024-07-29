@@ -1,0 +1,10 @@
+The parameters dictionary contains a null entry for parameter 'stockId' of non-nullable type 'System.Int32' for method 'System.Web.Mvc.ActionResult OnDelete(Int32)' in 'WebApplication1.Controllers.StocksManagerController'. An optional parameter must be a reference type, a nullable type, or be declared as an optional parameter.
+Parameter name: parameters
+Description: An unhandled exception occurred during the execution of the current web request. Please review the stack trace for more information about the error and where it originated in the code.
+
+Exception Details: System.ArgumentException: The parameters dictionary contains a null entry for parameter 'stockId' of non-nullable type 'System.Int32' for method 'System.Web.Mvc.ActionResult OnDelete(Int32)' in 'WebApplication1.Controllers.StocksManagerController'. An optional parameter must be a reference type, a nullable type, or be declared as an optional parameter.
+Parameter name: parameters
+
+Source Error:
+
+An unhandled exception was generated during the execution of the current web request. Information regarding the origin and location of the exception can be identified using the exception stack trace below.
