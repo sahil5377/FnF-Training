@@ -1,0 +1,107 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
+
+namespace ConsoleApp1
+{
+    internal class LinqExample
+    {
+        public static IConfiguration Configuration { get; set; }
+        public static LinqRepo repo = null;
+        static void Main(string[] args)
+        {
+            Init();
+            var emplist = repo.Employees;
+            //displayNameAndCities(emplist);
+
+            searchByCity(emplist, "Lucknow");
+
+
+
+
+            //Console.WriteLine();
+            //var deptlist=repo.Department;
+            //var query2 = from dept in deptlist
+            //             select dept.DeptName;
+            //foreach( var name in query2)
+            //{
+
+            //Console.WriteLine(name); 
+            //}
+            //firstExample();
+            // Mockaroo:
+            // 50 rec for emp and 5 rec dep
+            //emp: empid, empname, empcity, empsalary, deptid,
+            //dept: deptid, deptname
+            //create class for employee and dept
+            //create repo class that has properties allemployees and all depts
+        }
+
+        private static void searchByCity(List<Employee> emplist, string City)
+        {
+            var query = from emp in emplist
+                        where emp.EmpCity == City
+                        select emp;
+            Console.WriteLine("People from" + City);
+            foreach (var emp in query)
+            {
+                Console.WriteLine($"{emp.EmpName}");
+            }
+
+        }
+
+        private static void displayNameAndCities(List<Employee> emplist)
+        {
+            var query = from emp in emplist
+                        select new { emp.EmpName, emp.EmpCity };
+            foreach (var name in query)
+            {
+                Console.WriteLine(name);
+            }
+        }
+
+        private static void Init()
+        {
+            var config = new ConfigurationBuilder().SetBasePath("C:\\Users\\6147955\\source\\repos\\FrameWork\\ConsoleApp1").AddJsonFile("appsettings.json", false).Build();
+
+            Configuration = config;
+
+            var Empfilename = Configuration["FileOption:linqCsv"];
+ 
+            repo = new LinqRepo(Empfilename);
+        }
+
+        private static void firstExample()
+        {
+            var values = new string[] { "Apple", "Bananas", "Mangoes", "Oranges" };
+            var filtered = from e in values
+                           where e.Length > 6
+                           select e;
+            foreach (var e in filtered)
+            {
+                Console.WriteLine(e);
+            }
+            filtered = from e in values
+                       where e.EndsWith("es")
+                       select e;
+            foreach (var e in filtered)
+            {
+
+                Console.WriteLine(e);
+            }
+        }
+    }
+}
+
+Unhandled exception. System.ArgumentNullException: Value cannot be null. (Parameter 'path')
+   at System.ArgumentNullException.Throw(String paramName)
+   at System.ArgumentNullException.ThrowIfNull(Object argument, String paramName)
+   at System.ArgumentException.ThrowNullOrEmptyException(String argument, String paramName)
+   at System.IO.File.ReadAllLines(String path, Encoding encoding)
+   at ConsoleApp1.LinqRepo.fillEmployeeRecords(String fileName) in C:\Users\6147955\source\repos\FrameWork\ConsoleApp1\Employee.cs:line 29
+   at ConsoleApp1.LinqRepo..ctor(String fileName) in C:\Users\6147955\source\repos\FrameWork\ConsoleApp1\Employee.cs:line 68
+   at ConsoleApp1.LinqExample.Init() in C:\Users\6147955\source\repos\FrameWork\ConsoleApp1\LinqExample.cs:line 74
+   at ConsoleApp1.LinqExample.Main(String[] args) in C:\Users\6147955\source\repos\FrameWork\ConsoleApp1\LinqExample.cs:line 16
