@@ -1,0 +1,154 @@
+using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+
+namespace ConsoleApp1
+{
+    public class Employee
+    {
+        public int EmpId { get; set; }
+        public string EmpName { get; set; } = string.Empty;
+        public string EmpCity { get; set; } = string.Empty;
+        public int EmpSalary { get; set; }
+        public int DeptId { get; set; }
+    }
+
+    public class Department
+    {
+        public int DeptId { get; set; }
+        public string DeptName { get; set; } = string.Empty;
+    }
+
+    public class LinqRepo
+    {
+        private void fillEmployeeRecords(string fileName)
+        {
+            var lines = File.ReadAllLines(fileName);
+            Employees = new List<Employee>();
+            foreach (var line in lines)
+            {
+                var words = line.Split(',');
+                var emp = new Employee
+                {
+                    EmpId = int.Parse(words[0]),
+                    EmpName = words[1],
+                    EmpCity = words[2],
+                    EmpSalary = int.Parse(words[3]),
+                    DeptId = int.Parse(words[4])
+                };
+                Employees.Add(emp);
+            }
+        }
+
+        private void fillDeptRecords()
+        {
+            Departments = new List<Department>
+            {
+                new Department { DeptId = 1, DeptName = "IT" },
+                new Department { DeptId = 2, DeptName = "HR" },
+                new Department { DeptId = 3, DeptName = "RD" },
+                new Department { DeptId = 4, DeptName = "Sales" },
+                new Department { DeptId = 5, DeptName = "ADM" }
+            };
+        }
+
+        public static IConfigurationRoot Configuration { get; set; }
+
+        static void Main()
+        {
+            var config = new ConfigurationBuilder()
+                .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+                .AddJsonFile("appsettings.json", false)
+                .Build();
+            Configuration = config;
+            var fileName = Configuration["FileOptions:linqCsv"];
+            var repo = new LinqRepo(fileName);
+        }
+
+        public LinqRepo(string fileName)
+        {
+            fillDeptRecords();
+            fillEmployeeRecords(fileName);
+            Console.WriteLine(Employees.Count);
+            Console.WriteLine(Departments.Count);
+        }
+
+        public List<Employee> Employees { get; private set; }
+        public List<Department> Departments { get; private set; }
+    }
+}
+
+using Microsoft.Extensions.Configuration;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace ConsoleApp1
+{
+    internal class LinqExample
+    {
+        public static IConfiguration Configuration { get; set; }
+        public static LinqRepo repo = null;
+
+        static void Main(string[] args)
+        {
+            Init();
+            var emplist = repo.Employees;
+            searchByCity(emplist, "Lucknow");
+        }
+
+        private static void searchByCity(List<Employee> emplist, string City)
+        {
+            var query = from emp in emplist
+                        where emp.EmpCity == City
+                        select emp;
+            Console.WriteLine("People from " + City);
+            foreach (var emp in query)
+            {
+                Console.WriteLine($"{emp.EmpName}");
+            }
+        }
+
+        private static void displayNameAndCities(List<Employee> emplist)
+        {
+            var query = from emp in emplist
+                        select new { emp.EmpName, emp.EmpCity };
+            foreach (var name in query)
+            {
+                Console.WriteLine(name);
+            }
+        }
+
+        private static void Init()
+        {
+            var config = new ConfigurationBuilder()
+                .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+                .AddJsonFile("appsettings.json", false)
+                .Build();
+            Configuration = config;
+            var Empfilename = Configuration["FileOptions:linqCsv"];
+            repo = new LinqRepo(Empfilename);
+        }
+
+        private static void firstExample()
+        {
+            var values = new string[] { "Apple", "Bananas", "Mangoes", "Oranges" };
+            var filtered = from e in values
+                           where e.Length > 6
+                           select e;
+            foreach (var e in filtered)
+            {
+                Console.WriteLine(e);
+            }
+            filtered = from e in values
+                       where e.EndsWith("es")
+                       select e;
+            foreach (var e in filtered)
+            {
+                Console.WriteLine(e);
+            }
+        }
+    }
+}
