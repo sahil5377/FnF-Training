@@ -3,8 +3,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace ConsoleApp1
 {
@@ -22,7 +20,8 @@ namespace ConsoleApp1
         public int DeptId { get; set; }
         public string DeptName { get; set; } = string.Empty;
     }
-    internal class LinqRepo
+
+    public class LinqRepo
     {
         private void fillEmployeeRecords(string fileName)
         {
@@ -31,15 +30,18 @@ namespace ConsoleApp1
             foreach (var line in lines)
             {
                 var words = line.Split(',');
-                var emp = new Employee();
-                emp.EmpId = int.Parse(words[0]);
-                emp.EmpName = words[1];
-                emp.EmpCity = words[2];
-                emp.EmpSalary = int.Parse(words[3]);
-                emp.DeptId = int.Parse(words[4]);
+                var emp = new Employee
+                {
+                    EmpId = int.Parse(words[0]),
+                    EmpName = words[1],
+                    EmpCity = words[2],
+                    EmpSalary = int.Parse(words[3]),
+                    DeptId = int.Parse(words[4])
+                };
                 Employees.Add(emp);
             }
         }
+
         private void fillDeptRecords()
         {
             Departments = new List<Department>
@@ -51,24 +53,29 @@ namespace ConsoleApp1
                 new Department { DeptId = 5, DeptName = "ADM" }
             };
         }
+
         public static IConfigurationRoot Configuration { get; set; }
+
         static void Main()
         {
             var config = new ConfigurationBuilder()
-            .SetBasePath("C:\\Users\\6147955\\source\\repos\\FrameWork\\ConsoleApp1")
-            .AddJsonFile("appsettings.json", false)
-            .Build();
+                .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+                .AddJsonFile("appsettings.json", false)
+                .Build();
             Configuration = config;
             var fileName = Configuration["FileOptions:linqCsv"];
             var repo = new LinqRepo(fileName);
         }
+
         public LinqRepo(string fileName)
         {
             fillDeptRecords();
             fillEmployeeRecords(fileName);
-            Console.WriteLine(Employees.Count);
-            Console.WriteLine(Departments.Count);
+            // Remove the following lines to prevent printing counts
+            // Console.WriteLine(Employees.Count);
+            // Console.WriteLine(Departments.Count);
         }
+
         public List<Employee> Employees { get; private set; }
         public List<Department> Departments { get; private set; }
     }
