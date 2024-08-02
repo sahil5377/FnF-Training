@@ -1,82 +1,104 @@
-using Microsoft.Extensions.Configuration;
+using ClassLibrary1;
+using ClassLibrary1.Data;
+using EmployeeDBApi.Models;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Web.Http;
 
-namespace ConsoleApp1
+namespace EmployeeDbApi.Controllers
 {
-    public class Employee
+    //Project type:ASP.NET Web Application, select WebAPI check box. 
+    //Add the reference of the Dll
+    //Drag and Drop the Dto class that was created in the Api Core project. 
+    //Create a new Api Controller ->Right click on Controllers folder and select WebAPI v2 Empty Controller. 
+    public class EmployeesController : ApiController
     {
-        public int EmpId { get; set; }
-        public string EmpName { get; set; } = string.Empty;
-        public string EmpCity { get; set; } = string.Empty;
-        public int EmpSalary { get; set; }
-        public int DeptId { get; set; }
-    }
+        private IEmployeeDbAccess dbAccess = new EmployeeDbAccess();
 
-    public class Department
-    {
-        public int DeptId { get; set; }
-        public string DeptName { get; set; } = string.Empty;
-    }
-
-    public class LinqRepo
-    {
-        private void fillEmployeeRecords(string fileName)
+        //api/Employees
+        public List<Employee> GetAll()
         {
-            var lines = File.ReadAllLines(fileName);
-            Employees = new List<Employee>();
-            foreach (var line in lines)
-            {
-                var words = line.Split(',');
-                var emp = new Employee
-                {
-                    EmpId = int.Parse(words[0]),
-                    EmpName = words[1],
-                    EmpCity = words[2],
-                    EmpSalary = int.Parse(words[3]),
-                    DeptId = int.Parse(words[4])
-                };
-                Employees.Add(emp);
-            }
+            var records = from emp in dbAccess.GetAllEmployees().DefaultIfEmpty()
+                          select new Employee
+                          {
+                              deptId = emp.deptId == null ? 0 : emp.deptId.Value,
+                              empAddress = emp.empAddress,
+                              empName = emp.empName,
+                              empId = emp.empId,
+                              empSalary = emp.empSalary
+                          };
+            return records.ToList();
         }
 
-        private void fillDeptRecords()
+        //api/Employees/id
+        [HttpGet]
+        public Employee Find(int id)
         {
-            Departments = new List<Department>
+            var record = dbAccess.GetEmployeeById(id);
+            return new Employee
             {
-                new Department { DeptId = 1, DeptName = "IT" },
-                new Department { DeptId = 2, DeptName = "HR" },
-                new Department { DeptId = 3, DeptName = "RD" },
-                new Department { DeptId = 4, DeptName = "Sales" },
-                new Department { DeptId = 5, DeptName = "ADM" }
+                deptId = record.deptId == null ? 0 : record.deptId.Value,
+                empAddress = record.empAddress,
+                empName = record.empName,
+                empId = record.empId,
+                empSalary = record.empSalary
             };
         }
 
-        public static IConfigurationRoot Configuration { get; set; }
-
-        static void Main()
+        [HttpPost]
+        public string AddEmployee(Employee emp)
         {
-            var config = new ConfigurationBuilder()
-                .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
-                .AddJsonFile("appsettings.json", false)
-                .Build();
-            Configuration = config;
-            var fileName = Configuration["FileOptions:linqCsv"];
-            var repo = new LinqRepo(fileName);
+            try
+            {
+                //convert the Employee to EmpTable object
+                EmpTable row = new EmpTable();
+                row.deptId = emp.deptId;
+                row.empName = emp.empName;
+                row.empSalary = emp.empSalary;
+                row.empAddress = emp.empAddress;
+                //Call the dll's function to add the record
+                dbAccess.AddEmployee(row);
+                //return success message
+                //else return ex.Message
+                return "Employee added successfully";
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
+            }
         }
 
-        public LinqRepo(string fileName)
+        [HttpDelete]
+        public string DeleteEmployee(int id)
         {
-            fillDeptRecords();
-            fillEmployeeRecords(fileName);
-            // Remove the following lines to prevent printing counts
-            // Console.WriteLine(Employees.Count);
-            // Console.WriteLine(Departments.Count);
+            try
+            {
+                dbAccess.DeleteEmployee(id);
+                return "Employee deleted successfully";
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
+            }
         }
 
-        public List<Employee> Employees { get; private set; }
-        public List<Department> Departments { get; private set; }
+        [HttpPut]
+        //api/Employees/id
+        public string UpdateEmployee(int id, Employee emp)
+        {
+            try
+            {
+                dbAccess.UpdateEmployee(new EmpTable { deptId = emp.deptId, empAddress = emp.empAddress, empName = emp.empName, empSalary = emp.empSalary, empId = id });
+                return "Employee updated successfully";
+
+            }
+            catch (Exception ex)
+            {
+                return ex.Message;
+            }
+        }
     }
 }
