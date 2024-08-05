@@ -1,7 +1,7 @@
 @page "/AddEmployee"
 @inject NavigationManager nav
 @inject IJSRuntime js
-@using CrudEmployeeApp.Models
+@inject IEmpService service
 
 <FormControl Heading="Register New Employee" ButtonText="Add New Record" OnSubmit="addNewEmployee" emp="@emp" />
 
@@ -10,14 +10,22 @@
 
     private async Task addNewEmployee()
     {
-        if (await js.InvokeAsync<bool>("confirm", $"Do you really want to Add the record?"))
+        if (await js.InvokeAsync<bool>("confirm", $"Do you really want to add the record?"))
         {
-            EmployeeRepo.AddEmployee(emp);
-            nav.NavigateTo("allEmployees");
+            var response = await service.AddEmployee(emp);
+            if (response.IsSuccessStatusCode)
+            {
+                await js.InvokeVoidAsync("alert", "Employee added successfully!");
+                nav.NavigateTo("allEmployees");
+            }
+            else
+            {
+                await js.InvokeVoidAsync("alert", "Failed to add employee.");
+            }
         }
         else
         {
-            await js.InvokeVoidAsync("alert", $"User has selected the cancel");
+            await js.InvokeVoidAsync("alert", "User has canceled the operation.");
         }
     }
 }
