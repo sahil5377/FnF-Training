@@ -1,55 +1,13 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Linq;
-
-namespace CrudEmployeeAPI.Controllers
+[HttpDelete("{id}")]
+public async Task<IActionResult> DeleteEmployee(int id)
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class CrudEmployeeController : ControllerBase
+    var employee = await _employeeDbContext.Employees.FirstOrDefaultAsync(e => e.EmpId == id);
+    if (employee == null)
     {
-        private EmployeeDbContext _employeeDbContext;
-        public CrudEmployeeController(EmployeeDbContext context)
-        {
-            _employeeDbContext = context;
-        }
-        [Route("AllEmployees")]
-        public async Task <IActionResult> GetAllEmployees()
-        {
-            var data = await _employeeDbContext.Employees.ToListAsync();
-            return Ok(data);
-        }
-        [HttpGet("AllEmployees/{id}")]
-        public async Task<IActionResult>GetById(int id)
-        {
-            var data = await _employeeDbContext.Employees.FirstOrDefaultAsync((e)=>e.EmpId == id);
-            return Ok(data);
-        }
-        [HttpPost]
-        public async Task<IActionResult>AddEmployee(Employee emp)
-        {
-            _employeeDbContext.Employees.Add(emp);
-            await _employeeDbContext.SaveChangesAsync();
-            return Ok("Employee Added Successfully");
-        }
-        [HttpPut]
-        public async Task<IActionResult>UpdateEmployee(Employee emp)
-        {
-            var rec = await _employeeDbContext.Employees.FirstOrDefaultAsync((e=>e.EmpId == emp.EmpId));
-            if (rec != null)
-            {
-                rec.EmpName = emp.EmpName;
-                rec.EmpAddress = emp.EmpAddress;
-                rec.EmpSalary = emp.EmpSalary;
-                await _employeeDbContext.SaveChangesAsync();
-                return Ok("Employee Details Updated Successfully");
-            }
-            else
-            {
-                return BadRequest("Employee Not Found to Update");
-            }
-        }
-        [HttpDelete]
+        return NotFound("Employee Not Found");
     }
+
+    _employeeDbContext.Employees.Remove(employee);
+    await _employeeDbContext.SaveChangesAsync();
+    return Ok("Employee Deleted Successfully");
 }
