@@ -1,39 +1,9 @@
-@page "/Details/{id:int}"
-@using CrudEmployeeApp.Models
-@inject IEmpService service
-@inject NavigationManager nav
-@inject IJSRuntime js
-
-@if (selected == null)
-{
-    <text>Employee is not found</text>
-}
-else
-{
-    <FormControl emp="@selected" ButtonText="Update Changes" Heading="Edit Employee" OnSubmit="Onupdate" />
-}
-
-@code {
-    [Parameter]
-    public int id { get; set; }
-
-    private Employee selected { get; set; }
-
-    protected override async Task OnInitializedAsync()
+private async Task ConfirmDelete(int id)
     {
-        selected = await service.GetById(id);
-    }
-
-    private async Task Onupdate()
-    {
-        if (await js.InvokeAsync<bool>("confirm", $"Do you really want to Update?"))
+        bool isConfirmed = await js.InvokeAsync<bool>("confirm", "Are you sure you want to delete this employee?");
+        if (isConfirmed)
         {
-            await service.UpdateEmployee(selected);
-            nav.NavigateTo("allEmployees");
-        }
-        else
-        {
-            await js.InvokeVoidAsync("alert", $"User has selected the cancel");
+            await service.DeleteEmployee(id);
+            empList = await service.GetAll(); // Refresh list after deletion
         }
     }
-}
