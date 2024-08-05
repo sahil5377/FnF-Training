@@ -1,20 +1,22 @@
 @page "/allEmployees"
 @using CrudEmployeeApp.Models
+
 <div>
     <h1>List of All Employees</h1>
     <hr/>
-    @if(empList==null)
+    @if (empList == null)
     {
         <text>Loading...</text>
-    }else if(empList.Count==0)
+    }
+    else if (empList.Count == 0)
     {
         <text>No Employees Records are found!!</text>
     }
     else
     {
-        <input type="search" class="form-control" placeholder="Search By Name" @bind = "searchName" @bind:after = "SearchByName"> 
+        <input type="search" class="form-control" placeholder="Search By Name" @bind="searchName" @bind:after="SearchByName"> 
         <button type="submit" class="btn btn-primary" @onclick="SearchByName">Search</button>
-        <table class=" table table-bordered table-striped">
+        <table class="table table-bordered table-striped">
             <thead>
                 <tr>
                     <td>Employee Id</td>
@@ -25,7 +27,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach(var emp in empList)
+                @foreach (var emp in empList)
                 {
                     <tr>
                         <td>@emp.EmpId</td>
@@ -34,7 +36,7 @@
                         <td>@emp.EmpSalary</td>
                         <td>
                             <a class="btn btn-primary" href="Details/@emp.EmpId">Edit</a>
-                            <a class="btn btn-danger" @onclick="@(()=> OnDelete(emp.EmpId))">Delete</a>
+                            <button class="btn btn-danger" @onclick="() => OnDelete(emp.EmpId)">Delete</button>
                         </td>                       
                     </tr>
                 }
@@ -45,7 +47,6 @@
 
 @code {
     private List<Employee> empList = null;
-
     public string searchName { get; set; } = string.Empty;
 
     protected override Task OnInitializedAsync()
@@ -58,8 +59,10 @@
     {
         empList = EmployeeRepo.GetAll().FindAll(e => e.EmpName.Contains(searchName));
     }
+
     private void OnDelete(int id)
     {
         EmployeeRepo.Delete(id);
+        empList = EmployeeRepo.GetAll(); // Refresh list after deletion
     }
 }
