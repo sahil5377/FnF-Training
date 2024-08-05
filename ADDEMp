@@ -2,15 +2,22 @@
 @inject NavigationManager nav
 @inject IJSRuntime js
 @using CrudEmployeeApp.Models
-<FormControl Heading="Register New Employee" ButtonText="Add New Record" OnSubmit="@addNewEmployee" emp ="@emp"/>
+
+<FormControl Heading="Register New Employee" ButtonText="Add New Record" OnSubmit="addNewEmployee" emp="@emp"/>
 
 @code {
     private Employee emp = new Employee();
 
-    async Task  addNewEmployee()
+    private async Task addNewEmployee()
     {
-        if (await js.InvokeAsync<bool>("confirm", $"Do you really want to Add the record")) ;
-        EmployeeRepo.AddEmployee(emp);
-        nav.NavigateTo("AllEmployees");
+        if (await js.InvokeAsync<bool>("confirm", $"Do you really want to Add the record?"))
+        {
+            EmployeeRepo.AddEmployee(emp);
+            nav.NavigateTo("allEmployees");
+        }
+        else
+        {
+            await js.InvokeVoidAsync("alert", $"User has selected the cancel");
+        }
     }
 }
