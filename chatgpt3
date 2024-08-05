@@ -1,5 +1,6 @@
 @page "/Details/{id:int}"
 @using CrudEmployeeApp.Models
+@inject IEmpService service
 @inject NavigationManager nav
 @inject IJSRuntime js
 
@@ -20,14 +21,14 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        selected = EmployeeRepo.GetById(id);
+        selected = await service.GetById(id);
     }
 
     private async Task Onupdate()
     {
         if (await js.InvokeAsync<bool>("confirm", $"Do you really want to Update?"))
         {
-            EmployeeRepo.UpdateEmployee(selected);
+            await service.UpdateEmployee(selected);
             nav.NavigateTo("allEmployees");
         }
         else
