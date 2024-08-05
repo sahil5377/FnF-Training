@@ -1,5 +1,5 @@
 @using CrudEmployeeApp.Models
-<EditForm Model="@emp" OnInvalidSubmit="@OnSubmit">
+<EditForm Model="@emp" OnValidSubmit="@OnSubmit">
     <h1>@Heading</h1>
     <div class="p-4">
         <p>
@@ -21,9 +21,7 @@
         <p>
             <button type="submit" class="btn btn-success">@ButtonText</button>  
         </p>
-
     </div>
-
 </EditForm>
 
 @code {
