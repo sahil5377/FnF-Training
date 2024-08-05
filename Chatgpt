@@ -1,8 +1,6 @@
 @page "/allEmployees"
-@inject IEmpService service;
+@inject IEmpService service
 @using CrudEmployeeApp.Models
-@using CrudEmployeeApp.Services
-
 
 <div>
     <h1>List of All Employees</h1>
@@ -13,11 +11,11 @@
     }
     else if (empList.Count == 0)
     {
-        <text>No Employees Records are found!!</text>
+        <text>No Employee Records found!</text>
     }
     else
     {
-        <input type="search" class="form-control" placeholder="Search By Name" @bind="searchName" @bind:after="SearchByName">
+        <input type="search" class="form-control" placeholder="Search By Name" @bind="searchName" />
         <button type="submit" class="btn btn-primary" @onclick="SearchByName">Search</button>
         <table class="table table-bordered table-striped">
             <thead>
@@ -54,17 +52,29 @@
 
     protected override async Task OnInitializedAsync()
     {
+        await LoadEmployees();
+    }
+
+    private async Task LoadEmployees()
+    {
         empList = await service.GetAll();
     }
 
-    private async void SearchByName()
+    private async Task SearchByName()
     {
         empList = await service.GetByName(searchName);
     }
 
-    private void OnDelete(int id)
+    private async Task OnDelete(int id)
     {
-        EmployeeRepo.Delete(id);
-        empList = EmployeeRepo.GetAll(); // Refresh list after deletion
+        var response = await service.DeleteEmployee(id);
+        if (response.IsSuccessStatusCode)
+        {
+            await LoadEmployees(); // Refresh the list after deletion
+        }
+        else
+        {
+            await js.InvokeVoidAsync("alert", "Failed to delete employee.");
+        }
     }
 }
