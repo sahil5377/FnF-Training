@@ -1,31 +1,38 @@
-@page "/AddEmployee"
+@page "/Details/{id:int}"
+@using CrudEmployeeApp.Models
 @inject NavigationManager nav
 @inject IJSRuntime js
-@inject IEmpService service
 
-<FormControl Heading="Register New Employee" ButtonText="Add New Record" OnSubmit="addNewEmployee" emp="@emp" />
+@if (selected == null)
+{
+    <text>Employee is not found</text>
+}
+else
+{
+    <FormControl emp="@selected" ButtonText="Update Changes" Heading="Edit Employee" OnSubmit="Onupdate" />
+}
 
 @code {
-    private Employee emp = new Employee();
+    [Parameter]
+    public int id { get; set; }
 
-    private async Task addNewEmployee()
+    private Employee selected { get; set; }
+
+    protected override async Task OnInitializedAsync()
     {
-        if (await js.InvokeAsync<bool>("confirm", $"Do you really want to add the record?"))
+        selected = EmployeeRepo.GetById(id);
+    }
+
+    private async Task Onupdate()
+    {
+        if (await js.InvokeAsync<bool>("confirm", $"Do you really want to Update?"))
         {
-            var response = await service.AddEmployee(emp);
-            if (response.IsSuccessStatusCode)
-            {
-                await js.InvokeVoidAsync("alert", "Employee added successfully!");
-                nav.NavigateTo("allEmployees");
-            }
-            else
-            {
-                await js.InvokeVoidAsync("alert", "Failed to add employee.");
-            }
+            EmployeeRepo.UpdateEmployee(selected);
+            nav.NavigateTo("allEmployees");
         }
         else
         {
-            await js.InvokeVoidAsync("alert", "User has canceled the operation.");
+            await js.InvokeVoidAsync("alert", $"User has selected the cancel");
         }
     }
 }
