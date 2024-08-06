@@ -1,80 +1,50 @@
-@page "/allEmployees"
-@inject IEmpService service
-@using CrudEmployeeApp.Models
+const http = require("http");
+const fs = require("fs");
+const parse = require("url").parse;
+const empList = [];
 
-<div>
-    <h1>List of All Employees</h1>
-    <hr />
-    @if (empList == null)
-    {
-        <text>Loading...</text>
-    }
-    else if (empList.Count == 0)
-    {
-        <text>No Employee Records found!</text>
-    }
-    else
-    {
-        <input type="search" class="form-control" placeholder="Search By Name" @bind="searchName" />
-        <button type="submit" class="btn btn-primary" @onclick="SearchByName">Search</button>
-        <table class="table table-bordered table-striped">
-            <thead>
-                <tr>
-                    <td>Employee Id</td>
-                    <td>Employee Name</td>
-                    <td>Employee Address</td>
-                    <td>Employee Salary</td>
-                    <td>Options</td>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var emp in empList)
-                {
-                    <tr>
-                        <td>@emp.EmpId</td>
-                        <td>@emp.EmpName</td>
-                        <td>@emp.EmpAddress</td>
-                        <td>@emp.EmpSalary</td>
-                        <td>
-                            <a class="btn btn-primary" href="Details/@emp.EmpId">Edit</a>
-                            <button class="btn btn-danger" @onclick="() => OnDelete(emp.EmpId)">Delete</button>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    }
-</div>
+const portNo = 1234;
+const root =__dirname;
+const data = require("./mydata.json");
 
-@code {
-    private List<Employee> empList = null;
-    public string searchName { get; set; } = string.Empty;
-
-    protected override async Task OnInitializedAsync()
-    {
-        await LoadEmployees();
-    }
-
-    private async Task LoadEmployees()
-    {
-        empList = await service.GetAll();
-    }
-
-    private async Task SearchByName()
-    {
-        empList = await service.GetByName(searchName);
-    }
-
-    private async Task OnDelete(int id)
-    {
-        var response = await service.DeleteEmployee(id);
-        if (response.IsSuccessStatusCode)
-        {
-            await LoadEmployees(); // Refresh the list after deletion
-        }
-        else
-        {
-            await js.InvokeVoidAsync("alert", "Failed to delete employee.");
-        }
-    }
+function errorPage(res){
+    const file = root + "/ErrorPage.html";
+    fs.createReadStream(file).pipe(res);
 }
+
+function processGet(req, res){
+  let query = parse(req.url, true).query;
+  var rec = {"name" : query.username, "email" : query.useremail};
+  empList.push(rec);
+  const msg =`<p>Thank you for registering with us!!</p><p>Mr.${query.username}'s email Address is ${query.useremail} </p>`
+  res.write(msg);
+  res.end();
+}
+
+http.createServer((req, res)=>{
+    console.log(req.method);
+    if(req.method == "GET"){
+        const query = parse(req.url).query;
+        if(query != null){
+        processGet(req, res);
+        return;
+        }
+    }
+    switch(req.url){
+        case "/EmpList":
+            res.write(JSON.stringify(empList));
+            break;
+        case "/EmpData":
+            res.write(JSON.stringify(data));
+            break;
+        case "/Register":
+            //create a page called Regpage.html and have inputs for Name and Email Address with a Submit button. 
+            fs.createReadStream(root +"/RegistrationPage.html").pipe(res);
+            return;
+        default:
+            errorPage(res);
+            return;
+    }
+    res.end();
+}).listen(portNo);
+console.log("Server is available at port no 1234");
