@@ -1,6 +1,6 @@
 <div class="row mb-3">
   <div class="col-md-4">
-    <img [src]="empObj.empPic" alt="Employee Picture" width="175px" height="200px" onError="this.onerror=null;this.src='default.jpg';">
+    <img [src]="'assets/' + empObj.empPic" alt="Employee Picture" width="175px" height="200px" (error)="onImageError($event)">
   </div>
   <div class="col-md-6">
     <p>
