@@ -1,4 +1,4 @@
-import { Component, Input, input } from '@angular/core';
+import { Component, Input } from '@angular/core';
 import { Employee } from '../../Models/employee';
 
 @Component({
@@ -6,5 +6,10 @@ import { Employee } from '../../Models/employee';
   templateUrl: './emp-detail.component.html',
 })
 export class EmpDetailComponent {
-  @Input() empObj = {} as Employee
+  @Input() empObj = {} as Employee;
+
+  onImageError(event: Event) {
+    const imgElement = event.target as HTMLImageElement;
+    imgElement.src = 'assets/default.jpg'; // Path to a default image
+  }
 }
