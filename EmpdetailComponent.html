@@ -1,10 +1,8 @@
-<div class="row">
-  <div class="col-md-5">
-    <p>
-      <img [src]="empObj.empPic" alt="Employee Picture" width="175px" height="200px" onError="this.onerror=null;this.src='default.jpg';">
-    </p>
+<div class="row mb-3">
+  <div class="col-md-4">
+    <img [src]="empObj.empPic" alt="Employee Picture" width="175px" height="200px" onError="this.onerror=null;this.src='default.jpg';">
   </div>
-  <div class="col-md-5">
+  <div class="col-md-6">
     <p>
       Employee Name:
       <input class="form-control" [(ngModel)]="empObj.empName" placeholder="Name" />
@@ -18,11 +16,11 @@
       <input class="form-control" [(ngModel)]="empObj.empSalary" placeholder="Salary" />
     </p>
   </div>
-  <div class="col-md-2">
-    <button class="btn btn-primary my-2">
+  <div class="col-md-2 d-flex flex-column justify-content-around">
+    <button class="btn btn-primary">
       <i class="fa fa-pencil" aria-hidden="true"></i>
     </button>
-    <button class="btn btn-danger my-2">
+    <button class="btn btn-danger">
       <i class="fa fa-trash" aria-hidden="true"></i>
     </button>
   </div>
