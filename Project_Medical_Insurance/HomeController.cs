@@ -23,6 +23,24 @@ namespace WebApplication1.Controllers
             return View();
         }
 
+        // Add this action to serve the Dashboard view
+        public IActionResult Dashboard()
+        {
+            return View();
+        }
+
+        // Add this action to serve the Policies view
+        public IActionResult Policies()
+        {
+            return View();
+        }
+
+        // Add this action to serve the Claims view
+        public IActionResult Claims()
+        {
+            return View();
+        }
+
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
