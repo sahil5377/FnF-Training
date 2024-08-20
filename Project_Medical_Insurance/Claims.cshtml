@@ -1,0 +1,31 @@
+@* Claims.cshtml *@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Claims";
+}
+
+<div class="container-fluid">
+    <h1 class="mt-4">Claims</h1>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Claim ID</th>
+                <th>Policy ID</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>501</td>
+                <td>101</td>
+                <td>Pending</td>
+                <td>
+                    <a href="#" class="btn btn-success btn-sm">Approve</a>
+                    <a href="#" class="btn btn-danger btn-sm">Reject</a>
+                </td>
+            </tr>
+            <!-- Add more rows as needed -->
+        </tbody>
+    </table>
+</div>
