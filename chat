@@ -121,4 +121,52 @@ namespace WebApplication1.Controllers
     }
 }
 Home Controller
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text.Json;
+using WebApplication1.Models;
+
+namespace WebApplication1.Services
+{
+    public class AdminService
+    {
+        public interface IAdminService
+        {
+            Task<Admin> GetAdminByIdAsync(int adminId);
+        }
+        private readonly HttpClient _httpClient;
+
+        public AdminService(HttpClient httpClient)
+        {
+            _httpClient = httpClient;
+        }
+        public async Task<Admin> GetAdminByIdAsync(int adminId)
+        {
+            var resposne = await _httpClient.GetAsync($"http://localhost:5230/api/Admin/{adminId}");
+            resposne.EnsureSuccessStatusCode();
+
+            var jsonRespone = await resposne.Content.ReadAsStringAsync();
+            var admin = JsonSerializer.Deserialize<Admin>(jsonRespone,new JsonSerializerOptions { PropertyNameCaseInsensitive=true});
+            return admin;
+        }
+        public async Task<Admin> GetAdminByNameAsync(string name)
+        {
+            var res = await _httpClient.GetAsync("Admin");
+            if (res.IsSuccessStatusCode)
+            {
+                var adminList = await res.Content.ReadFromJsonAsync<List<Admin>>();
+                var admin = adminList?.FirstOrDefault(a => a.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+                return admin;
+            }
+            return null;
+        }
+
+        internal async Task Authenticate(string username, string password)
+        {
+            throw new NotImplementedException();
+        }
+    }
+}
+
+adminservice.cs
 
