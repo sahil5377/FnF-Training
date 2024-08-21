@@ -1,3 +1,201 @@
+admin service
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text.Json;
+using WebApplication1.Models;
+
+namespace WebApplication1.Services
+{
+    public class AdminService : IAdminService
+    {
+        private readonly HttpClient _httpClient;
+
+        public AdminService(HttpClient httpClient)
+        {
+            _httpClient = httpClient;
+        }
+
+        public async Task<Admin> GetAdminByIdAsync(int adminId)
+        {
+            var response = await _httpClient.GetAsync($"Admin/{adminId}");
+            response.EnsureSuccessStatusCode();
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            var admins = JsonSerializer.Deserialize<List<Admin>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var admin = admins?.FirstOrDefault(a =>a.AdminId == adminId);
+            return admin;
+        }
+
+        public async Task<Admin> GetAdminByNameAsync(string name)
+        {
+            var response = await _httpClient.GetAsync("Admin");
+            if (response.IsSuccessStatusCode)
+            {
+                var jsonResponse = await response.Content.ReadAsStringAsync();
+                var adminList = JsonSerializer.Deserialize<List<Admin>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive=true});
+                var admin = adminList?.FirstOrDefault(a => a.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
+                return admin;
+            }
+            return null;
+        }
+
+        // Implement Authenticate if needed
+        public async Task Authenticate(string username, string password)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public interface IAdminService
+    {
+        Task<Admin> GetAdminByIdAsync(int adminId);
+        Task<Admin> GetAdminByNameAsync(string name);
+        Task Authenticate(string username, string password);
+    }
+}
+
+HomeController.cs
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
+using System.Security.Claims;
+using WebApplication1.Models;
+using WebApplication1.Services; // Make sure this namespace is included
+
+namespace WebApplication1.Controllers
+{
+    [Authorize]
+    public class HomeController : Controller
+    {
+        private readonly ILogger<HomeController> _logger;
+        private readonly IAdminService _adminService;
+
+        public HomeController(ILogger<HomeController> logger, IAdminService adminService)
+        {
+            _logger = logger;
+            _adminService = adminService;
+        }
+        [Authorize]
+        public async Task<IActionResult> Profile()
+        {
+            var adminIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (int.TryParse(adminIdClaim, out var adminId))
+            {
+                var admin = await _adminService.GetAdminByIdAsync(adminId);
+                if (admin != null)
+                {
+                    return View(admin);
+                }
+            }
+            return RedirectToAction("Login", "Account");
+        }
+
+        public IActionResult Index()
+        {
+            return View();
+        }
+
+        public IActionResult Privacy()
+        {
+            return View();
+        }
+
+        // Add this action to serve the Dashboard view
+        public IActionResult Dashboard()
+        {
+            return View();
+        }
+
+        // Add this action to serve the Policies view
+        public IActionResult Policies()
+        {
+            return View();
+        }
+
+        // Add this action to serve the Claims view
+        public IActionResult Claims()
+        {
+            return View();
+        }
+
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public IActionResult Error()
+        {
+            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+    }
+}
+profile.cshtml
+@model WebApplication1.Models.Admin
+
+@{
+    ViewData["Title"] = "Profile";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<div class="card mt-4">
+    <div class="card-header">
+        Admin Profile
+    </div>
+    <div class="card-body">
+        <h5 class="card-title">Name: @Model.Name</h5>
+        <p class="card-text">Admin ID: @Model.AdminId</p>
+    </div>
+</div>
+
+programs.cs
+using Microsoft.AspNetCore.Authentication.Cookies;
+using WebApplication1.Services;
+
+namespace WebApplication1
+{
+    public class Program
+    {
+        public static void Main(string[] args)
+        {
+            var builder = WebApplication.CreateBuilder(args);
+
+            // Add services to the container.
+            builder.Services.AddControllersWithViews();
+
+            // Register AdminService with its interface
+            builder.Services.AddHttpClient<IAdminService, AdminService>(client =>
+            {
+                client.BaseAddress = new Uri("http://localhost:5230/api/");
+            });
+
+            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(options =>
+                {
+                    options.LoginPath = "/Account/Login";
+                    options.AccessDeniedPath = "/Account/AccessDenied";
+                });
+
+            var app = builder.Build();
+
+            // Configure the HTTP request pipeline.
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseExceptionHandler("/Home/Error");
+                app.UseHsts();
+            }
+
+            app.UseHttpsRedirection();
+            app.UseStaticFiles();
+            app.UseRouting();
+            app.UseAuthentication();
+            app.UseAuthorization();
+
+            app.MapControllerRoute(
+                name: "default",
+                pattern: "{controller=Account}/{action=Login}/{id?}");
+
+            app.Run();
+        }
+    }
+}
+
+Account Controller
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
@@ -56,182 +254,3 @@ namespace WebApplication1.Controllers
         }
     }
 }
-
-
-using Microsoft.AspNetCore.Authentication.Cookies;
-using WebApplication1.Services;
-
-namespace WebApplication1
-{
-    public class Program
-    {
-        public static void Main(string[] args)
-        {
-            var builder = WebApplication.CreateBuilder(args);
-
-            // Add services to the container.
-            builder.Services.AddControllersWithViews();
-
-            // Register AdminService with its interface
-            builder.Services.AddHttpClient<IAdminService, AdminService>(client =>
-            {
-                client.BaseAddress = new Uri("http://localhost:5230/api/");
-            });
-
-            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                .AddCookie(options =>
-                {
-                    options.LoginPath = "/Account/Login";
-                    options.AccessDeniedPath = "/Account/AccessDenied";
-                });
-
-            var app = builder.Build();
-
-            // Configure the HTTP request pipeline.
-            if (!app.Environment.IsDevelopment())
-            {
-                app.UseExceptionHandler("/Home/Error");
-                app.UseHsts();
-            }
-
-            app.UseHttpsRedirection();
-            app.UseStaticFiles();
-            app.UseRouting();
-            app.UseAuthentication();
-            app.UseAuthorization();
-
-            app.MapControllerRoute(
-                name: "default",
-                pattern: "{controller=Account}/{action=Login}/{id?}");
-
-            app.Run();
-        }
-    }
-}
-
-
-
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text.Json;
-using WebApplication1.Models;
-
-namespace WebApplication1.Services
-{
-    public class AdminService : IAdminService
-    {
-        private readonly HttpClient _httpClient;
-
-        public AdminService(HttpClient httpClient)
-        {
-            _httpClient = httpClient;
-        }
-
-        public async Task<Admin> GetAdminByIdAsync(int adminId)
-        {
-            var response = await _httpClient.GetAsync($"Admin/{adminId}");
-            response.EnsureSuccessStatusCode();
-            var jsonResponse = await response.Content.ReadAsStringAsync();
-            var admin = JsonSerializer.Deserialize<Admin>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            return admin;
-        }
-
-        public async Task<Admin> GetAdminByNameAsync(string name)
-        {
-            var response = await _httpClient.GetAsync("Admin");
-            if (response.IsSuccessStatusCode)
-            {
-                var adminList = await response.Content.ReadFromJsonAsync<List<Admin>>();
-                var admin = adminList?.FirstOrDefault(a => a.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
-                return admin;
-            }
-            return null;
-        }
-
-        // Implement Authenticate if needed
-        public async Task Authenticate(string username, string password)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    public interface IAdminService
-    {
-        Task<Admin> GetAdminByIdAsync(int adminId);
-        Task<Admin> GetAdminByNameAsync(string name);
-        Task Authenticate(string username, string password);
-    }
-}
-
-
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
-using System.Security.Claims;
-using WebApplication1.Models;
-using WebApplication1.Services; // Make sure this namespace is included
-
-namespace WebApplication1.Controllers
-{
-    [Authorize]
-    public class HomeController : Controller
-    {
-        private readonly ILogger<HomeController> _logger;
-        private readonly IAdminService _adminService;
-
-        public HomeController(ILogger<HomeController> logger, IAdminService adminService)
-        {
-            _logger = logger;
-            _adminService = adminService;
-        }
-
-        public async Task<IActionResult> Profile()
-        {
-            var adminIdClaim = User.FindFirst("AdminId")?.Value;
-            if (int.TryParse(adminIdClaim, out var adminId))
-            {
-                var admin = await _adminService.GetAdminByIdAsync(adminId);
-                if (admin != null)
-                {
-                    return View(admin);
-                }
-            }
-            return RedirectToAction("Login", "Account");
-        }
-
-        public IActionResult Index()
-        {
-            return View();
-        }
-
-        public IActionResult Privacy()
-        {
-            return View();
-        }
-
-        // Add this action to serve the Dashboard view
-        public IActionResult Dashboard()
-        {
-            return View();
-        }
-
-        // Add this action to serve the Policies view
-        public IActionResult Policies()
-        {
-            return View();
-        }
-
-        // Add this action to serve the Claims view
-        public IActionResult Claims()
-        {
-            return View();
-        }
-
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
-    }
-}
-
