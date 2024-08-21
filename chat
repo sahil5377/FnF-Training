@@ -1,0 +1,124 @@
+using Microsoft.AspNetCore.Authentication.Cookies;
+using WebApplication1.Services;
+
+namespace WebApplication1
+{
+    public class Program
+    {
+        public static void Main(string[] args)
+        {
+            var builder = WebApplication.CreateBuilder(args);
+
+            // Add services to the container.
+            builder.Services.AddControllersWithViews();
+            builder.Services.AddHttpClient<AdminService>(client =>
+            {
+                client.BaseAddress = new Uri("http://localhost:5230/api/");
+            });
+            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(options =>
+            {
+                options.LoginPath = "/Account/Login";
+                options.AccessDeniedPath = "/Account/AccessDenied";
+            });
+
+            var app = builder.Build();
+
+            // Configure the HTTP request pipeline.
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseExceptionHandler("/Home/Error");
+                app.UseHsts();
+            }
+            app.UseHttpsRedirection();
+
+            app.UseStaticFiles();
+
+            app.UseRouting();
+
+            app.UseAuthentication();
+            app.UseAuthorization();
+
+            app.MapControllerRoute(
+                name: "default",
+                pattern: "{controller=Account}/{action=Login}/{id?}");
+
+            app.Run();
+        }
+    }
+}
+
+Program.cs
+
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using System.Diagnostics;
+using WebApplication1.Models;
+using static WebApplication1.Services.AdminService;
+
+namespace WebApplication1.Controllers
+{
+    [Authorize]
+    public class HomeController : Controller
+    {
+
+        private readonly ILogger<HomeController> _logger;
+        private readonly IAdminService _adminService;
+
+        public HomeController(ILogger<HomeController> logger, IAdminService adminService)
+        {
+            _logger = logger;
+            _adminService= adminService;
+        }
+
+        [Authorize]
+        public async Task<IActionResult> Profile()
+        {
+            var adminIdClaim = User.FindFirst("AdminId")?.Value;
+            if (int.TryParse(adminIdClaim, out var adminId))
+            {
+                var admin = await _adminService.GetAdminByIdAsync(adminId);
+                if (admin != null)
+                {
+                    return View(admin);
+                }
+            }
+            return RedirectToAction("Login", "Account");
+        }
+
+        public IActionResult Index()
+        {
+            return View();
+        }
+
+        public IActionResult Privacy()
+        {
+            return View();
+        }
+
+        // Add this action to serve the Dashboard view
+        public IActionResult Dashboard()
+        {
+            return View();
+        }
+
+        // Add this action to serve the Policies view
+        public IActionResult Policies()
+        {
+            return View();
+        }
+
+        // Add this action to serve the Claims view
+        public IActionResult Claims()
+        {
+            return View();
+        }
+
+        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+        public IActionResult Error()
+        {
+            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+    }
+}
+Home Controller
+
