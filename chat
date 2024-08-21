@@ -1,118 +1,52 @@
-using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Mvc;
-using System.Diagnostics;
-using WebApplication1.Models;
+using System.Security.Claims;
 using WebApplication1.Services;
-
 namespace WebApplication1.Controllers
 {
-    [Authorize]
-    public class HomeController : Controller
+    public class AccountController : Controller
     {
-        private readonly ILogger<HomeController> _logger;
-        private readonly IAdminService _adminService;
+        private readonly AdminService adminService;
 
-        public HomeController(ILogger<HomeController> logger, IAdminService adminService)
+        public AccountController(AdminService adminService)
         {
-            _logger = logger;
-            _adminService = adminService;
+            this.adminService = adminService;
         }
 
-        [Authorize]
-        public async Task<IActionResult> Profile()
+        public IActionResult Login()
         {
-            var adminIdClaim = User.FindFirst("AdminId")?.Value;
-            if (int.TryParse(adminIdClaim, out var adminId))
+            return View();
+        }
+        [HttpPost]
+        public async Task<IActionResult> Login(string username, string password)
+        {
+            var admin = await adminService.GetAdminByNameAsync(username);
+            if (admin != null && VerifyPasswordHash(password, admin.PasswordHash))
             {
-                var admin = await _adminService.GetAdminByIdAsync(adminId);
-                if (admin != null)
+                var claims = new[]
                 {
-                    return View(admin);
-                }
+                    new Claim(ClaimTypes.Name, admin.Name)
+                };
+                var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+                var principal = new ClaimsPrincipal(identity);
+
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, principal);
+
+                return RedirectToAction("Index", "Home");
             }
+            ModelState.AddModelError("", "Invalid Login UserName OR Password.");
+            return View();
+        }
+        public async Task<IActionResult> Logout()
+        {
+            await HttpContext.SignOutAsync();
             return RedirectToAction("Login", "Account");
         }
-
-        public IActionResult Index()
+        private bool VerifyPasswordHash(string password, string storedhash)
         {
-            return View();
-        }
-
-        public IActionResult Privacy()
-        {
-            return View();
-        }
-
-        // Serve the Dashboard view
-        public IActionResult Dashboard()
-        {
-            return View();
-        }
-
-        // Serve the Policies view
-        public IActionResult Policies()
-        {
-            return View();
-        }
-
-        // Serve the Claims view
-        public IActionResult Claims()
-        {
-            return View();
-        }
-
-        [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
-        public IActionResult Error()
-        {
-            return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
-        }
-    }
-}
-
-
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text.Json;
-using WebApplication1.Models;
-
-namespace WebApplication1.Services
-{
-    // Interface should be outside of AdminService class
-    public interface IAdminService
-    {
-        Task<Admin> GetAdminByIdAsync(int adminId);
-        Task<Admin> GetAdminByNameAsync(string name);
-    }
-
-    public class AdminService : IAdminService
-    {
-        private readonly HttpClient _httpClient;
-
-        public AdminService(HttpClient httpClient)
-        {
-            _httpClient = httpClient;
-        }
-
-        public async Task<Admin> GetAdminByIdAsync(int adminId)
-        {
-            var response = await _httpClient.GetAsync($"Admin/{adminId}");
-            response.EnsureSuccessStatusCode();
-
-            var jsonResponse = await response.Content.ReadAsStringAsync();
-            var admin = JsonSerializer.Deserialize<Admin>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-            return admin;
-        }
-
-        public async Task<Admin> GetAdminByNameAsync(string name)
-        {
-            var response = await _httpClient.GetAsync("Admin");
-            if (response.IsSuccessStatusCode)
-            {
-                var adminList = await response.Content.ReadFromJsonAsync<List<Admin>>();
-                var admin = adminList?.FirstOrDefault(a => a.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
-                return admin;
-            }
-            return null;
+            //Implemented Pass Logic Here
+            return password == storedhash;
         }
     }
 }
