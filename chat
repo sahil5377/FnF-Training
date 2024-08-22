@@ -18,6 +18,12 @@ namespace WebApplication1
                 client.BaseAddress = new Uri("http://localhost:5230/api/");
             });
 
+            // Register HospitalService with its interface
+            builder.Services.AddHttpClient<IHospitalService, HospitalService>(client =>
+            {
+                client.BaseAddress = new Uri("http://localhost:5230/api/");
+            });
+
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(options =>
                 {
