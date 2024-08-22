@@ -18,8 +18,12 @@ namespace WebApplication1.Services
         {
             var response = await _httpClient.GetAsync("Hospital");
             response.EnsureSuccessStatusCode();
+
+            // The JSON data is inside an array, so we need to deserialize it accordingly
             var jsonResponse = await response.Content.ReadAsStringAsync();
-            return JsonSerializer.Deserialize<List<Hospital>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var hospitals = JsonSerializer.Deserialize<List<Hospital>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            return hospitals;
         }
 
         public async Task<Hospital> AddHospitalAsync(Hospital hospital)
