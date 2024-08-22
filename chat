@@ -104,8 +104,8 @@
     }
 
     function editHospital(hospitalId) {
-        var hospital = @Html.Raw(Json.Serialize(Model));
-        var selectedHospital = hospital.find(h => h.HospitalId === hospitalId);
+        var hospitals = @Html.Raw(Json.Serialize(Model));
+        var selectedHospital = hospitals.find(h => h.HospitalId === hospitalId);
 
         document.getElementById('editHospitalId').value = selectedHospital.HospitalId;
         document.getElementById('editHospitalName').value = selectedHospital.Name;
@@ -117,7 +117,8 @@
     }
 </script>
 
-.cshtml
+
+
 
 using System.Net.Http;
 using System.Net.Http.Json;
@@ -140,7 +141,6 @@ namespace WebApplication1.Services
             var response = await _httpClient.GetAsync("Hospital");
             response.EnsureSuccessStatusCode();
 
-            // The JSON data is inside an array, so we need to deserialize it accordingly
             var jsonResponse = await response.Content.ReadAsStringAsync();
             var hospitals = JsonSerializer.Deserialize<List<Hospital>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
@@ -177,6 +177,7 @@ namespace WebApplication1.Services
 }
 
 service
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using WebApplication1.Models;
@@ -208,7 +209,7 @@ namespace WebApplication1.Controllers
                 await _hospitalService.AddHospitalAsync(hospital);
                 return RedirectToAction("ManageHospitals");
             }
-            return View("ManageHospitals");
+            return View("ManageHospitals", await _hospitalService.GetAllHospitalsAsync());
         }
 
         [HttpPost]
@@ -219,7 +220,7 @@ namespace WebApplication1.Controllers
                 await _hospitalService.UpdateHospitalAsync(hospital);
                 return RedirectToAction("ManageHospitals");
             }
-            return View("ManageHospitals");
+            return View("ManageHospitals", await _hospitalService.GetAllHospitalsAsync());
         }
 
         [HttpPost]
@@ -230,5 +231,3 @@ namespace WebApplication1.Controllers
         }
     }
 }
-
-controller
