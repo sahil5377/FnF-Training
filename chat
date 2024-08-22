@@ -1,53 +1,56 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using WebApplication1.Models;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using WebApplication1.Services;
 
-namespace WebApplication1.Controllers
+namespace WebApplication1
 {
-    [Authorize]
-    public class HospitalController : Controller
+    public class Program
     {
-        private readonly IHospitalService _hospitalService;
-
-        public HospitalController(IHospitalService hospitalService)
+        public static void Main(string[] args)
         {
-            _hospitalService = hospitalService;
-        }
+            var builder = WebApplication.CreateBuilder(args);
 
-        public async Task<IActionResult> ManageHospitals()
-        {
-            var hospitals = await _hospitalService.GetAllHospitalsAsync();
-            return View(hospitals);
-        }
+            // Add services to the container.
+            builder.Services.AddControllersWithViews();
 
-        [HttpPost]
-        public async Task<IActionResult> AddHospital(Hospital hospital)
-        {
-            if (ModelState.IsValid)
+            // Register AdminService with its interface
+            builder.Services.AddHttpClient<IAdminService, AdminService>(client =>
             {
-                await _hospitalService.AddHospitalAsync(hospital);
-                return RedirectToAction("ManageHospitals");
-            }
-            return View("ManageHospitals");
-        }
+                client.BaseAddress = new Uri("http://localhost:5230/api/");
+            });
 
-        [HttpPost]
-        public async Task<IActionResult> UpdateHospital(Hospital hospital)
-        {
-            if (ModelState.IsValid)
+            // Register HospitalService with its interface
+            builder.Services.AddHttpClient<IHospitalService, HospitalService>(client =>
             {
-                await _hospitalService.UpdateHospitalAsync(hospital);
-                return RedirectToAction("ManageHospitals");
-            }
-            return View("ManageHospitals");
-        }
+                client.BaseAddress = new Uri("http://localhost:5230/api/");
+            });
 
-        [HttpPost]
-        public async Task<IActionResult> DeleteHospital(int hospitalId)
-        {
-            await _hospitalService.DeleteHospitalAsync(hospitalId);
-            return RedirectToAction("ManageHospitals");
+            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(options =>
+                {
+                    options.LoginPath = "/Account/Login";
+                    options.AccessDeniedPath = "/Account/AccessDenied";
+                });
+
+            var app = builder.Build();
+
+            // Configure the HTTP request pipeline.
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseExceptionHandler("/Home/Error");
+                app.UseHsts();
+            }
+
+            app.UseHttpsRedirection();
+            app.UseStaticFiles();
+            app.UseRouting();
+            app.UseAuthentication();
+            app.UseAuthorization();
+
+            app.MapControllerRoute(
+                name: "default",
+                pattern: "{controller=Account}/{action=Login}/{id?}");
+
+            app.Run();
         }
     }
 }
