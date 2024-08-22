@@ -104,130 +104,22 @@
     }
 
     function editHospital(hospitalId) {
+        // Ensure the modal can find the hospital data
         var hospitals = @Html.Raw(Json.Serialize(Model));
         var selectedHospital = hospitals.find(h => h.HospitalId === hospitalId);
 
-        document.getElementById('editHospitalId').value = selectedHospital.HospitalId;
-        document.getElementById('editHospitalName').value = selectedHospital.Name;
-        document.getElementById('editHospitalAddress').value = selectedHospital.Address;
-        document.getElementById('editHospitalPhone').value = selectedHospital.Phone;
+        // Populate modal fields with hospital data
+        if (selectedHospital) {
+            document.getElementById('editHospitalId').value = selectedHospital.HospitalId;
+            document.getElementById('editHospitalName').value = selectedHospital.Name;
+            document.getElementById('editHospitalAddress').value = selectedHospital.Address;
+            document.getElementById('editHospitalPhone').value = selectedHospital.Phone;
 
-        var editModal = new bootstrap.Modal(document.getElementById('editHospitalModal'));
-        editModal.show();
+            // Show the modal
+            var editModal = new bootstrap.Modal(document.getElementById('editHospitalModal'));
+            editModal.show();
+        } else {
+            console.error("Hospital not found!");
+        }
     }
 </script>
-
-
-
-
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text.Json;
-using WebApplication1.Models;
-
-namespace WebApplication1.Services
-{
-    public class HospitalService : IHospitalService
-    {
-        private readonly HttpClient _httpClient;
-
-        public HospitalService(HttpClient httpClient)
-        {
-            _httpClient = httpClient;
-        }
-
-        public async Task<List<Hospital>> GetAllHospitalsAsync()
-        {
-            var response = await _httpClient.GetAsync("Hospital");
-            response.EnsureSuccessStatusCode();
-
-            var jsonResponse = await response.Content.ReadAsStringAsync();
-            var hospitals = JsonSerializer.Deserialize<List<Hospital>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            return hospitals;
-        }
-
-        public async Task<Hospital> AddHospitalAsync(Hospital hospital)
-        {
-            var response = await _httpClient.PostAsJsonAsync("Hospital", hospital);
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<Hospital>();
-        }
-
-        public async Task UpdateHospitalAsync(Hospital hospital)
-        {
-            var response = await _httpClient.PutAsJsonAsync($"Hospital/{hospital.HospitalId}", hospital);
-            response.EnsureSuccessStatusCode();
-        }
-
-        public async Task DeleteHospitalAsync(int hospitalId)
-        {
-            var response = await _httpClient.DeleteAsync($"Hospital/{hospitalId}");
-            response.EnsureSuccessStatusCode();
-        }
-    }
-
-    public interface IHospitalService
-    {
-        Task<List<Hospital>> GetAllHospitalsAsync();
-        Task<Hospital> AddHospitalAsync(Hospital hospital);
-        Task UpdateHospitalAsync(Hospital hospital);
-        Task DeleteHospitalAsync(int hospitalId);
-    }
-}
-
-service
-
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using WebApplication1.Models;
-using WebApplication1.Services;
-
-namespace WebApplication1.Controllers
-{
-    [Authorize]
-    public class HospitalController : Controller
-    {
-        private readonly IHospitalService _hospitalService;
-
-        public HospitalController(IHospitalService hospitalService)
-        {
-            _hospitalService = hospitalService;
-        }
-
-        public async Task<IActionResult> ManageHospitals()
-        {
-            var hospitals = await _hospitalService.GetAllHospitalsAsync();
-            return View(hospitals);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> AddHospital(Hospital hospital)
-        {
-            if (ModelState.IsValid)
-            {
-                await _hospitalService.AddHospitalAsync(hospital);
-                return RedirectToAction("ManageHospitals");
-            }
-            return View("ManageHospitals", await _hospitalService.GetAllHospitalsAsync());
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> UpdateHospital(Hospital hospital)
-        {
-            if (ModelState.IsValid)
-            {
-                await _hospitalService.UpdateHospitalAsync(hospital);
-                return RedirectToAction("ManageHospitals");
-            }
-            return View("ManageHospitals", await _hospitalService.GetAllHospitalsAsync());
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> DeleteHospital(int hospitalId)
-        {
-            await _hospitalService.DeleteHospitalAsync(hospitalId);
-            return RedirectToAction("ManageHospitals");
-        }
-    }
-}
