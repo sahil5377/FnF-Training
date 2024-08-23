@@ -1,15 +1,48 @@
-public class ClaimService : IClaimService
-{
-    // Existing code...
+@model List<InsuranceApi.DTOs.ClaimDto>
+@{
+    ViewData["Title"] = "Manage Claims";
+}
 
-    public async Task<List<ClaimDto>> GetNewClaimsAsync()
-    {
-        var response = await _httpClient.GetAsync("Claim/new");
-        response.EnsureSuccessStatusCode();
+<h2>@ViewData["Title"]</h2>
 
-        var jsonResponse = await response.Content.ReadAsStringAsync();
-        var newClaims = JsonSerializer.Deserialize<List<ClaimDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th scope="col">Claim ID</th>
+            <th scope="col">Policy Holder ID</th>
+            <th scope="col">Claim Date</th>
+            <th scope="col">Claim Amount</th>
+            <th scope="col">Claim Status</th>
+            @if (ViewData["Title"].ToString() == "New Claim Requests")
+            {
+                <th scope="col">Actions</th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var claim in Model)
+        {
+            <tr>
+                <td>@claim.ClaimId</td>
+                <td>@claim.PolicyHolderId</td>
+                <td>@claim.ClaimDate.ToShortDateString()</td>
+                <td>@claim.ClaimAmount</td>
+                <td>@claim.ClaimStatus</td>
+                @if (ViewData["Title"].ToString() == "New Claim Requests")
+                {
+                    <td>
+                        <button class="btn btn-primary" onclick="showReviewModal(@claim.ClaimId)">Review</button>
+                        <form method="post" asp-action="UpdateClaimStatus" asp-controller="Claim" style="display:inline;">
+                            <input type="hidden" name="claimId" value="@claim.ClaimId" />
+                            <button type="submit" name="status" value="Rejected" class="btn btn-danger">Reject</button>
+                        </form>
+                    </td>
+                }
+            </tr>
+        }
+    </tbody>
+</table>
 
-        return newClaims;
-    }
+@section Scripts {
+    <!-- Your existing scripts here -->
 }
