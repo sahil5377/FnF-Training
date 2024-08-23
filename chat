@@ -1,64 +1,31 @@
-@model List<WebApplication1.Models.Claim>
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using WebApplication1.Services;
+using YourClassLibraryNamespace; // Replace with your class library namespace
 
-@{
-    ViewData["Title"] = "Manage Claims";
-}
+namespace WebApplication1.Controllers
+{
+    [Authorize]
+    public class ClaimController : Controller
+    {
+        private readonly IClaimService _claimService;
 
-<h2>Manage Claims</h2>
-
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th scope="col">Claim ID</th>
-            <th scope="col">Policy Holder ID</th>
-            <th scope="col">Insured Policy ID</th>
-            <th scope="col">Claim Date</th>
-            <th scope="col">Claim Amount</th>
-            <th scope="col">Claim Status</th>
-            <th scope="col">Dispense Amount</th>
-            <th scope="col">Document Type</th>
-            <th scope="col">Document Path</th>
-            <th scope="col">Hospital ID</th>
-            <th scope="col">Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var claim in Model)
+        public ClaimController(IClaimService claimService)
         {
-            <tr>
-                <td>@claim.ClaimId</td>
-                <td>@claim.PolicyHolderId</td>
-                <td>@claim.InsuredPolicyId</td>
-                <td>@claim.ClaimDate.ToShortDateString()</td>
-                <td>@claim.ClaimAmount</td>
-                <td>@claim.ClaimStatus</td>
-                <td>@claim.DispenseAmount</td>
-                <td>@claim.DocumentType</td>
-                <td>@claim.DocumentPath</td>
-                <td>@claim.HospitalId</td>
-                <td>
-                    <button class="btn btn-success" onclick="updateClaimStatus(@claim.ClaimId, 'Accepted')">Accept</button>
-                    <button class="btn btn-danger" onclick="updateClaimStatus(@claim.ClaimId, 'Rejected')">Reject</button>
-                </td>
-            </tr>
+            _claimService = claimService;
         }
-    </tbody>
-</table>
 
-<script>
-    function updateClaimStatus(claimId, status) {
-        if (confirm(`Are you sure you want to ${status.toLowerCase()} this claim?`)) {
-            $.ajax({
-                url: `@Url.Action("UpdateClaimStatus", "Claim")`,
-                type: 'POST',
-                data: { claimId: claimId, status: status },
-                success: function () {
-                    location.reload();
-                },
-                error: function (xhr, status, error) {
-                    alert("An error occurred while updating the claim status.");
-                }
-            });
+        public async Task<IActionResult> ManageClaims()
+        {
+            var claims = await _claimService.GetAllClaimsAsync();
+            return View(claims);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateClaimStatus(int claimId, string status)
+        {
+            await _claimService.UpdateClaimStatusAsync(claimId, status);
+            return RedirectToAction("ManageClaims");
         }
     }
-</script>
+}
