@@ -48,7 +48,7 @@
                 </button>
             </div>
             <div class="modal-body">
-                <form id="reviewForm" method="post">
+                <form id="reviewForm">
                     <input type="hidden" id="claimId" name="claimId" />
                     <div class="form-group">
                         <label for="dispenseAmount">Dispense Amount</label>
@@ -61,3 +61,49 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.1/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        function showReviewModal(claimId) {
+            // Set the claim ID in the hidden input field
+            document.getElementById('claimId').value = claimId;
+
+            // Optionally, fetch claim details using AJAX and populate the modal
+            // Here, you can call an API to get the claim details and set them in the modal fields
+
+            // Show the modal
+            $('#reviewModal').modal('show');
+        }
+
+        $(document).ready(function () {
+            $('#reviewForm').submit(function (event) {
+                event.preventDefault();
+
+                var claimId = $('#claimId').val();
+                var dispenseAmount = $('#dispenseAmount').val();
+
+                $.ajax({
+                    url: '@Url.Action("UpdateClaimStatus", "Claim")',
+                    type: 'POST',
+                    data: {
+                        claimId: claimId,
+                        status: 'Approved',
+                        dispenseAmount: dispenseAmount
+                    },
+                    success: function (response) {
+                        $('#reviewModal').modal('hide');
+                        // Optionally reload the page or update the table row dynamically
+                        location.reload();
+                    },
+                    error: function (xhr, status, error) {
+                        alert('Error updating claim status.');
+                    }
+                });
+            });
+        });
+    </script>
+}
+
