@@ -1,116 +1,73 @@
-using InsuranceApi.Data;
-using InsuranceApi.DTOs;
-using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using WebApplication1.Services;
 
-namespace InsuranceApi.Services
+namespace WebApplication1
 {
-    public interface IClaimService
+    public class Program
     {
-        Task Add(ClaimDto claimDto);
-        Task Delete(int id);
-        Task<List<ClaimDto>> GetAll();
-        Task<ClaimDto> GetById(int id);
-        Task Update(ClaimDto claimDto);
-        Task UpdateStatus(int id, string status);
-    }
-
-    public class ClaimService : IClaimService
-    {
-        private readonly FnfProjectContext context;
-
-        public ClaimService(FnfProjectContext context)
+        public static void Main(string[] args)
         {
-            this.context = context;
-        }
+            var builder = WebApplication.CreateBuilder(args);
 
-        public async Task<List<ClaimDto>> GetAll()
-        {
-            List<ClaimDto> claimDtos = [];
-            await foreach (var claimTable in context.Claims)
+            // Add services to the container.
+            builder.Services.AddControllersWithViews();
+
+            // Register services with HTTP client
+            builder.Services.AddHttpClient<IAdminService, AdminService>(client =>
             {
-                var claimDto = ConvertToDto(claimTable);
-                claimDtos.Add(claimDto);
+                client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]);
+            });
+
+            builder.Services.AddHttpClient<IHospitalService, HospitalService>(client =>
+            {
+                client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]);
+            });
+
+            builder.Services.AddHttpClient<IClaimService, ClaimService>(client =>
+            {
+                client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]);
+            });
+
+            // Add CORS policy if needed
+            builder.Services.AddCors(options =>
+            {
+                options.AddDefaultPolicy(builder =>
+                {
+                    builder.WithOrigins("http://yourfrontendurl.com") // Replace with actual front-end URL
+                           .AllowAnyHeader()
+                           .AllowAnyMethod();
+                });
+            });
+
+            // Configure authentication
+            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(options =>
+                {
+                    options.LoginPath = "/Account/Login";
+                    options.AccessDeniedPath = "/Account/AccessDenied";
+                });
+
+            var app = builder.Build();
+
+            // Configure the HTTP request pipeline.
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseExceptionHandler("/Home/Error");
+                app.UseHsts();
             }
-            return claimDtos;
-        }
 
-        public async Task Delete(int id)
-        {
-            var found = await context.Claims.FirstOrDefaultAsync((claimTable) =>
-                claimTable.ClaimId == id);
-            if (found != null)
-            {
-                context.Claims.Remove(found);
-                await context.SaveChangesAsync();
-                return;
-            }
-            throw new NullReferenceException();
-        }
+            app.UseHttpsRedirection();
+            app.UseStaticFiles();
+            app.UseRouting();
+            app.UseCors(); // Enable CORS if configured
+            app.UseAuthentication();
+            app.UseAuthorization();
 
-        public async Task Add(ClaimDto claimDto)
-        {
-            Claim claimTable = new();
-            ConvertToTable(claimDto, claimTable);
-            context.Claims.Add(claimTable);
-            await context.SaveChangesAsync();
-            return;
-        }
+            app.MapControllerRoute(
+                name: "default",
+                pattern: "{controller=Account}/{action=Login}/{id?}");
 
-        public async Task Update(ClaimDto claimDto)
-        {
-            var found = await context.Claims.FirstOrDefaultAsync((claimTable) =>
-                claimTable.ClaimId == claimDto.ClaimId);
-            if (found != null)
-            {
-                ConvertToTable(claimDto, found);
-                await context.SaveChangesAsync();
-                return;
-            }
-            throw new NullReferenceException();
-        }
-
-        public async Task<ClaimDto> GetById(int id)
-        {
-            var found = await context.Claims.FirstOrDefaultAsync((claimTable) =>
-                claimTable.ClaimId == id);
-
-            if (found != null)
-                return ConvertToDto(found);
-
-            throw new NullReferenceException();
-        }
-
-        private ClaimDto ConvertToDto(Claim claimTable)
-        {
-            ClaimDto claimDto = new()
-            {
-                ClaimId = claimTable.ClaimId,
-                PolicyHolderId = claimTable.PolicyHolderId,
-                InsuredPolicyId = claimTable.InsuredPolicyId,
-                ClaimAmount = claimTable.ClaimAmount,
-                ClaimStatus = claimTable.ClaimStatus,
-                DispenseAmount = claimTable.DispenseAmount,
-                DocumentPath = claimTable.DocumentPath,
-                DocumentType = claimTable.DocumentType,
-                HospitalId = claimTable.HospitalId,
-                ClaimDate = DateTime.Parse(claimTable.ClaimDate.ToString()),
-            };
-            return claimDto;
-        }
-
-        private void ConvertToTable(ClaimDto claimDto, Claim claimTable)
-        {
-            claimTable.ClaimId = claimDto.ClaimId;
-            claimTable.PolicyHolderId = claimDto.PolicyHolderId;
-            claimTable.InsuredPolicyId = claimDto.InsuredPolicyId;
-            claimTable.ClaimAmount = claimDto.ClaimAmount;
-            claimTable.ClaimStatus = claimDto.ClaimStatus;
-            claimTable.DispenseAmount = claimDto.DispenseAmount;
-            claimTable.DocumentPath = claimDto.DocumentPath;
-            claimTable.DocumentType = claimDto.DocumentType;
-            claimTable.ClaimDate = DateOnly.FromDateTime(claimDto.ClaimDate);
-            claimTable.HospitalId = claimDto.HospitalId;
-            return;
+            app.Run();
         }
     }
 }
