@@ -1,60 +1,88 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
-using WebApplication1.Services;
+using InsuranceApi.DTOs;
+using InsuranceApi.Services;
+using Microsoft.AspNetCore.Mvc;
 
-namespace WebApplication1
+namespace InsuranceApi.Controllers
 {
-    public class Program
+    [Route("api/[controller]")]
+    [ApiController]
+    public class ClaimController : ControllerBase
     {
-        public static void Main(string[] args)
+        private readonly IClaimService service;
+
+        public ClaimController(IClaimService service)
         {
-            var builder = WebApplication.CreateBuilder(args);
+            this.service = service;
+        }
 
-            // Add services to the container.
-            builder.Services.AddControllersWithViews();
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            List<ClaimDto> claims = await service.GetAll();
+            return Ok(claims);
+        }
 
-            // Register AdminService with its interface
-            builder.Services.AddHttpClient<IAdminService, AdminService>(client =>
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
             {
-                client.BaseAddress = new Uri("http://localhost:5230/api/");
-            });
-
-            // Register HospitalService with its interface
-            builder.Services.AddHttpClient<IHospitalService, HospitalService>(client =>
-            {
-                client.BaseAddress = new Uri("http://localhost:5230/api/");
-            });
-            builder.Services.AddHttpClient<IClaimService, ClaimService>(client =>
-            {
-                client.BaseAddress = new Uri("http://localhost:5230/api/");
-            });
-
-            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                .AddCookie(options =>
-                {
-                    options.LoginPath = "/Account/Login";
-                    options.AccessDeniedPath = "/Account/AccessDenied";
-                });
-
-            var app = builder.Build();
-
-            // Configure the HTTP request pipeline.
-            if (!app.Environment.IsDevelopment())
-            {
-                app.UseExceptionHandler("/Home/Error");
-                app.UseHsts();
+                await service.Delete(id);
+                return Ok();
             }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
+        }
 
-            app.UseHttpsRedirection();
-            app.UseStaticFiles();
-            app.UseRouting();
-            app.UseAuthentication();
-            app.UseAuthorization();
+        [HttpPost]
+        public async Task<IActionResult> Add(ClaimDto claim)
+        {
+            await service.Add(claim);
+            return Ok();
+        }
 
-            app.MapControllerRoute(
-                name: "default",
-                pattern: "{controller=Account}/{action=Login}/{id?}");
+        [HttpPut]
+        public async Task<IActionResult> Update(ClaimDto claim)
+        {
+            try
+            {
+                await service.Update(claim);
+                return Ok();
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
+        }
 
-            app.Run();
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            try
+            {
+                var found = await service.GetById(id);
+                return Ok(found);
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpPut("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] string status)
+        {
+            try
+            {
+                await service.UpdateStatus(id, status);
+                return Ok();
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
         }
     }
 }
