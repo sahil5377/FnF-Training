@@ -1,73 +1,63 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
-using WebApplication1.Services;
-
-namespace WebApplication1
-{
-    public class Program
-    {
-        public static void Main(string[] args)
-        {
-            var builder = WebApplication.CreateBuilder(args);
-
-            // Add services to the container.
-            builder.Services.AddControllersWithViews();
-
-            // Register services with HTTP client
-            builder.Services.AddHttpClient<IAdminService, AdminService>(client =>
-            {
-                client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]);
-            });
-
-            builder.Services.AddHttpClient<IHospitalService, HospitalService>(client =>
-            {
-                client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]);
-            });
-
-            builder.Services.AddHttpClient<IClaimService, ClaimService>(client =>
-            {
-                client.BaseAddress = new Uri(builder.Configuration["ApiBaseUrl"]);
-            });
-
-            // Add CORS policy if needed
-            builder.Services.AddCors(options =>
-            {
-                options.AddDefaultPolicy(builder =>
-                {
-                    builder.WithOrigins("http://yourfrontendurl.com") // Replace with actual front-end URL
-                           .AllowAnyHeader()
-                           .AllowAnyMethod();
-                });
-            });
-
-            // Configure authentication
-            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                .AddCookie(options =>
-                {
-                    options.LoginPath = "/Account/Login";
-                    options.AccessDeniedPath = "/Account/AccessDenied";
-                });
-
-            var app = builder.Build();
-
-            // Configure the HTTP request pipeline.
-            if (!app.Environment.IsDevelopment())
-            {
-                app.UseExceptionHandler("/Home/Error");
-                app.UseHsts();
-            }
-
-            app.UseHttpsRedirection();
-            app.UseStaticFiles();
-            app.UseRouting();
-            app.UseCors(); // Enable CORS if configured
-            app.UseAuthentication();
-            app.UseAuthorization();
-
-            app.MapControllerRoute(
-                name: "default",
-                pattern: "{controller=Account}/{action=Login}/{id?}");
-
-            app.Run();
-        }
-    }
+@model List<InsuranceApi.DTOs.ClaimDto>
+@{
+    ViewData["Title"] = "Manage Claims";
 }
+
+<h2>Manage Claims</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th scope="col">Claim ID</th>
+            <th scope="col">Policy Holder ID</th>
+            <th scope="col">Claim Date</th>
+            <th scope="col">Claim Amount</th>
+            <th scope="col">Claim Status</th>
+            <th scope="col">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var claim in Model)
+        {
+            <tr>
+                <td>@claim.ClaimId</td>
+                <td>@claim.PolicyHolderId</td>
+                <td>@claim.ClaimDate.ToShortDateString()</td>
+                <td>@claim.ClaimAmount</td>
+                <td>@claim.ClaimStatus</td>
+                <td>
+                    <button class="btn btn-primary" onclick="showReviewModal(@claim.ClaimId)">Review</button>
+                    <form method="post" asp-action="UpdateClaimStatus" asp-controller="Claim" style="display:inline;">
+                        <input type="hidden" name="claimId" value="@claim.ClaimId" />
+                        <button type="submit" name="status" value="Rejected" class="btn btn-danger">Reject</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Review Modal -->
+<div class="modal fade" id="reviewModal" tabindex="-1" role="dialog" aria-labelledby="reviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reviewModalLabel">Review Claim</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="reviewForm" method="post">
+                    <input type="hidden" id="claimId" name="claimId" />
+                    <div class="form-group">
+                        <label for="dispenseAmount">Dispense Amount</label>
+                        <input type="number" class="form-control" id="dispenseAmount" name="dispenseAmount" value="0" />
+                    </div>
+                    <!-- Add more fields to display claim details as needed -->
+                    <button type="submit" class="btn btn-success">Accept</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
