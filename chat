@@ -1,88 +1,41 @@
 using InsuranceApi.DTOs;
-using InsuranceApi.Services;
-using Microsoft.AspNetCore.Mvc;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text.Json;
 
-namespace InsuranceApi.Controllers
+namespace WebApplication1.Services
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class ClaimController : ControllerBase
+    public class ClaimService : IClaimService
     {
-        private readonly IClaimService service;
+        private readonly HttpClient _httpClient;
 
-        public ClaimController(IClaimService service)
+        public ClaimService(HttpClient httpClient)
         {
-            this.service = service;
+            _httpClient = httpClient;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<List<ClaimDto>> GetAllClaimsAsync()
         {
-            List<ClaimDto> claims = await service.GetAll();
-            return Ok(claims);
+            string endpoint = "api/Claim";
+            var response = await _httpClient.GetAsync(endpoint);
+            response.EnsureSuccessStatusCode();
+
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            var claims = JsonSerializer.Deserialize<List<ClaimDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            return claims;
         }
 
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task UpdateClaimStatusAsync(int claimId, string status)
         {
-            try
-            {
-                await service.Delete(id);
-                return Ok();
-            }
-            catch (NullReferenceException)
-            {
-                return NotFound();
-            }
+            var response = await _httpClient.PutAsJsonAsync($"api/Claim/{claimId}/status", status);
+            response.EnsureSuccessStatusCode();
         }
+    }
 
-        [HttpPost]
-        public async Task<IActionResult> Add(ClaimDto claim)
-        {
-            await service.Add(claim);
-            return Ok();
-        }
-
-        [HttpPut]
-        public async Task<IActionResult> Update(ClaimDto claim)
-        {
-            try
-            {
-                await service.Update(claim);
-                return Ok();
-            }
-            catch (NullReferenceException)
-            {
-                return NotFound();
-            }
-        }
-
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id)
-        {
-            try
-            {
-                var found = await service.GetById(id);
-                return Ok(found);
-            }
-            catch (NullReferenceException)
-            {
-                return NotFound();
-            }
-        }
-
-        [HttpPut("{id}/status")]
-        public async Task<IActionResult> UpdateStatus(int id, [FromBody] string status)
-        {
-            try
-            {
-                await service.UpdateStatus(id, status);
-                return Ok();
-            }
-            catch (NullReferenceException)
-            {
-                return NotFound();
-            }
-        }
+    public interface IClaimService
+    {
+        Task<List<ClaimDto>> GetAllClaimsAsync();
+        Task UpdateClaimStatusAsync(int claimId, string status);
     }
 }
