@@ -1,28 +1,15 @@
-public class ClaimController : Controller
+public class ClaimService : IClaimService
 {
-    private readonly IClaimService _claimService;
+    // Existing code...
 
-    public ClaimController(IClaimService claimService)
+    public async Task<List<ClaimDto>> GetNewClaimsAsync()
     {
-        _claimService = claimService;
-    }
+        var response = await _httpClient.GetAsync("Claim/new");
+        response.EnsureSuccessStatusCode();
 
-    public async Task<IActionResult> AllClaims()
-    {
-        var claims = await _claimService.GetAllClaimsAsync();
-        return View(claims); // Create a new view for AllClaims or reuse the ManageClaims view
-    }
+        var jsonResponse = await response.Content.ReadAsStringAsync();
+        var newClaims = JsonSerializer.Deserialize<List<ClaimDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-    public async Task<IActionResult> NewClaimRequests()
-    {
-        var newClaims = await _claimService.GetNewClaimsAsync();
-        return View("ManageClaims", newClaims); // Reuse the ManageClaims view for new claims
-    }
-
-    [HttpPost]
-    public async Task<IActionResult> UpdateClaimStatus(int claimId, string status, decimal dispenseAmount)
-    {
-        await _claimService.UpdateClaimStatusAsync(claimId, status, dispenseAmount);
-        return RedirectToAction("AllClaims");
+        return newClaims;
     }
 }
