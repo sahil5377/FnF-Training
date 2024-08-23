@@ -1,41 +1,31 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using WebApplication1.Services;
 using InsuranceApi.DTOs;
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text.Json;
 
-namespace WebApplication1.Services
+namespace WebApplication1.Controllers
 {
-    public class ClaimService : IClaimService
+    [Authorize]
+    public class ClaimController : Controller
     {
-        private readonly HttpClient _httpClient;
+        private readonly IClaimService _claimService;
 
-        public ClaimService(HttpClient httpClient)
+        public ClaimController(IClaimService claimService)
         {
-            _httpClient = httpClient;
+            _claimService = claimService;
         }
 
-        public async Task<List<ClaimDto>> GetAllClaimsAsync()
+        public async Task<IActionResult> ManageClaims()
         {
-            string endpoint = "api/Claim";
-            var response = await _httpClient.GetAsync(endpoint);
-            response.EnsureSuccessStatusCode();
-
-            var jsonResponse = await response.Content.ReadAsStringAsync();
-            var claims = JsonSerializer.Deserialize<List<ClaimDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            return claims;
+            var claims = await _claimService.GetAllClaimsAsync();
+            return View(claims);
         }
 
-        public async Task UpdateClaimStatusAsync(int claimId, string status)
+        [HttpPost]
+        public async Task<IActionResult> UpdateClaimStatus(int claimId, string status)
         {
-            var response = await _httpClient.PutAsJsonAsync($"api/Claim/{claimId}/status", status);
-            response.EnsureSuccessStatusCode();
+            await _claimService.UpdateClaimStatusAsync(claimId, status);
+            return RedirectToAction("ManageClaims");
         }
-    }
-
-    public interface IClaimService
-    {
-        Task<List<ClaimDto>> GetAllClaimsAsync();
-        Task UpdateClaimStatusAsync(int claimId, string status);
     }
 }
