@@ -110,3 +110,421 @@
         }
     }
 </script>
+Layout.cshtml
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using WebApplication1.Services;
+using InsuranceApi.DTOs;
+
+namespace WebApplication1.Controllers
+{
+    [Authorize]
+    public class ClaimController : Controller
+    {
+        private readonly IClaimService _claimService;
+
+        public ClaimController(IClaimService claimService)
+        {
+            _claimService = claimService;
+        }
+
+        public async Task<IActionResult> ManageClaims()
+        {
+            var claims = await _claimService.GetAllClaimsAsync();
+            return View(claims);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateClaimStatus(int claimId, string status, decimal dispenseAmount)
+        {
+            await _claimService.UpdateClaimStatusAsync(claimId, status, dispenseAmount);
+            return RedirectToAction("ManageClaims");
+        }
+    }
+}
+ClaimController.cs
+using InsuranceApi.DTOs;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text.Json;
+
+namespace WebApplication1.Services
+{
+    public class ClaimService : IClaimService
+    {
+        private readonly HttpClient _httpClient;
+
+        public ClaimService(HttpClient httpClient)
+        {
+            _httpClient = httpClient;
+        }
+
+        public async Task<List<ClaimDto>> GetAllClaimsAsync()
+        {
+            string endpoint = "Claim";
+            var response = await _httpClient.GetAsync(endpoint);
+            response.EnsureSuccessStatusCode();
+
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            var claims = JsonSerializer.Deserialize<List<ClaimDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            return claims;
+        }
+
+        public async Task UpdateClaimStatusAsync(int claimId, string status, decimal dispenseAmount)
+        {
+            var updateDto = new { Status = status, DispenseAmount = dispenseAmount };
+            var response = await _httpClient.PutAsJsonAsync($"Claim/{claimId}/status", updateDto);
+            response.EnsureSuccessStatusCode();
+        }
+    }
+
+    public interface IClaimService
+    {
+        Task<List<ClaimDto>> GetAllClaimsAsync();
+        Task UpdateClaimStatusAsync(int claimId, string status, decimal dispenseAmount);
+    }
+}
+ClaimService.cs
+@model List<InsuranceApi.DTOs.ClaimDto>
+@{
+    ViewData["Title"] = "Manage Claims";
+}
+
+<h2>Manage Claims</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Claim ID</th>
+            <th>Claim Status</th>
+            <th>Dispense Amount</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var claim in Model)
+        {
+            <tr>
+                <td>@claim.ClaimId</td>
+                <td>@claim.ClaimStatus</td>
+                <td>@claim.DispenseAmount</td>
+                <td>
+                    <button class="btn btn-primary" onclick="openReviewModal(@claim.ClaimId)">Review</button>
+                    <form asp-action="UpdateClaimStatus" method="post" style="display:inline">
+                        <input type="hidden" name="claimId" value="@claim.ClaimId" />
+                        <input type="hidden" name="status" value="Rejected" />
+                        <input type="hidden" name="dispenseAmount" value="0" />
+                        <button type="submit" class="btn btn-danger">Reject</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<div class="modal fade" id="reviewModal" tabindex="-1" role="dialog" aria-labelledby="reviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reviewModalLabel">Review Claim</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form asp-action="UpdateClaimStatus" method="post">
+                    <input type="hidden" id="claimId" name="claimId" />
+                    <div class="form-group">
+                        <label for="dispenseAmount">Dispense Amount</label>
+                        <input type="number" class="form-control" id="dispenseAmount" name="dispenseAmount" />
+                    </div>
+                    <input type="hidden" name="status" value="Approved" />
+                    <button type="submit" class="btn btn-success">Accept</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function openReviewModal(claimId) {
+        document.getElementById("claimId").value = claimId;
+        $('#reviewModal').modal('show');
+    }
+</script>
+ManageClaim.cshtml
+using InsuranceApi.DTOs;
+using InsuranceApi.Services;
+using Microsoft.AspNetCore.Mvc;
+
+namespace InsuranceApi.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class ClaimController : ControllerBase
+    {
+        private readonly IClaimService service;
+
+        public ClaimController(IClaimService service)
+        {
+            this.service = service;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            List<ClaimDto> claims = await service.GetAll();
+            return Ok(claims);
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                await service.Delete(id);
+                return Ok();
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Add(ClaimDto claim)
+        {
+            await service.Add(claim);
+            return Ok();
+        }
+
+        [HttpPut]
+        public async Task<IActionResult> Update(ClaimDto claim)
+        {
+            try
+            {
+                await service.Update(claim);
+                return Ok();
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            try
+            {
+                var found = await service.GetById(id);
+                return Ok(found);
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpPut("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] ClaimStatusUpdateDto updateDto)
+        {
+            try
+            {
+                await service.UpdateStatus(id, updateDto.Status, updateDto.DispenseAmount);
+                return Ok();
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
+        }
+    }
+
+    public class ClaimStatusUpdateDto
+    {
+        public string Status { get; set; }
+        public decimal DispenseAmount { get; set; }
+    }
+}
+ClaimController api
+using InsuranceApi.Data;
+using InsuranceApi.DTOs;
+using Microsoft.EntityFrameworkCore;
+
+namespace InsuranceApi.Services
+{
+    public interface IClaimService
+    {
+        Task Add(ClaimDto claimDto);
+        Task Delete(int id);
+        Task<List<ClaimDto>> GetAll();
+        Task<ClaimDto> GetById(int id);
+        Task Update(ClaimDto claimDto);
+        Task UpdateStatus(int id, string status, decimal dispenseAmount);
+    }
+
+    public class ClaimService : IClaimService
+    {
+        private readonly FnfProjectContext context;
+
+        public ClaimService(FnfProjectContext context)
+        {
+            this.context = context;
+        }
+
+        public async Task<List<ClaimDto>> GetAll()
+        {
+            var claims = await context.Claims.AsNoTracking().ToListAsync();
+            var claimDtos = claims.Select(claim => ConvertToDto(claim)).ToList();
+            return claimDtos;
+        }
+
+        public async Task<ClaimDto> GetById(int id)
+        {
+            var found = await context.Claims.AsNoTracking().FirstOrDefaultAsync(claim => claim.ClaimId == id);
+
+            if (found != null)
+                return ConvertToDto(found);
+
+            throw new NullReferenceException($"Claim with ID {id} not found.");
+        }
+
+        public async Task Add(ClaimDto claimDto)
+        {
+            Claim claimTable = new();
+            ConvertToTable(claimDto, claimTable);
+            context.Claims.Add(claimTable);
+            await context.SaveChangesAsync();
+        }
+
+        public async Task Update(ClaimDto claimDto)
+        {
+            var found = await context.Claims.FirstOrDefaultAsync(claim => claim.ClaimId == claimDto.ClaimId);
+
+            if (found != null)
+            {
+                ConvertToTable(claimDto, found);
+                await context.SaveChangesAsync();
+                return;
+            }
+
+            throw new NullReferenceException($"Claim with ID {claimDto.ClaimId} not found.");
+        }
+
+        public async Task Delete(int id)
+        {
+            var found = await context.Claims.FirstOrDefaultAsync(claim => claim.ClaimId == id);
+            if (found != null)
+            {
+                context.Claims.Remove(found);
+                await context.SaveChangesAsync();
+                return;
+            }
+            throw new NullReferenceException($"Claim with ID {id} not found.");
+        }
+
+        public async Task UpdateStatus(int id, string status, decimal dispenseAmount)
+        {
+            var found = await context.Claims.FirstOrDefaultAsync(claim => claim.ClaimId == id);
+
+            if (found != null)
+            {
+                found.ClaimStatus = status;
+                found.DispenseAmount = dispenseAmount;
+                await context.SaveChangesAsync();
+                return;
+            }
+
+            throw new NullReferenceException($"Claim with ID {id} not found.");
+        }
+
+        private ClaimDto ConvertToDto(Claim claimTable)
+        {
+            return new ClaimDto
+            {
+                ClaimId = claimTable.ClaimId,
+                PolicyHolderId = claimTable.PolicyHolderId,
+                InsuredPolicyId = claimTable.InsuredPolicyId,
+                ClaimAmount = claimTable.ClaimAmount,
+                ClaimStatus = claimTable.ClaimStatus,
+                DispenseAmount = claimTable.DispenseAmount,
+                DocumentPath = claimTable.DocumentPath,
+                DocumentType = claimTable.DocumentType,
+                HospitalId = claimTable.HospitalId,
+                ClaimDate = DateTime.Parse(claimTable.ClaimDate.ToString()),
+            };
+        }
+
+        private void ConvertToTable(ClaimDto claimDto, Claim claimTable)
+        {
+            claimTable.ClaimId = claimDto.ClaimId;
+            claimTable.PolicyHolderId = claimDto.PolicyHolderId;
+            claimTable.InsuredPolicyId = claimDto.InsuredPolicyId;
+            claimTable.ClaimAmount = claimDto.ClaimAmount;
+            claimTable.ClaimStatus = claimDto.ClaimStatus;
+            claimTable.DispenseAmount = claimDto.DispenseAmount;
+            claimTable.DocumentPath = claimDto.DocumentPath;
+            claimTable.DocumentType = claimDto.DocumentType;
+            claimTable.ClaimDate = DateOnly.FromDateTime(claimDto.ClaimDate);
+            claimTable.HospitalId = claimDto.HospitalId;
+        }
+    }
+}
+clainservice in api
+using InsuranceApi.Data;
+using InsuranceApi.Services;
+using Microsoft.EntityFrameworkCore;
+
+namespace WebApplication1
+{
+    public class Program
+    {
+        public static void Main(string[] args)
+        {
+            var builder = WebApplication.CreateBuilder(args);
+
+            // Add services to the container.
+            builder.Services.AddDbContext<FnfProjectContext>(options =>
+            {
+                options.UseSqlServer(builder.Configuration.GetConnectionString("FnfProject"));
+            });
+            builder.Services.AddTransient<IAdminService, AdminService>();
+            builder.Services.AddTransient<IInsuredPolicyService, InsuredPolicyService>();
+            builder.Services.AddTransient<IBlacklistService, BlacklistService>();
+            builder.Services.AddTransient<IClaimService, ClaimService>();
+            builder.Services.AddTransient<IPaymentService, PaymentService>();
+            builder.Services.AddTransient<IInsuranceTypeService, InsuranceTypeService>();
+            builder.Services.AddTransient<IPolicyHolderService, PolicyHolderService>();
+            builder.Services.AddTransient<IPolicyService, PolicyService>();
+            builder.Services.AddTransient<IInsuredService, InsuredService>();
+            builder.Services.AddTransient<IHospitalService, HospitalService>();
+            builder.Services.AddTransient<IIllnessService, IllnessService>();
+            builder.Services.AddTransient<IInsuredIllnessService, InsuredIllnessService>();
+
+            builder.Services.AddControllers();
+            //Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen();
+
+            var app = builder.Build();
+
+            // Configure the HTTP request pipeline.
+            if (app.Environment.IsDevelopment())
+            {
+                app.UseSwagger();
+                app.UseSwaggerUI();
+            }
+
+            app.UseAuthorization();
+
+
+            app.MapControllers();
+
+            app.Run();
+        }
+    }
+}
+
+These are all my files Make the above changes i said in these files and give me all the files fully written
