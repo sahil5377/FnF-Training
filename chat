@@ -1,5 +1,188 @@
-@model List<YourClassLibraryNamespace.ClaimDto> <!-- Replace with the namespace of your class library -->
+using InsuranceApi.Data;
+using InsuranceApi.DTOs;
+using InsuranceApi.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
+namespace InsuranceApi.Controllers
+{
+    public interface IClaimController
+    {
+        Task<IActionResult> Add(ClaimDto claimDto);
+        Task<IActionResult> Delete(int id);
+        Task<IActionResult> GetAll();
+        Task<IActionResult> GetById(int id);
+        Task<IActionResult> Update(ClaimDto claimDto);
+    }
+
+    [Route("api/[controller]")]
+    [ApiController]
+    public class ClaimController : ControllerBase, IClaimController
+    {
+        private readonly IClaimService service;
+        public ClaimController(IClaimService service)
+        {
+            this.service = service;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            List<ClaimDto> claims = await service.GetAll();
+            return Ok(claims);
+        }
+
+        [HttpDelete]
+        [Route("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                await service.Delete(id);
+                return Ok();
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Add(ClaimDto claim)
+        {
+            await service.Add(claim);
+            return Ok();
+        }
+
+        [HttpPut]
+        public async Task<IActionResult> Update(ClaimDto claim)
+        {
+            try
+            {
+                await service.Update(claim);
+                return Ok();
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpGet]
+        [Route("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            try
+            {
+                var found = await service.GetById(id);
+                return Ok(found);
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
+        }
+    }
+}
+
+ClaimController in API.
+
+SharedModel DTO
+namespace InsuranceApi.DTOs
+{
+    public class ClaimDto
+    {
+        public int ClaimId { get; set; }
+        public int InsuredPolicyId { get; set; }
+        public int PolicyHolderId { get; set; }
+        public DateTime ClaimDate { get; set; }
+        public decimal ClaimAmount { get; set; }
+        public string ClaimStatus { get; set; } = null!;
+        public decimal? DispenseAmount { get; set; }
+        public string DocumentType { get; set; } = null!;
+        public string DocumentPath { get; set; } = null!;
+        public int HospitalId { get; set; }
+    }
+}
+
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using WebApplication1.Services;
+using InsuranceApi.DTOs; // Replace with your class library namespace
+
+namespace WebApplication1.Controllers
+{
+    [Authorize]
+    public class ClaimController : Controller
+    {
+        private readonly IClaimService _claimService;
+
+        public ClaimController(IClaimService claimService)
+        {
+            _claimService = claimService;
+        }
+
+        public async Task<IActionResult> ManageClaims()
+        {
+            var claims = await _claimService.GetAllClaimsAsync();
+            return View(claims);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateClaimStatus(int claimId, string status)
+        {
+            await _claimService.UpdateClaimStatusAsync(claimId, status);
+            return RedirectToAction("ManageClaims");
+        }
+    }
+}
+
+Claim Controller in MVC
+using InsuranceApi.DTOs;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text.Json; // Replace with the namespace of your class library containing ClaimDto
+
+namespace WebApplication1.Services
+{
+    public class ClaimService : IClaimService
+    {
+        private readonly HttpClient _httpClient;
+
+        public ClaimService(HttpClient httpClient)
+        {
+            _httpClient = httpClient;
+        }
+
+        public async Task<List<ClaimDto>> GetAllClaimsAsync()
+        {
+            string endpoint = "api/Claim";
+            Console.WriteLine("Request URL:" + _httpClient.BaseAddress+endpoint);
+            var response = await _httpClient.GetAsync(endpoint);
+            response.EnsureSuccessStatusCode();
+
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            var claims = JsonSerializer.Deserialize<List<ClaimDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            return claims;
+        }
+
+        public async Task UpdateClaimStatusAsync(int claimId, string status)
+        {
+            var response = await _httpClient.PutAsJsonAsync($"Claims/{claimId}/status", new { Status = status });
+            response.EnsureSuccessStatusCode();
+        }
+    }
+
+    public interface IClaimService
+    {
+        Task<List<ClaimDto>> GetAllClaimsAsync();
+        Task UpdateClaimStatusAsync(int claimId, string status);
+    }
+}
+ClaimSerive
+@model List<InsuranceApi.DTOs.ClaimDto>
 @{
     ViewData["Title"] = "Manage Claims";
 }
@@ -37,3 +220,9 @@
         }
     </tbody>
 </table>
+MangeClaim.cshtml
+
+Still the error is not going
+This are all files including both API AND MVC
+
+Rewiew all the files make the chanages and me me all the files with required changes.
