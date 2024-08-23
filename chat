@@ -1,31 +1,39 @@
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using WebApplication1.Services;
-using InsuranceApi.DTOs;
+@model List<InsuranceApi.DTOs.ClaimDto>
 
-namespace WebApplication1.Controllers
-{
-    [Authorize]
-    public class ClaimController : Controller
-    {
-        private readonly IClaimService _claimService;
-
-        public ClaimController(IClaimService claimService)
-        {
-            _claimService = claimService;
-        }
-
-        public async Task<IActionResult> ManageClaims()
-        {
-            var claims = await _claimService.GetAllClaimsAsync();
-            return View(claims);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> UpdateClaimStatus(int claimId, string status)
-        {
-            await _claimService.UpdateClaimStatusAsync(claimId, status);
-            return RedirectToAction("ManageClaims");
-        }
-    }
+@{
+    ViewData["Title"] = "Manage Claims";
 }
+
+<h2>Manage Claims</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th scope="col">Claim ID</th>
+            <th scope="col">Policy Holder ID</th>
+            <th scope="col">Claim Date</th>
+            <th scope="col">Claim Amount</th>
+            <th scope="col">Claim Status</th>
+            <th scope="col">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var claim in Model)
+        {
+            <tr>
+                <td>@claim.ClaimId</td>
+                <td>@claim.PolicyHolderId</td>
+                <td>@claim.ClaimDate.ToShortDateString()</td>
+                <td>@claim.ClaimAmount</td>
+                <td>@claim.ClaimStatus</td>
+                <td>
+                    <form method="post" asp-action="UpdateClaimStatus" asp-controller="Claim" style="display:inline;">
+                        <input type="hidden" name="claimId" value="@claim.ClaimId" />
+                        <button type="submit" name="status" value="Accepted" class="btn btn-success">Accept</button>
+                        <button type="submit" name="status" value="Rejected" class="btn btn-danger">Reject</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
