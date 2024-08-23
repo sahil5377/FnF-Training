@@ -1,40 +1,39 @@
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text.Json;
-using YourClassLibraryNamespace; // Replace with the namespace of your class library containing ClaimDto
+@model List<YourClassLibraryNamespace.ClaimDto> <!-- Replace with the namespace of your class library -->
 
-namespace WebApplication1.Services
-{
-    public class ClaimService : IClaimService
-    {
-        private readonly HttpClient _httpClient;
-
-        public ClaimService(HttpClient httpClient)
-        {
-            _httpClient = httpClient;
-        }
-
-        public async Task<List<ClaimDto>> GetAllClaimsAsync()
-        {
-            var response = await _httpClient.GetAsync("Claims");
-            response.EnsureSuccessStatusCode();
-            
-            var jsonResponse = await response.Content.ReadAsStringAsync();
-            var claims = JsonSerializer.Deserialize<List<ClaimDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            return claims;
-        }
-
-        public async Task UpdateClaimStatusAsync(int claimId, string status)
-        {
-            var response = await _httpClient.PutAsJsonAsync($"Claims/{claimId}/status", new { Status = status });
-            response.EnsureSuccessStatusCode();
-        }
-    }
-
-    public interface IClaimService
-    {
-        Task<List<ClaimDto>> GetAllClaimsAsync();
-        Task UpdateClaimStatusAsync(int claimId, string status);
-    }
+@{
+    ViewData["Title"] = "Manage Claims";
 }
+
+<h2>Manage Claims</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th scope="col">Claim ID</th>
+            <th scope="col">Policy Holder ID</th>
+            <th scope="col">Claim Date</th>
+            <th scope="col">Claim Amount</th>
+            <th scope="col">Claim Status</th>
+            <th scope="col">Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var claim in Model)
+        {
+            <tr>
+                <td>@claim.ClaimId</td>
+                <td>@claim.PolicyHolderId</td>
+                <td>@claim.ClaimDate.ToShortDateString()</td>
+                <td>@claim.ClaimAmount</td>
+                <td>@claim.ClaimStatus</td>
+                <td>
+                    <form method="post" asp-action="UpdateClaimStatus" asp-controller="Claim" style="display:inline;">
+                        <input type="hidden" name="claimId" value="@claim.ClaimId" />
+                        <button type="submit" name="status" value="Accepted" class="btn btn-success">Accept</button>
+                        <button type="submit" name="status" value="Rejected" class="btn btn-danger">Reject</button>
+                    </form>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
