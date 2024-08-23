@@ -1,16 +1,31 @@
-[HttpGet("new")]
-public async Task<IActionResult> GetNewClaims()
-{
-    var newClaims = await service.GetNewClaims();
-    return Ok(newClaims);
+@model IEnumerable<YourNamespace.Models.ClaimDto>
+
+@{
+    ViewData["Title"] = "All Claims";
 }
 
-// In ClaimService.cs:
-public async Task<List<ClaimDto>> GetNewClaims()
-{
-    var newClaims = await context.Claims
-                                  .Where(c => c.ClaimStatus == "New")
-                                  .AsNoTracking()
-                                  .ToListAsync();
-    return newClaims.Select(claim => ConvertToDto(claim)).ToList();
-}
+<h2>All Claims</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Claim ID</th>
+            <th>Claimant Name</th>
+            <th>Claim Date</th>
+            <th>Claim Amount</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var claim in Model)
+        {
+            <tr>
+                <td>@claim.ClaimId</td>
+                <td>@claim.ClaimantName</td>
+                <td>@claim.ClaimDate.ToString("yyyy-MM-dd")</td>
+                <td>@claim.ClaimAmount</td>
+                <td>@claim.Status</td>
+            </tr>
+        }
+    </tbody>
+</table>
