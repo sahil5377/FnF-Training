@@ -1,29 +1,10 @@
-<script>
-async function updateStatus(policyHolderId, newStatus) {
-    const endpoint = `http://localhost:5230/api/PolicyHolder/${policyHolderId}/status`;
-    try {
-        const response = await fetch(endpoint, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(newStatus)
-        });
+@model List<InsuranceApi.DTOs.PolicyHolderDto>
 
-        if (!response.ok) {
-            const errorText = await response.text();
-            console.error('Failed to update status:', errorText);
-            alert('Failed to update status.');
-        } else {
-            alert('Status updated successfully!');
-            // Optionally, refresh the page or update the DOM to reflect changes
-        }
-    } catch (error) {
-        console.error('Error during fetch:', error);
-        alert('An error occurred while updating the status.');
-    }
+@{
+    ViewData["Title"] = "Manage Customers";
 }
-</script>
+
+<h2>Manage Customers</h2>
 
 <table class="table table-striped">
     <thead>
@@ -46,13 +27,95 @@ async function updateStatus(policyHolderId, newStatus) {
                 <td>@holder.Address</td>
                 <td>@holder.Phone</td>
                 <td>@holder.Email</td>
-                <td>@(holder.Status == 1 ? "Active" : "Blocked")</td>
                 <td>
-                    <button onclick="updateStatus(@holder.PolicyHolderId, @((holder.Status == 1) ? 0 : 1))">
-                        @(holder.Status == 1 ? "Block" : "Activate")
-                    </button>
+                    <span class="status-text">@((holder.Status == 1) ? "Active" : "Blocked")</span>
+                </td>
+                <td>
+                    <label class="switch">
+                        <input type="checkbox" onchange="toggleStatus(@holder.PolicyHolderId, this)" @(holder.Status == 1 ? "checked" : "")>
+                        <span class="slider round"></span>
+                    </label>
                 </td>
             </tr>
         }
     </tbody>
 </table>
+
+@section Scripts {
+    <script>
+        function toggleStatus(policyHolderId, checkbox) {
+            const status = checkbox.checked ? 1 : 0;
+            fetch(`/api/PolicyHolder/${policyHolderId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(status)
+            })
+                .then(response => {
+                    if (response.ok) {
+                        const statusText = checkbox.checked ? "Active" : "Blocked";
+                        checkbox.closest('tr').querySelector('.status-text').textContent = statusText;
+                    } else {
+                        alert('Failed to update status.');
+                        checkbox.checked = !checkbox.checked;  // Revert checkbox state
+                    }
+                })
+                .catch(error => {
+                    alert('An error occurred while updating status.');
+                    checkbox.checked = !checkbox.checked;  // Revert checkbox state
+                });
+        }
+    </script>
+}
+
+<style>
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+    }
+
+        .switch input {
+            display: none;
+        }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+    }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+        }
+
+    input:checked + .slider {
+        background-color: #2196F3;
+    }
+
+        input:checked + .slider:before {
+            transform: translateX(26px);
+        }
+
+    .slider.round {
+        border-radius: 34px;
+    }
+
+        .slider.round:before {
+            border-radius: 50%;
+        }
+</style>
