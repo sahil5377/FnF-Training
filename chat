@@ -1,24 +1,63 @@
-function toggleStatus(policyHolderId, checkbox) {
-    const status = checkbox.checked ? 1 : 0;
-    fetch(`/api/PolicyHolder/${policyHolderId}/status`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(status) // Send status as an integer
-    })
-        .then(response => {
-            if (response.ok) {
-                const statusText = checkbox.checked ? "Active" : "Blocked";
-                checkbox.closest('tr').querySelector('.status-text').textContent = statusText;
-            } else {
-                alert('Failed to update status.');
-                checkbox.checked = !checkbox.checked;  // Revert checkbox state if update fails
-            }
-        })
-        .catch(error => {
-            console.error('Error updating status:', error);
-            alert('An error occurred while updating status.');
-            checkbox.checked = !checkbox.checked;  // Revert checkbox state if an error occurs
-        });
+using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+
+public class Program
+{
+    public static void Main(string[] args)
+    {
+        CreateHostBuilder(args).Build().Run();
+    }
+
+    public static IHostBuilder CreateHostBuilder(string[] args) =>
+        Host.CreateDefaultBuilder(args)
+            .ConfigureWebHostDefaults(webBuilder =>
+            {
+                webBuilder.ConfigureServices((context, services) =>
+                {
+                    services.AddControllers();
+                    
+                    // Add CORS policy
+                    services.AddCors(options =>
+                    {
+                        options.AddPolicy("AllowSpecificOrigin",
+                            builder =>
+                            {
+                                builder.WithOrigins("http://localhost:5187") // Replace with your frontend origin
+                                       .AllowAnyHeader()
+                                       .AllowAnyMethod();
+                            });
+                    });
+                });
+                webBuilder.Configure((context, app) =>
+                {
+                    if (context.HostingEnvironment.IsDevelopment())
+                    {
+                        app.UseDeveloperExceptionPage();
+                    }
+                    else
+                    {
+                        app.UseExceptionHandler("/Home/Error");
+                        app.UseHsts();
+                    }
+
+                    app.UseHttpsRedirection();
+                    app.UseStaticFiles();
+
+                    app.UseRouting();
+
+                    // Use CORS policy
+                    app.UseCors("AllowSpecificOrigin");
+
+                    app.UseAuthorization();
+
+                    app.UseEndpoints(endpoints =>
+                    {
+                        endpoints.MapControllerRoute(
+                            name: "default",
+                            pattern: "{controller=Home}/{action=Index}/{id?}");
+                    });
+                });
+            });
 }
