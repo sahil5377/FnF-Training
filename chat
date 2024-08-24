@@ -1,13 +1,13 @@
-public async Task UpdateStatus(int id, int status)
+[HttpPut("{id}/status")]
+public async Task<IActionResult> UpdateStatus(int id, [FromBody] int status)
 {
-    var policyHolder = await context.PolicyHolders.FirstOrDefaultAsync(ph => ph.PolicyHolderId == id);
-    if (policyHolder != null)
+    try
     {
-        policyHolder.Status = status;
-        await context.SaveChangesAsync();
+        await service.UpdateStatus(id, status);
+        return Ok();
     }
-    else
+    catch (NullReferenceException)
     {
-        throw new NullReferenceException();
+        return NotFound();
     }
 }
