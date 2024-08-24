@@ -1,11 +1,30 @@
-public async Task UpdateStatus(int id, int status)
+using InsuranceApi.DTOs;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+
+public class PolicyHolderService 
 {
-    var found = await context.PolicyHolders.FirstOrDefaultAsync(ph => ph.PolicyHolderId == id);
-    if (found != null)
+    private readonly HttpClient _httpClient;
+
+    public PolicyHolderService(HttpClient httpClient)
     {
-        found.Status = status;
-        await context.SaveChangesAsync();
-        return;
+        _httpClient = httpClient;
     }
-    throw new NullReferenceException();
+
+    public async Task<List<PolicyHolderDto>> GetPolicyHoldersAsync()
+    {
+        string endpoint = "PolicyHolder";
+        var response = await _httpClient.GetAsync(endpoint);
+        response.EnsureSuccessStatusCode();
+
+        var jsonResponse = await response.Content.ReadAsStringAsync();
+        var customers = JsonSerializer.Deserialize<List<PolicyHolderDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        return customers;
+    }
+
 }
+
