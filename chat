@@ -1,63 +1,66 @@
-using Microsoft.AspNetCore.Builder;
-using Microsoft.AspNetCore.Hosting;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.Authentication.Cookies;
+using WebApplication1.Services;
 
-public class Program
+namespace WebApplication1
 {
-    public static void Main(string[] args)
+    public class Program
     {
-        CreateHostBuilder(args).Build().Run();
-    }
+        public static void Main(string[] args)
+        {
+            var builder = WebApplication.CreateBuilder(args);
 
-    public static IHostBuilder CreateHostBuilder(string[] args) =>
-        Host.CreateDefaultBuilder(args)
-            .ConfigureWebHostDefaults(webBuilder =>
+            // Add services to the container.
+            builder.Services.AddControllersWithViews();
+
+            // Register services with HTTP client
+            builder.Services.AddHttpClient<IAdminService, AdminService>(client =>
             {
-                webBuilder.ConfigureServices((context, services) =>
-                {
-                    services.AddControllers();
-                    
-                    // Add CORS policy
-                    services.AddCors(options =>
-                    {
-                        options.AddPolicy("AllowSpecificOrigin",
-                            builder =>
-                            {
-                                builder.WithOrigins("http://localhost:5187") // Replace with your frontend origin
-                                       .AllowAnyHeader()
-                                       .AllowAnyMethod();
-                            });
-                    });
-                });
-                webBuilder.Configure((context, app) =>
-                {
-                    if (context.HostingEnvironment.IsDevelopment())
-                    {
-                        app.UseDeveloperExceptionPage();
-                    }
-                    else
-                    {
-                        app.UseExceptionHandler("/Home/Error");
-                        app.UseHsts();
-                    }
-
-                    app.UseHttpsRedirection();
-                    app.UseStaticFiles();
-
-                    app.UseRouting();
-
-                    // Use CORS policy
-                    app.UseCors("AllowSpecificOrigin");
-
-                    app.UseAuthorization();
-
-                    app.UseEndpoints(endpoints =>
-                    {
-                        endpoints.MapControllerRoute(
-                            name: "default",
-                            pattern: "{controller=Home}/{action=Index}/{id?}");
-                    });
-                });
+                client.BaseAddress = new Uri("http://localhost:5230/api/");
             });
+
+            builder.Services.AddHttpClient<IHospitalService, HospitalService>(client =>
+            {
+                client.BaseAddress = new Uri("http://localhost:5230/api/");
+            });
+
+            builder.Services.AddHttpClient<IClaimService, ClaimService>(client =>
+            {
+                client.BaseAddress = new Uri("http://localhost:5230/api/");
+            });
+
+            builder.Services.AddHttpClient<PolicyHolderService>(client =>
+            {
+                client.BaseAddress = new Uri("http://localhost:5230/api/");
+            });
+
+            // Configure authentication
+            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(options =>
+                {
+                    options.LoginPath = "/Account/Login";
+                    options.AccessDeniedPath = "/Account/AccessDenied";
+                });
+
+            var app = builder.Build();
+
+            // Configure the HTTP request pipeline.
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseExceptionHandler("/Home/Error");
+                app.UseHsts();
+            }
+
+            app.UseHttpsRedirection();
+            app.UseStaticFiles();
+            app.UseRouting();
+            app.UseAuthentication();
+            app.UseAuthorization();
+
+            app.MapControllerRoute(
+                name: "default",
+                pattern: "{controller=Home}/{action=Index}/{id?}");
+
+            app.Run();
+        }
+    }
 }
