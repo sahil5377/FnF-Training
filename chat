@@ -1,38 +1,13 @@
-using InsuranceApi.DTOs;
-using System.Net.Http;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-
-public class PolicyHolderService
+public async Task UpdateStatus(int id, int status)
 {
-    private readonly HttpClient _httpClient;
-
-    public PolicyHolderService(HttpClient httpClient)
+    var policyHolder = await context.PolicyHolders.FirstOrDefaultAsync(ph => ph.PolicyHolderId == id);
+    if (policyHolder != null)
     {
-        _httpClient = httpClient;
+        policyHolder.Status = status;
+        await context.SaveChangesAsync();
     }
-
-    public async Task<List<PolicyHolderDto>> GetPolicyHoldersAsync()
+    else
     {
-        string endpoint = "PolicyHolder";
-        var response = await _httpClient.GetAsync(endpoint);
-        response.EnsureSuccessStatusCode();
-
-        var jsonResponse = await response.Content.ReadAsStringAsync();
-        var customers = JsonSerializer.Deserialize<List<PolicyHolderDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-        return customers;
-    }
-
-    public async Task<bool> UpdatePolicyHolderStatusAsync(int id, int status)
-    {
-        string endpoint = $"PolicyHolder/{id}/status";
-        var payload = new { Status = status };
-        var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-
-        var response = await _httpClient.PutAsync(endpoint, content);
-
-        return response.IsSuccessStatusCode;
+        throw new NullReferenceException();
     }
 }
