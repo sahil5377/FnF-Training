@@ -29,12 +29,38 @@
                 <td>@policyHolder.Email</td>
                 <td>@policyHolder.Status</td>
                 <td>
-                    <button class="btn btn-primary" onclick="toggleStatus(@policyHolder.PolicyHolderId, @policyHolder.Status)">Action</button>
+                    <button 
+                        class="btn @(policyHolder.Status == 1 ? "btn-primary" : "btn-secondary")"
+                        onclick="toggleStatus(@policyHolder.PolicyHolderId, @policyHolder.Status)">
+                        @((policyHolder.Status == 1 ? "Turn Off" : "Turn On"))
+                    </button>
                 </td>
             </tr>
         }
     </tbody>
 </table>
+
+<style>
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+
+    .btn-secondary {
+        background-color: #6c757d;
+        border-color: #6c757d;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+        border-color: #004085;
+    }
+
+    .btn-secondary:hover {
+        background-color: #5a6268;
+        border-color: #545b62;
+    }
+</style>
 
 <script>
     async function toggleStatus(id, currentStatus) {
@@ -55,8 +81,3 @@
         }
     }
 </script>
-
-In this i click on action button
-
-when status is = 0 the button should turn grey if status = 1 the button should turn blue dont change the above scrpit file just make changes in the ui
-if u make cahnge in the scrpit the staus will not get upatated
