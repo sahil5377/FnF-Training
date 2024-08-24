@@ -1,38 +1,58 @@
-using InsuranceApi.DTOs;
-using System.Net.Http;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+<script>
+async function updateStatus(policyHolderId, newStatus) {
+    const endpoint = `http://localhost:5230/api/PolicyHolder/${policyHolderId}/status`;
+    try {
+        const response = await fetch(endpoint, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(newStatus)
+        });
 
-public class PolicyHolderService 
-{
-    private readonly HttpClient _httpClient;
-
-    public PolicyHolderService(HttpClient httpClient)
-    {
-        _httpClient = httpClient;
-    }
-
-    public async Task<List<PolicyHolderDto>> GetPolicyHoldersAsync()
-    {
-        string endpoint = "PolicyHolder";
-        var response = await _httpClient.GetAsync(endpoint);
-        response.EnsureSuccessStatusCode();
-
-        var jsonResponse = await response.Content.ReadAsStringAsync();
-        var customers = JsonSerializer.Deserialize<List<PolicyHolderDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-        return customers;
-    }
-
-    // Add this method to update the status of a policy holder
-    public async Task UpdateStatusAsync(int id, int status)
-    {
-        string endpoint = $"PolicyHolder/{id}/status";
-        var content = new StringContent(JsonSerializer.Serialize(status), Encoding.UTF8, "application/json");
-
-        var response = await _httpClient.PutAsync(endpoint, content);
-        response.EnsureSuccessStatusCode();
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Failed to update status:', errorText);
+            alert('Failed to update status.');
+        } else {
+            alert('Status updated successfully!');
+            // Optionally, refresh the page or update the DOM to reflect changes
+        }
+    } catch (error) {
+        console.error('Error during fetch:', error);
+        alert('An error occurred while updating the status.');
     }
 }
+</script>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Policy Holder ID</th>
+            <th>Name</th>
+            <th>Address</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var holder in Model)
+        {
+            <tr>
+                <td>@holder.PolicyHolderId</td>
+                <td>@holder.Name</td>
+                <td>@holder.Address</td>
+                <td>@holder.Phone</td>
+                <td>@holder.Email</td>
+                <td>@(holder.Status == 1 ? "Active" : "Blocked")</td>
+                <td>
+                    <button onclick="updateStatus(@holder.PolicyHolderId, @((holder.Status == 1) ? 0 : 1))">
+                        @(holder.Status == 1 ? "Block" : "Activate")
+                    </button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
