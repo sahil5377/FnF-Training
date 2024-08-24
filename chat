@@ -96,3 +96,285 @@ namespace InsuranceApi.Controllers
         }
     }
 }
+
+API Controller
+
+using InsuranceApi.Data;
+using InsuranceApi.DTOs;
+using Microsoft.EntityFrameworkCore;
+
+namespace InsuranceApi.Services
+{
+    public interface IPolicyService
+    {
+        Task Add(PolicyDto policyDto);
+        Task Delete(int id);
+        Task<List<PolicyDto>> GetAll();
+        Task<PolicyDto> GetById(int id);
+        Task Update(PolicyDto policyDto);
+    }
+
+    public class PolicyService : IPolicyService
+    {
+        private readonly FnfProjectContext context;
+
+        public PolicyService(FnfProjectContext context)
+        {
+            this.context = context;
+        }
+
+        public async Task<List<PolicyDto>> GetAll()
+        {
+            List<PolicyDto> policyDtos = [];
+            await foreach (var policyTable in context.Policies)
+            {
+                var policyDto = ConvertToDto(policyTable);
+                policyDtos.Add(policyDto);
+            }
+            return policyDtos;
+        }
+
+        public async Task Delete(int id)
+        {
+            var found = await context.Policies.FirstOrDefaultAsync((policyTable) =>
+                policyTable.PolicyId == id);
+            if (found != null)
+            {
+                context.Policies.Remove(found);
+                await context.SaveChangesAsync();
+                return;
+            }
+            throw new NullReferenceException();
+        }
+
+        public async Task Add(PolicyDto policyDto)
+        {
+            Policy policyTable = new();
+            ConvertToTable(policyDto, policyTable);
+            context.Policies.Add(policyTable);
+            await context.SaveChangesAsync();
+            return;
+        }
+
+        public async Task Update(PolicyDto policyDto)
+        {
+            var found = await context.Policies.FirstOrDefaultAsync((policyTable) =>
+                policyTable.PolicyId == policyDto.PolicyId);
+            if (found != null)
+            {
+                ConvertToTable(policyDto, found);
+                await context.SaveChangesAsync();
+                return;
+            }
+            throw new NullReferenceException();
+        }
+
+        public async Task<PolicyDto> GetById(int id)
+        {
+            var found = await context.Policies.FirstOrDefaultAsync((policyTable) =>
+                policyTable.PolicyId == id);
+
+            if (found != null)
+                return ConvertToDto(found);
+
+            throw new NullReferenceException();
+        }
+
+        private PolicyDto ConvertToDto(Policy policyTable)
+        {
+            PolicyDto policyDto = new()
+            {
+                PolicyId = policyTable.PolicyId,
+                PolicyNumber = policyTable.PolicyNumber,
+                PremiumAmount = policyTable.PremiumAmount,
+                InsuranceTypeId = policyTable.InsuranceTypeId,
+                StartDate = DateTime.Parse(policyTable.StartDate.ToString()),
+                EndDate = DateTime.Parse(policyTable.EndDate.ToString()),
+            };
+            return policyDto;
+        }
+
+        private void ConvertToTable(PolicyDto policyDto, Policy policyTable)
+        {
+            policyTable.PolicyId = policyDto.PolicyId;
+            policyTable.PolicyNumber = policyDto.PolicyNumber;
+            policyTable.PremiumAmount = policyDto.PremiumAmount;
+            policyTable.InsuranceTypeId = policyDto.InsuranceTypeId;
+            policyTable.StartDate = DateOnly.FromDateTime(policyDto.StartDate);
+            policyTable.EndDate = DateOnly.FromDateTime(policyDto.EndDate);
+            return;
+        }
+    }
+}
+API Policy Service.
+@model List<InsuranceApi.DTOs.PolicyHolderDto>
+
+@{
+    ViewData["Title"] = "Manage Customers";
+}
+
+<h2>Manage Customers</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Policy Holder ID</th>
+            <th>Name</th>
+            <th>Address</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var holder in Model)
+        {
+            <tr>
+                <td>@holder.PolicyHolderId</td>
+                <td>@holder.Name</td>
+                <td>@holder.Address</td>
+                <td>@holder.Phone</td>
+                <td>@holder.Email</td>
+                <td>@holder.Status</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+Managecustomer.cshtml
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using WebApplication1.Services;
+using InsuranceApi.DTOs;
+
+namespace WebApplication1.Controllers
+{
+    [Authorize]
+    public class ClaimController : Controller
+    {
+        private readonly IClaimService _claimService;
+
+        public ClaimController(IClaimService claimService)
+        {
+            _claimService = claimService;
+        }
+
+        public async Task<IActionResult> ManageClaims()
+        {
+            var claims = await _claimService.GetAllClaimsAsync();
+            return View(claims);
+        }
+
+    }
+}
+MVC PolicyHolderController.
+using InsuranceApi.DTOs;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+
+public class PolicyHolderService 
+{
+    private readonly HttpClient _httpClient;
+
+    public PolicyHolderService(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+    }
+
+    public async Task<List<PolicyHolderDto>> GetPolicyHoldersAsync()
+    {
+        string endpoint = "PolicyHolder";
+        var response = await _httpClient.GetAsync(endpoint);
+        response.EnsureSuccessStatusCode();
+
+        var jsonResponse = await response.Content.ReadAsStringAsync();
+        var customers = JsonSerializer.Deserialize<List<PolicyHolderDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        return customers;
+    }
+}
+
+MVC PolicyHolderService
+using Microsoft.AspNetCore.Authentication.Cookies;
+using WebApplication1.Services;
+
+namespace WebApplication1
+{
+    public class Program
+    {
+        public static void Main(string[] args)
+        {
+            var builder = WebApplication.CreateBuilder(args);
+
+            // Add services to the container.
+            builder.Services.AddControllersWithViews();
+
+            // Register services with HTTP client
+            builder.Services.AddHttpClient<IAdminService, AdminService>(client =>
+            {
+                client.BaseAddress = new Uri("http://localhost:5230/api/");
+            });
+
+            builder.Services.AddHttpClient<IHospitalService, HospitalService>(client =>
+            {
+                client.BaseAddress = new Uri("http://localhost:5230/api/");
+            });
+
+            builder.Services.AddHttpClient<IClaimService, ClaimService>(client =>
+            {
+                client.BaseAddress = new Uri("http://localhost:5230/api/");
+            });
+
+            builder.Services.AddHttpClient<PolicyHolderService>(client =>
+            {
+                client.BaseAddress = new Uri("http://localhost:5230/api/");
+            });
+
+            // Configure authentication
+            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(options =>
+                {
+                    options.LoginPath = "/Account/Login";
+                    options.AccessDeniedPath = "/Account/AccessDenied";
+                });
+
+            var app = builder.Build();
+
+            // Configure the HTTP request pipeline.
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseExceptionHandler("/Home/Error");
+                app.UseHsts();
+            }
+
+            app.UseHttpsRedirection();
+            app.UseStaticFiles();
+            app.UseRouting();
+            app.UseAuthentication();
+            app.UseAuthorization();
+
+            app.MapControllerRoute(
+                name: "default",
+                pattern: "{controller=Home}/{action=Index}/{id?}");
+
+            app.Run();
+        }
+    }
+}
+
+ I am able to ge the data from the backend 
+
+*The following functionality i want to add in this files is
+
+1) i want a toggle button of in the mange customer table name one side active and another side of toggle should be block.
+2) When it is active Mode the status feild  of the managecustomer should become active and when it is block the status felid should be blocked.
+you can use updatestatus for that if u want
+3) and it should reflect in the database.
+
+*One point to take care is 
+the status field in the PolicyHolder table the datatype of its int so for active = 1 and block = 0.
+
+but on the admin front end it shoule be active and blocked and in the database it should be 0 and 1
