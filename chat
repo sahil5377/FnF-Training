@@ -38,14 +38,57 @@
                     }
                 </td>
                 <td>
-                    <button class="btn @(policyHolder.Status == 1 ? "btn-primary" : "btn-secondary")" onclick="toggleStatus(@policyHolder.PolicyHolderId, @policyHolder.Status)">
-                        @(policyHolder.Status == 1 ? "Active" : "Blocked")
+                    <button class="btn toggle-button @(policyHolder.Status == 1 ? "btn-primary" : "btn-secondary")" onclick="toggleStatus(@policyHolder.PolicyHolderId, @policyHolder.Status)">
+                        <span class="toggle-slider @(policyHolder.Status == 1 ? "active" : "inactive")"></span>
                     </button>
                 </td>
             </tr>
         }
     </tbody>
 </table>
+
+<style>
+    .toggle-button {
+        position: relative;
+        width: 80px;
+        height: 34px;
+        border: none;
+        border-radius: 50px;
+        cursor: pointer;
+        outline: none;
+        transition: background-color 0.3s;
+    }
+
+    .btn-primary {
+        background-color: blue;
+        color: white;
+    }
+
+    .btn-secondary {
+        background-color: grey;
+        color: white;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        top: 50%;
+        left: 4px;
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background-color: white;
+        transform: translateY(-50%);
+        transition: transform 0.3s;
+    }
+
+    .toggle-button.btn-primary .toggle-slider {
+        transform: translateX(46px) translateY(-50%);
+    }
+
+    .toggle-button.btn-secondary .toggle-slider {
+        transform: translateX(4px) translateY(-50%);
+    }
+</style>
 
 <script>
     async function toggleStatus(id, currentStatus) {
