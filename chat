@@ -1,48 +1,97 @@
-using Microsoft.AspNetCore.Mvc;
 using InsuranceApi.DTOs;
-using WebApplication1.Services;
+using InsuranceApi.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
 
-namespace WebApplication1.Controllers
+namespace InsuranceApi.Controllers
 {
-    public class PolicyHolderController : Controller
+    public interface IPolicyHolderController
     {
-        private readonly IPolicyHolderService _policyHolderService;
+        Task<IActionResult> Add(PolicyHolderDto policyHolderDto);
+        Task<IActionResult> Delete(int id);
+        Task<IActionResult> GetAll();
+        Task<IActionResult> GetById(int id);
+        Task<IActionResult> Update(PolicyHolderDto policyHolderDto);
+    }
 
-        public PolicyHolderController(IPolicyHolderService policyHolderService)
+    [Route("api/[controller]")]
+    [ApiController]
+    public class PolicyHolderController : ControllerBase
+    {
+        private readonly IPolicyHolderService service;
+        public PolicyHolderController(IPolicyHolderService service)
         {
-            _policyHolderService = policyHolderService;
+            this.service = service;
         }
 
         [HttpGet]
-        public async Task<IActionResult> ManageCustomers()
+        public async Task<IActionResult> GetAll()
         {
-            var policyHolders = await _policyHolderService.GetPolicyHoldersAsync();
-            return View(policyHolders);
+            List<PolicyHolderDto> policyHolderDtos = await service.GetAll();
+            return Ok(policyHolderDtos);
+        }
+
+        [HttpDelete]
+        [Route("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                await service.Delete(id);
+                return Ok();
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
         }
 
         [HttpPost]
-        public async Task<IActionResult> UpdateStatus(int id, int status)
+        public async Task<IActionResult> Add(PolicyHolderDto policyHolderDto)
         {
-            if (id <= 0 || (status != 0 && status != 1))
-            {
-                return BadRequest("Invalid request parameters.");
-            }
+            await service.Add(policyHolderDto);
+            return Ok();
+        }
 
+        [HttpPut]
+        public async Task<IActionResult> Update(PolicyHolderDto policyHolderDto)
+        {
             try
             {
-                bool result = await _policyHolderService.UpdatePolicyHolderStatusAsync(id, status);
-                if (result)
-                {
-                    return Ok();
-                }
-                else
-                {
-                    return StatusCode(500, "Error updating status.");
-                }
+                await service.Update(policyHolderDto);
+                return Ok();
             }
-            catch (Exception ex)
+            catch (NullReferenceException)
             {
-                return StatusCode(500, "An error occurred: " + ex.Message);
+                return NotFound();
+            }
+        }
+
+        [HttpGet]
+        [Route("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            try
+            {
+                var found = await service.GetById(id);
+                return Ok(found);
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
+        }
+        [HttpPut("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] int status)
+        {
+            try
+            {
+                await service.UpdateStatus(id, status);
+                return Ok();
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
             }
         }
     }
