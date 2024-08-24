@@ -1,212 +1,3 @@
-using InsuranceApi.DTOs;
-using InsuranceApi.Services;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-
-namespace InsuranceApi.Controllers
-{
-    public interface IPolicyHolderController
-    {
-        Task<IActionResult> Add(PolicyHolderDto policyHolderDto);
-        Task<IActionResult> Delete(int id);
-        Task<IActionResult> GetAll();
-        Task<IActionResult> GetById(int id);
-        Task<IActionResult> Update(PolicyHolderDto policyHolderDto);
-    }
-
-    [Route("api/[controller]")]
-    [ApiController]
-    public class PolicyHolderController : ControllerBase
-    {
-        private readonly IPolicyHolderService service;
-        public PolicyHolderController(IPolicyHolderService service)
-        {
-            this.service = service;
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetAll()
-        {
-            List<PolicyHolderDto> policyHolderDtos = await service.GetAll();
-            return Ok(policyHolderDtos);
-        }
-
-        [HttpDelete]
-        [Route("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            try
-            {
-                await service.Delete(id);
-                return Ok();
-            }
-            catch (NullReferenceException)
-            {
-                return NotFound();
-            }
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Add(PolicyHolderDto policyHolderDto)
-        {
-            await service.Add(policyHolderDto);
-            return Ok();
-        }
-
-        [HttpPut]
-        public async Task<IActionResult> Update(PolicyHolderDto policyHolderDto)
-        {
-            try
-            {
-                await service.Update(policyHolderDto);
-                return Ok();
-            }
-            catch (NullReferenceException)
-            {
-                return NotFound();
-            }
-        }
-
-        [HttpGet]
-        [Route("{id}")]
-        public async Task<IActionResult> GetById(int id)
-        {
-            try
-            {
-                var found = await service.GetById(id);
-                return Ok(found);
-            }
-            catch (NullReferenceException)
-            {
-                return NotFound();
-            }
-        }
-        [HttpPut("{id}/status")]
-        public async Task<IActionResult> UpdateStatus(int id, [FromBody] int status)
-        {
-            try
-            {
-                await service.UpdateStatus(id, status);
-                return Ok();
-            }
-            catch (NullReferenceException)
-            {
-                return NotFound();
-            }
-        }
-    }
-}
-
-API Controller
-
-using InsuranceApi.Data;
-using InsuranceApi.DTOs;
-using Microsoft.EntityFrameworkCore;
-
-namespace InsuranceApi.Services
-{
-    public interface IPolicyService
-    {
-        Task Add(PolicyDto policyDto);
-        Task Delete(int id);
-        Task<List<PolicyDto>> GetAll();
-        Task<PolicyDto> GetById(int id);
-        Task Update(PolicyDto policyDto);
-    }
-
-    public class PolicyService : IPolicyService
-    {
-        private readonly FnfProjectContext context;
-
-        public PolicyService(FnfProjectContext context)
-        {
-            this.context = context;
-        }
-
-        public async Task<List<PolicyDto>> GetAll()
-        {
-            List<PolicyDto> policyDtos = [];
-            await foreach (var policyTable in context.Policies)
-            {
-                var policyDto = ConvertToDto(policyTable);
-                policyDtos.Add(policyDto);
-            }
-            return policyDtos;
-        }
-
-        public async Task Delete(int id)
-        {
-            var found = await context.Policies.FirstOrDefaultAsync((policyTable) =>
-                policyTable.PolicyId == id);
-            if (found != null)
-            {
-                context.Policies.Remove(found);
-                await context.SaveChangesAsync();
-                return;
-            }
-            throw new NullReferenceException();
-        }
-
-        public async Task Add(PolicyDto policyDto)
-        {
-            Policy policyTable = new();
-            ConvertToTable(policyDto, policyTable);
-            context.Policies.Add(policyTable);
-            await context.SaveChangesAsync();
-            return;
-        }
-
-        public async Task Update(PolicyDto policyDto)
-        {
-            var found = await context.Policies.FirstOrDefaultAsync((policyTable) =>
-                policyTable.PolicyId == policyDto.PolicyId);
-            if (found != null)
-            {
-                ConvertToTable(policyDto, found);
-                await context.SaveChangesAsync();
-                return;
-            }
-            throw new NullReferenceException();
-        }
-
-        public async Task<PolicyDto> GetById(int id)
-        {
-            var found = await context.Policies.FirstOrDefaultAsync((policyTable) =>
-                policyTable.PolicyId == id);
-
-            if (found != null)
-                return ConvertToDto(found);
-
-            throw new NullReferenceException();
-        }
-
-        private PolicyDto ConvertToDto(Policy policyTable)
-        {
-            PolicyDto policyDto = new()
-            {
-                PolicyId = policyTable.PolicyId,
-                PolicyNumber = policyTable.PolicyNumber,
-                PremiumAmount = policyTable.PremiumAmount,
-                InsuranceTypeId = policyTable.InsuranceTypeId,
-                StartDate = DateTime.Parse(policyTable.StartDate.ToString()),
-                EndDate = DateTime.Parse(policyTable.EndDate.ToString()),
-            };
-            return policyDto;
-        }
-
-        private void ConvertToTable(PolicyDto policyDto, Policy policyTable)
-        {
-            policyTable.PolicyId = policyDto.PolicyId;
-            policyTable.PolicyNumber = policyDto.PolicyNumber;
-            policyTable.PremiumAmount = policyDto.PremiumAmount;
-            policyTable.InsuranceTypeId = policyDto.InsuranceTypeId;
-            policyTable.StartDate = DateOnly.FromDateTime(policyDto.StartDate);
-            policyTable.EndDate = DateOnly.FromDateTime(policyDto.EndDate);
-            return;
-        }
-    }
-}
-API Policy Service.
 @model List<InsuranceApi.DTOs.PolicyHolderDto>
 
 @{
@@ -224,6 +15,7 @@ API Policy Service.
             <th>Phone</th>
             <th>Email</th>
             <th>Status</th>
+            <th>Action</th>
         </tr>
     </thead>
     <tbody>
@@ -235,146 +27,86 @@ API Policy Service.
                 <td>@holder.Address</td>
                 <td>@holder.Phone</td>
                 <td>@holder.Email</td>
-                <td>@holder.Status</td>
+                <td>
+                    <span class="status-text">@((holder.Status == 1) ? "Active" : "Blocked")</span>
+                </td>
+                <td>
+                    <label class="switch">
+                        <input type="checkbox" onchange="toggleStatus(@holder.PolicyHolderId, this)" @(holder.Status == 1 ? "checked" : "")>
+                        <span class="slider round"></span>
+                    </label>
+                </td>
             </tr>
         }
     </tbody>
 </table>
 
-Managecustomer.cshtml
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Mvc;
-using WebApplication1.Services;
-using InsuranceApi.DTOs;
-
-namespace WebApplication1.Controllers
-{
-    [Authorize]
-    public class ClaimController : Controller
-    {
-        private readonly IClaimService _claimService;
-
-        public ClaimController(IClaimService claimService)
-        {
-            _claimService = claimService;
+@section Scripts {
+    <script>
+        function toggleStatus(policyHolderId, checkbox) {
+            const status = checkbox.checked ? 1 : 0;
+            fetch(`/api/PolicyHolder/${policyHolderId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(status)
+            })
+            .then(response => {
+                if (response.ok) {
+                    const statusText = checkbox.checked ? "Active" : "Blocked";
+                    checkbox.closest('tr').querySelector('.status-text').textContent = statusText;
+                } else {
+                    alert('Failed to update status.');
+                    checkbox.checked = !checkbox.checked;  // Revert checkbox state
+                }
+            })
+            .catch(error => {
+                alert('An error occurred while updating status.');
+                checkbox.checked = !checkbox.checked;  // Revert checkbox state
+            });
         }
-
-        public async Task<IActionResult> ManageClaims()
-        {
-            var claims = await _claimService.GetAllClaimsAsync();
-            return View(claims);
-        }
-
-    }
-}
-MVC PolicyHolderController.
-using InsuranceApi.DTOs;
-using System.Net.Http;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-
-public class PolicyHolderService 
-{
-    private readonly HttpClient _httpClient;
-
-    public PolicyHolderService(HttpClient httpClient)
-    {
-        _httpClient = httpClient;
-    }
-
-    public async Task<List<PolicyHolderDto>> GetPolicyHoldersAsync()
-    {
-        string endpoint = "PolicyHolder";
-        var response = await _httpClient.GetAsync(endpoint);
-        response.EnsureSuccessStatusCode();
-
-        var jsonResponse = await response.Content.ReadAsStringAsync();
-        var customers = JsonSerializer.Deserialize<List<PolicyHolderDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-        return customers;
-    }
+    </script>
 }
 
-MVC PolicyHolderService
-using Microsoft.AspNetCore.Authentication.Cookies;
-using WebApplication1.Services;
-
-namespace WebApplication1
-{
-    public class Program
-    {
-        public static void Main(string[] args)
-        {
-            var builder = WebApplication.CreateBuilder(args);
-
-            // Add services to the container.
-            builder.Services.AddControllersWithViews();
-
-            // Register services with HTTP client
-            builder.Services.AddHttpClient<IAdminService, AdminService>(client =>
-            {
-                client.BaseAddress = new Uri("http://localhost:5230/api/");
-            });
-
-            builder.Services.AddHttpClient<IHospitalService, HospitalService>(client =>
-            {
-                client.BaseAddress = new Uri("http://localhost:5230/api/");
-            });
-
-            builder.Services.AddHttpClient<IClaimService, ClaimService>(client =>
-            {
-                client.BaseAddress = new Uri("http://localhost:5230/api/");
-            });
-
-            builder.Services.AddHttpClient<PolicyHolderService>(client =>
-            {
-                client.BaseAddress = new Uri("http://localhost:5230/api/");
-            });
-
-            // Configure authentication
-            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                .AddCookie(options =>
-                {
-                    options.LoginPath = "/Account/Login";
-                    options.AccessDeniedPath = "/Account/AccessDenied";
-                });
-
-            var app = builder.Build();
-
-            // Configure the HTTP request pipeline.
-            if (!app.Environment.IsDevelopment())
-            {
-                app.UseExceptionHandler("/Home/Error");
-                app.UseHsts();
-            }
-
-            app.UseHttpsRedirection();
-            app.UseStaticFiles();
-            app.UseRouting();
-            app.UseAuthentication();
-            app.UseAuthorization();
-
-            app.MapControllerRoute(
-                name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}");
-
-            app.Run();
-        }
+<style>
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
     }
-}
-
- I am able to ge the data from the backend 
-
-*The following functionality i want to add in this files is
-
-1) i want a toggle button of in the mange customer table name one side active and another side of toggle should be block.
-2) When it is active Mode the status feild  of the managecustomer should become active and when it is block the status felid should be blocked.
-you can use updatestatus for that if u want
-3) and it should reflect in the database.
-
-*One point to take care is 
-the status field in the PolicyHolder table the datatype of its int so for active = 1 and block = 0.
-
-but on the admin front end it shoule be active and blocked and in the database it should be 0 and 1
+    .switch input {display:none;}
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+    }
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+    }
+    input:checked + .slider {
+        background-color: #2196F3;
+    }
+    input:checked + .slider:before {
+        transform: translateX(26px);
+    }
+    .slider.round {
+        border-radius: 34px;
+    }
+    .slider.round:before {
+        border-radius: 50%;
+    }
+</style>
