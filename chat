@@ -1,28 +1,122 @@
-function toggleStatus(policyHolderId, checkbox) {
-    const status = checkbox.checked ? 1 : 0;
+@model List<InsuranceApi.DTOs.PolicyHolderDto>
 
-    fetch(`/api/PolicyHolder/${policyHolderId}/status`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ Status: status })  // Adjusted body to match a JSON object
-    })
-    .then(response => {
-        if (response.ok) {
-            const statusText = checkbox.checked ? "Active" : "Blocked";
-            checkbox.closest('tr').querySelector('.status-text').textContent = statusText;
-        } else {
-            return response.text().then(errorMessage => { // Read error message
-                console.error('Failed to update status:', errorMessage);
-                alert(`Failed to update status: ${errorMessage}`);
-                checkbox.checked = !checkbox.checked;  // Revert checkbox state
-            });
-        }
-    })
-    .catch(error => {
-        console.error('Error during fetch:', error);
-        alert('An error occurred while updating status.');
-        checkbox.checked = !checkbox.checked;  // Revert checkbox state
-    });
+@{
+    ViewData["Title"] = "Manage Customers";
 }
+
+<h2>Manage Customers</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Policy Holder ID</th>
+            <th>Name</th>
+            <th>Address</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var holder in Model)
+        {
+            <tr>
+                <td>@holder.PolicyHolderId</td>
+                <td>@holder.Name</td>
+                <td>@holder.Address</td>
+                <td>@holder.Phone</td>
+                <td>@holder.Email</td>
+                <td>
+                    <span class="status-text">@((holder.Status == 1) ? "Active" : "Blocked")</span>
+                </td>
+                <td>
+                    <label class="switch">
+                        <input type="checkbox" onchange="toggleStatus(@holder.PolicyHolderId, this)" @(holder.Status == 1 ? "checked" : "")>
+                        <span class="slider round"></span>
+                    </label>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts {
+    <script>
+        function toggleStatus(policyHolderId, checkbox) {
+            const status = checkbox.checked ? 1 : 0;
+            fetch(`/api/PolicyHolder/${policyHolderId}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: status }) // Send status as an object
+            })
+                .then(response => {
+                    if (response.ok) {
+                        const statusText = checkbox.checked ? "Active" : "Blocked";
+                        checkbox.closest('tr').querySelector('.status-text').textContent = statusText;
+                    } else {
+                        alert('Failed to update status.');
+                        checkbox.checked = !checkbox.checked;  // Revert checkbox state if update fails
+                    }
+                })
+                .catch(error => {
+                    console.error('Error updating status:', error);
+                    alert('An error occurred while updating status.');
+                    checkbox.checked = !checkbox.checked;  // Revert checkbox state if an error occurs
+                });
+        }
+    </script>
+}
+
+<style>
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
+    }
+
+    .switch input {
+        display: none;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+    }
+
+    input:checked + .slider {
+        background-color: #2196F3;
+    }
+
+    input:checked + .slider:before {
+        transform: translateX(26px);
+    }
+
+    .slider.round {
+        border-radius: 34px;
+    }
+
+    .slider.round:before {
+        border-radius: 50%;
+    }
+</style>
