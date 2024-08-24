@@ -1,39 +1,38 @@
 using InsuranceApi.DTOs;
-using Microsoft.AspNetCore.Mvc;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
-using WebApplication1.Services;
+using System.Collections.Generic;
 
-namespace WebApplication1.Controllers
+public class PolicyHolderService
 {
-    [EnableCors("AllowSpecificOrigin")]  // Ensure CORS policy is applied
-    public class CustomerController : Controller
+    private readonly HttpClient _httpClient;
+
+    public PolicyHolderService(HttpClient httpClient)
     {
-        private readonly PolicyHolderService _policyHolderService;
+        _httpClient = httpClient;
+    }
 
-        public CustomerController(PolicyHolderService policyHolderService)
-        {
-            _policyHolderService = policyHolderService;
-        }
+    public async Task<List<PolicyHolderDto>> GetPolicyHoldersAsync()
+    {
+        string endpoint = "PolicyHolder";
+        var response = await _httpClient.GetAsync(endpoint);
+        response.EnsureSuccessStatusCode();
 
-        public async Task<IActionResult> ManageCustomers()
-        {
-            var policyHolders = await _policyHolderService.GetPolicyHoldersAsync();
-            return View(policyHolders);
-        }
+        var jsonResponse = await response.Content.ReadAsStringAsync();
+        var customers = JsonSerializer.Deserialize<List<PolicyHolderDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-        [HttpPut]
-        [Route("PolicyHolder/{id}/status")]
-        public async Task<IActionResult> UpdateStatus(int id, [FromBody] int status)
-        {
-            try
-            {
-                await _policyHolderService.UpdateStatusAsync(id, status);
-                return Ok();
-            }
-            catch
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while updating the status.");
-            }
-        }
+        return customers;
+    }
+
+    // Update this method to send status as an integer
+    public async Task UpdateStatusAsync(int id, int status)
+    {
+        string endpoint = $"PolicyHolder/{id}/status";
+        var content = new StringContent(JsonSerializer.Serialize(status), Encoding.UTF8, "application/json");
+
+        var response = await _httpClient.PutAsync(endpoint, content);
+        response.EnsureSuccessStatusCode();
     }
 }
