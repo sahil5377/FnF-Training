@@ -27,31 +27,93 @@
                 <td>@policyHolder.Address</td>
                 <td>@policyHolder.Phone</td>
                 <td>@policyHolder.Email</td>
-                <td>@policyHolder.Status</td>
                 <td>
-                    <button class="btn btn-primary" onclick="toggleStatus(@policyHolder.PolicyHolderId, @policyHolder.Status)">Action</button>
+                    <span class="status-text">@((policyHolder.Status == 1) ? "Active" : "Blocked")</span>
+                </td>
+                <td>
+                    <label class="switch">
+                        <input type="checkbox" onchange="toggleStatus(@policyHolder.PolicyHolderId, this)" @(policyHolder.Status == 1 ? "checked" : "")>
+                        <span class="slider round"></span>
+                    </label>
                 </td>
             </tr>
         }
     </tbody>
 </table>
 
-<script>
-    async function toggleStatus(id, currentStatus) {
-        let newStatus = currentStatus === 1 ? 0 : 1; // Assuming status is binary (active/inactive)
+@section Scripts {
+    <script>
+        async function toggleStatus(id, checkbox) {
+            let status = checkbox.checked ? 1 : 0; // Convert checkbox state to status value
 
-        const response = await fetch(`/PolicyHolder/${id}/status`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(newStatus)
-        });
+            const response = await fetch(`/api/PolicyHolder/${id}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(status) // Send status as an integer
+            });
 
-        if (response.ok) {
-            location.reload(); // Reload the page to reflect changes
-        } else {
-            alert('Failed to update status');
+            if (response.ok) {
+                checkbox.closest('tr').querySelector('.status-text').textContent = checkbox.checked ? "Active" : "Blocked";
+            } else {
+                alert('Failed to update status');
+                checkbox.checked = !checkbox.checked; // Revert checkbox state if update fails
+            }
         }
+    </script>
+}
+
+<style>
+    .switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 34px;
     }
-</script>
+
+    .switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+
+    .slider {
+        position: absolute;
+        cursor: pointer;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background-color: #ccc;
+        transition: .4s;
+    }
+
+    .slider:before {
+        position: absolute;
+        content: "";
+        height: 26px;
+        width: 26px;
+        border-radius: 50%;
+        left: 4px;
+        bottom: 4px;
+        background-color: white;
+        transition: .4s;
+    }
+
+    input:checked + .slider {
+        background-color: #2196F3;
+    }
+
+    input:checked + .slider:before {
+        transform: translateX(26px);
+    }
+
+    .slider.round {
+        border-radius: 34px;
+    }
+
+    .slider.round:before {
+        border-radius: 50%;
+    }
+</style>
