@@ -1,38 +1,24 @@
-using InsuranceApi.DTOs;
-using InsuranceApi.Services;
-using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
-
-namespace WebApplication1.Controllers
-{
-    public class CustomerController : Controller
-    {
-        private readonly PolicyHolderService _policyHolderService;
-
-        public CustomerController(PolicyHolderService policyHolderService)
-        {
-            _policyHolderService = policyHolderService;
-        }
-
-        public async Task<IActionResult> ManageCustomers()
-        {
-            var policyHolders = await _policyHolderService.GetPolicyHoldersAsync();
-            return View(policyHolders);
-        }
-
-        [HttpPut]
-        [Route("api/PolicyHolder/{id}/status")]
-        public async Task<IActionResult> UpdateStatus(int id, [FromBody] int status)
-        {
-            try
-            {
-                await _policyHolderService.UpdateStatusAsync(id, status);
-                return Ok();
+function toggleStatus(policyHolderId, checkbox) {
+    const status = checkbox.checked ? 1 : 0;
+    fetch(`/api/PolicyHolder/${policyHolderId}/status`, {
+        method: 'PUT',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(status) // Send status as an integer
+    })
+        .then(response => {
+            if (response.ok) {
+                const statusText = checkbox.checked ? "Active" : "Blocked";
+                checkbox.closest('tr').querySelector('.status-text').textContent = statusText;
+            } else {
+                alert('Failed to update status.');
+                checkbox.checked = !checkbox.checked;  // Revert checkbox state if update fails
             }
-            catch
-            {
-                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while updating the status.");
-            }
-        }
-    }
+        })
+        .catch(error => {
+            console.error('Error updating status:', error);
+            alert('An error occurred while updating status.');
+            checkbox.checked = !checkbox.checked;  // Revert checkbox state if an error occurs
+        });
 }
