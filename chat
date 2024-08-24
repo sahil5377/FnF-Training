@@ -1,3 +1,334 @@
+using InsuranceApi.DTOs;
+using InsuranceApi.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+
+namespace InsuranceApi.Controllers
+{
+    public interface IPolicyHolderController
+    {
+        Task<IActionResult> Add(PolicyHolderDto policyHolderDto);
+        Task<IActionResult> Delete(int id);
+        Task<IActionResult> GetAll();
+        Task<IActionResult> GetById(int id);
+        Task<IActionResult> Update(PolicyHolderDto policyHolderDto);
+    }
+
+    [Route("api/[controller]")]
+    [ApiController]
+    public class PolicyHolderController : ControllerBase, IPolicyHolderController
+    {
+        private readonly IPolicyHolderService service;
+        public PolicyHolderController(IPolicyHolderService service)
+        {
+            this.service = service;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            List<PolicyHolderDto> policyHolderDtos = await service.GetAll();
+            return Ok(policyHolderDtos);
+        }
+
+        [HttpDelete]
+        [Route("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                await service.Delete(id);
+                return Ok();
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Add(PolicyHolderDto policyHolderDto)
+        {
+            await service.Add(policyHolderDto);
+            return Ok();
+        }
+
+        [HttpPut]
+        public async Task<IActionResult> Update(PolicyHolderDto policyHolderDto)
+        {
+            try
+            {
+                await service.Update(policyHolderDto);
+                return Ok();
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpGet]
+        [Route("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            try
+            {
+                var found = await service.GetById(id);
+                return Ok(found);
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
+        }
+        [HttpPut("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] int status)
+        {
+            try
+            {
+                await service.UpdateStatus(id, status);
+                return Ok();
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
+        }
+    }
+}
+Policy Holder COntroller in APi
+
+using InsuranceApi.Data;
+using InsuranceApi.DTOs;
+using Microsoft.EntityFrameworkCore;
+
+namespace InsuranceApi.Services
+{
+    public interface IPolicyHolderService
+    {
+        Task Add(PolicyHolderDto policyHolderDto);
+        Task Delete(int id);
+        Task<List<PolicyHolderDto>> GetAll();
+        Task<PolicyHolderDto> GetById(int id);
+        Task Update(PolicyHolderDto policyHolderDto);
+        Task UpdateStatus(int id, int status);
+    }
+
+    public class PolicyHolderService : IPolicyHolderService
+    {
+        private readonly FnfProjectContext context;
+
+        public PolicyHolderService(FnfProjectContext context)
+        {
+            this.context = context;
+        }
+
+        public async Task<List<PolicyHolderDto>> GetAll()
+        {
+            List<PolicyHolderDto> policyHolderDtos = [];
+            await foreach (var policyHolderTable in context.PolicyHolders)
+            {
+                var policyHolderDto = ConvertToDto(policyHolderTable);
+                policyHolderDtos.Add(policyHolderDto);
+            }
+            return policyHolderDtos;
+        }
+
+        public async Task Delete(int id)
+        {
+            var found = await context.PolicyHolders.FirstOrDefaultAsync((policyHolderTable) =>
+                policyHolderTable.PolicyHolderId == id);
+            if (found != null)
+            {
+                context.PolicyHolders.Remove(found);
+                await context.SaveChangesAsync();
+                return;
+            }
+            throw new NullReferenceException();
+        }
+
+        public async Task Add(PolicyHolderDto policyHolderDto)
+        {
+            PolicyHolder policyHolderTable = new();
+            ConvertToTable(policyHolderDto, policyHolderTable);
+            context.PolicyHolders.Add(policyHolderTable);
+            await context.SaveChangesAsync();
+            return;
+        }
+
+        public async Task Update(PolicyHolderDto policyHolderDto)
+        {
+            var found = await context.PolicyHolders.FirstOrDefaultAsync((policyHolderTable) =>
+                policyHolderTable.PolicyHolderId == policyHolderDto.PolicyHolderId);
+            if (found != null)
+            {
+                ConvertToTable(policyHolderDto, found);
+                await context.SaveChangesAsync();
+                return;
+            }
+            throw new NullReferenceException();
+        }
+
+        public async Task<PolicyHolderDto> GetById(int id)
+        {
+            var found = await context.PolicyHolders.FirstOrDefaultAsync((policyHolderTable) =>
+                policyHolderTable.PolicyHolderId == id);
+
+            if (found != null)
+                return ConvertToDto(found);
+
+            throw new NullReferenceException();
+        }
+        public async Task UpdateStatus(int id, int status)
+        {
+            var policyHolder = await context.PolicyHolders.FirstOrDefaultAsync(ph => ph.PolicyHolderId == id);
+            if (policyHolder != null)
+            {
+                policyHolder.Status = status;
+                await context.SaveChangesAsync();
+            }
+            else
+            {
+                throw new NullReferenceException();
+            }
+        }
+
+        private PolicyHolderDto ConvertToDto(PolicyHolder policyHolderTable)
+        {
+            PolicyHolderDto policyHolderDto = new()
+            {
+                PolicyHolderId = policyHolderTable.PolicyHolderId,
+                Name = policyHolderTable.Name,
+                Address = policyHolderTable.Address,
+                Email = policyHolderTable.Email,
+                PasswordHash = policyHolderTable.PasswordHash,
+                Phone = policyHolderTable.Phone,
+                Status = policyHolderTable.Status,
+            };
+            return policyHolderDto;
+        }
+
+        private void ConvertToTable(PolicyHolderDto policyHolderDto, PolicyHolder policyHolderTable)
+        {
+            policyHolderTable.PolicyHolderId = policyHolderDto.PolicyHolderId;
+            policyHolderTable.Name = policyHolderDto.Name;
+            policyHolderTable.Address = policyHolderDto.Address;
+            policyHolderTable.Email = policyHolderDto.Email;
+            policyHolderTable.PasswordHash = policyHolderDto.PasswordHash;
+            policyHolderTable.Phone = policyHolderDto.Phone;
+            policyHolderTable.Status = policyHolderDto.Status;
+            return;
+        }
+    }
+}
+
+PolicyHolderService in Api
+using InsuranceApi.DTOs;
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
+
+namespace WebApplication1.Controllers
+{
+    public class PolicyHolderController : Controller
+    {
+        private readonly IPolicyHolderService _policyHolderService;
+
+        public PolicyHolderController(IPolicyHolderService policyHolderService)
+        {
+            _policyHolderService = policyHolderService;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ManageCustomers()
+        {
+            var policyHolders = await _policyHolderService.GetPolicyHoldersAsync();
+            return View(policyHolders);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateStatus(int id, int status)
+        {
+            if (id <= 0 || (status != 0 && status != 1))
+            {
+                return BadRequest("Invalid request parameters.");
+            }
+
+            try
+            {
+                // Call the service to update the status
+                bool result = await _policyHolderService.UpdatePolicyHolderStatusAsync(id, status);
+                if (result)
+                {
+                    return Ok();
+                }
+                else
+                {
+                    return StatusCode(500, "Error updating status.");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions, log error
+                return StatusCode(500, "An error occurred: " + ex.Message);
+            }
+        }
+    }
+}
+Customer COntroller in MVC
+using InsuranceApi.DTOs;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+
+public class PolicyHolderService : IPolicyHolderService
+{
+    private readonly HttpClient _httpClient;
+
+    public PolicyHolderService(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+    }
+
+    public async Task<List<PolicyHolderDto>> GetPolicyHoldersAsync()
+    {
+        string endpoint = "PolicyHolder";
+        var response = await _httpClient.GetAsync(endpoint);
+        response.EnsureSuccessStatusCode();
+
+        var jsonResponse = await response.Content.ReadAsStringAsync();
+        var customers = JsonSerializer.Deserialize<List<PolicyHolderDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        return customers;
+    }
+
+    public async Task<bool> UpdatePolicyHolderStatusAsync(int id, int status)
+    {
+        string endpoint = $"PolicyHolder/{id}/status";
+        var payload = new { Status = status };
+        var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
+
+        var response = await _httpClient.PutAsync(endpoint, content);
+
+        return response.IsSuccessStatusCode;
+    }
+}
+
+public interface IPolicyHolderService
+{
+    Task<List<PolicyHolderDto>> GetPolicyHoldersAsync();
+    Task<bool> UpdatePolicyHolderStatusAsync(int id, int status);
+}
+PolicyHolderservie in MVC
+@model List<InsuranceApi.DTOs.PolicyHolderDto>
+
+@{
+    ViewData["Title"] = "Manage Customers";
+}
+
+<h2>Manage Customers</h2>
+
 <table class="table">
     <thead>
         <tr>
@@ -19,14 +350,14 @@
                 <td>@customer.Email</td>
                 <td>@(customer.Status == 1 ? "Active" : "Block")</td>
                 <td>
-                    <button class="btn btn-primary @(customer.Status == 1 ? "disabled" : "")" 
-                            onclick="confirmUpdateStatus(@customer.PolicyHolderId, 1, '@customer.Name')" 
-                            @(customer.Status == 1 ? "disabled" : "")>
+                    <button class="btn btn-primary @(customer.Status == 1 ? "disabled" : "")"
+                            onclick="confirmUpdateStatus(@customer.PolicyHolderId, 1, '@customer.Name')"
+                    @(customer.Status == 1 ? "disabled" : "")>
                         Active
                     </button>
-                    <button class="btn btn-secondary @(customer.Status == 0 ? "disabled" : "")" 
-                            onclick="confirmUpdateStatus(@customer.PolicyHolderId, 0, '@customer.Name')" 
-                            @(customer.Status == 0 ? "disabled" : "")>
+                    <button class="btn btn-secondary @(customer.Status == 0 ? "disabled" : "")"
+                            onclick="confirmUpdateStatus(@customer.PolicyHolderId, 0, '@customer.Name')"
+                    @(customer.Status == 0 ? "disabled" : "")>
                         Block
                     </button>
                 </td>
@@ -59,3 +390,74 @@
         }
     </script>
 }
+ManageCustomers.cshtml
+using Microsoft.AspNetCore.Authentication.Cookies;
+using WebApplication1.Services;
+
+namespace WebApplication1
+{
+    public class Program
+    {
+        public static void Main(string[] args)
+        {
+            var builder = WebApplication.CreateBuilder(args);
+
+            // Add services to the container.
+            builder.Services.AddControllersWithViews();
+
+            // Register services with HTTP client
+            builder.Services.AddHttpClient<IAdminService, AdminService>(client =>
+            {
+                client.BaseAddress = new Uri("http://localhost:5230/api/");
+            });
+
+            builder.Services.AddHttpClient<IHospitalService, HospitalService>(client =>
+            {
+                client.BaseAddress = new Uri("http://localhost:5230/api/");
+            });
+
+            builder.Services.AddHttpClient<IClaimService, ClaimService>(client =>
+            {
+                client.BaseAddress = new Uri("http://localhost:5230/api/");
+            });
+            builder.Services.AddHttpClient<IPolicyHolderService,PolicyHolderService>(client =>
+            {
+                client.BaseAddress = new Uri("http://localhost:5230/api/");
+            });
+
+
+            // Add CORS policy if needed
+
+
+            // Configure authentication
+            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+                .AddCookie(options =>
+                {
+                    options.LoginPath = "/Account/Login";
+                    options.AccessDeniedPath = "/Account/AccessDenied";
+                });
+
+            var app = builder.Build();
+
+            // Configure the HTTP request pipeline.
+            if (!app.Environment.IsDevelopment())
+            {
+                app.UseExceptionHandler("/Home/Error");
+                app.UseHsts();
+            }
+
+            app.UseHttpsRedirection();
+            app.UseStaticFiles();
+            app.UseRouting();
+            app.UseAuthentication();
+            app.UseAuthorization();
+
+            app.MapControllerRoute(
+                name: "default",
+                pattern: "{controller=Account}/{action=Login}/{id?}");
+
+            app.Run();
+        }
+    }
+}
+Program.cs
