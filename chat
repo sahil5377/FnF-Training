@@ -1,66 +1,49 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Mvc;
+using InsuranceApi.DTOs;
 using WebApplication1.Services;
 
-namespace WebApplication1
+namespace WebApplication1.Controllers
 {
-    public class Program
+    public class PolicyHolderController : Controller
     {
-        public static void Main(string[] args)
+        private readonly IPolicyHolderService _policyHolderService;
+
+        public PolicyHolderController(IPolicyHolderService policyHolderService)
         {
-            var builder = WebApplication.CreateBuilder(args);
+            _policyHolderService = policyHolderService;
+        }
 
-            // Add services to the container.
-            builder.Services.AddControllersWithViews();
+        [HttpGet]
+        public async Task<IActionResult> ManageCustomers()
+        {
+            var policyHolders = await _policyHolderService.GetPolicyHoldersAsync();
+            return View(policyHolders);
+        }
 
-            // Register services with HTTP client
-            builder.Services.AddHttpClient<IAdminService, AdminService>(client =>
+        [HttpPost]
+        public async Task<IActionResult> UpdateStatus(int id, int status)
+        {
+            if (id <= 0 || (status != 0 && status != 1))
             {
-                client.BaseAddress = new Uri("http://localhost:5230/api/");
-            });
-
-            builder.Services.AddHttpClient<IHospitalService, HospitalService>(client =>
-            {
-                client.BaseAddress = new Uri("http://localhost:5230/api/");
-            });
-
-            builder.Services.AddHttpClient<IClaimService, ClaimService>(client =>
-            {
-                client.BaseAddress = new Uri("http://localhost:5230/api/");
-            });
-
-            builder.Services.AddHttpClient<IPolicyHolderService, PolicyHolderService>(client =>
-            {
-                client.BaseAddress = new Uri("http://localhost:5230/api/");
-            });
-
-            // Configure authentication
-            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                .AddCookie(options =>
-                {
-                    options.LoginPath = "/Account/Login";
-                    options.AccessDeniedPath = "/Account/AccessDenied";
-                });
-
-            var app = builder.Build();
-
-            // Configure the HTTP request pipeline.
-            if (!app.Environment.IsDevelopment())
-            {
-                app.UseExceptionHandler("/Home/Error");
-                app.UseHsts();
+                return BadRequest("Invalid request parameters.");
             }
 
-            app.UseHttpsRedirection();
-            app.UseStaticFiles();
-            app.UseRouting();
-            app.UseAuthentication();
-            app.UseAuthorization();
-
-            app.MapControllerRoute(
-                name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}");
-
-            app.Run();
+            try
+            {
+                bool result = await _policyHolderService.UpdatePolicyHolderStatusAsync(id, status);
+                if (result)
+                {
+                    return Ok();
+                }
+                else
+                {
+                    return StatusCode(500, "Error updating status.");
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "An error occurred: " + ex.Message);
+            }
         }
     }
 }
