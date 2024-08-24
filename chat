@@ -1,86 +1,259 @@
-using Microsoft.AspNetCore.Authentication.Cookies;
-using Microsoft.AspNetCore.Builder;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Hosting;
-using WebApplication1.Services;
+send vo layout ka
+ 
+Local set-up • Angular
+Angular
+The web development framework for building modern apps.
+ 
+so ja, good night!
+ 
+yes
+ 
+send cmd of fortawsome
+ 
+npm i @fortawesome/fontawesome-free
+ 
+onEdit = (rec:Employee) =>{};
+  onDelete =(emp:Employee) => {
+    const index = this.empList.indexOf(emp);
+    this.empList.splice(index,1);
+  };
+ 
+send that cmd Emp_detaial
+ 
+ng g c Components/empDetail --skip-tests
+ 
+@page "/AddEmployee"
 
-namespace WebApplication1
-{
-    public class Program
+@using CrudEmployeeApp.Models
+
+@using CrudEmployeeApp.Services
+
+@inject NavigationManager nav
+
+@inject IJSRuntime js
+
+@inject IEmpService service
+ 
+<FormControl Heading="Register New Employee" ButtonText="Add New Record" OnSubmit="addNewEmployee" emp="@emp" />
+ 
+@code {
+
+    private Employee emp = new Employee();
+ 
+    private async Task addNewEmployee()
+
     {
-        public static void Main(string[] args)
+
+        if (await js.InvokeAsync<bool>("confirm", $"Do you really want to add the record?"))
+
         {
-            var builder = WebApplication.CreateBuilder(args);
 
-            // Add services to the container.
-            builder.Services.AddControllersWithViews();
+            var response = await service.AddEmployee(emp);
 
-            // Register services with HTTP client
-            builder.Services.AddHttpClient<IAdminService, AdminService>(client =>
+            if (response.IsSuccessStatusCode)
+
             {
-                client.BaseAddress = new Uri("http://localhost:5230/api/");
-            });
 
-            builder.Services.AddHttpClient<IHospitalService, HospitalService>(client =>
-            {
-                client.BaseAddress = new Uri("http://localhost:5230/api/");
-            });
+                await js.InvokeVoidAsync("alert", "Employee added successfully!");
 
-            builder.Services.AddHttpClient<IClaimService, ClaimService>(client =>
-            {
-                client.BaseAddress = new Uri("http://localhost:5230/api/");
-            });
+                nav.NavigateTo("allEmployees");
 
-            builder.Services.AddHttpClient<PolicyHolderService>(client =>
-            {
-                client.BaseAddress = new Uri("http://localhost:5230/api/");
-            });
-
-            // Configure CORS
-            builder.Services.AddCors(options =>
-            {
-                options.AddPolicy("AllowSpecificOrigin",
-                    builder =>
-                    {
-                        builder.WithOrigins("http://localhost:5187") // Replace with your frontend origin
-                               .AllowAnyHeader()
-                               .AllowAnyMethod();
-                    });
-            });
-
-            // Configure authentication
-            builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-                .AddCookie(options =>
-                {
-                    options.LoginPath = "/Account/Login";
-                    options.AccessDeniedPath = "/Account/AccessDenied";
-                });
-
-            var app = builder.Build();
-
-            // Configure the HTTP request pipeline.
-            if (!app.Environment.IsDevelopment())
-            {
-                app.UseExceptionHandler("/Home/Error");
-                app.UseHsts();
             }
 
-            app.UseHttpsRedirection();
-            app.UseStaticFiles();
+            else
 
-            app.UseRouting();
+            {
 
-            // Use CORS policy
-            app.UseCors("AllowSpecificOrigin");
+                await js.InvokeVoidAsync("alert", "Failed to add employee.");
 
-            app.UseAuthentication();
-            app.UseAuthorization();
+            }
 
-            app.MapControllerRoute(
-                name: "default",
-                pattern: "{controller=Home}/{action=Index}/{id?}");
-
-            app.Run();
         }
+
+        else
+
+        {
+
+            await js.InvokeVoidAsync("alert", "User has canceled the operation.");
+
+        }
+
     }
+
 }
+ 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>@ViewData["Title"] - WebApplication1</title>
+<link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+<link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/WebApplication1.styles.css" asp-append-version="true" />
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"> <!-- Added Font Awesome -->
+</head>
+ 
+<body>
+
+    @if (User.Identity.IsAuthenticated)
+
+    {
+<header>
+<nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+<div class="container-fluid">
+<a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+<img src="~/images/CompanyLogo.png" alt="Company Logo" style="height: 40px;" />
+</a>
+<button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+
+                            aria-expanded="false" aria-label="Toggle navigation">
+<span class="navbar-toggler-icon"></span>
+</button>
+ 
+                    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+<ul class="navbar-nav flex-grow-1 justify-content-end">
+<!-- Dashboard -->
+<li class="nav-item mx-2">
+<a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Dashboard">
+<i class="fa fa-dashboard" aria-hidden="true"></i> Dashboard
+</a>
+</li>
+ 
+                            <!-- Customers -->
+<li class="nav-item dropdown">
+<a class="nav-link dropdown-toggle text-black" href="#" id="manageCustomersDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+<i class="fa fa-users" aria-hidden="true"></i> Customers
+</a>
+<ul class="dropdown-menu" aria-labelledby="manageCustomersDropdown">
+<li>
+<a class="dropdown-item" asp-controller="Customer" asp-action="ManageCustomers">Manage Customers</a>
+</li>
+</ul>
+</li>
+ 
+                            <!-- Policies -->
+<li class="nav-item mx-2">
+<a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Policies">
+<i class="fa fa-file-text-o" aria-hidden="true"></i> Policies
+</a>
+</li>
+ 
+                            <!-- Claims -->
+<li class="nav-item dropdown mx-2">
+<a class="nav-link dropdown-toggle text-dark" href="#" id="claimDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+<i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Claims
+</a>
+<ul class="dropdown-menu" aria-labelledby="hospitalDropdown">
+<li><a class="dropdown-item" asp-area="" asp-controller="Claim" asp-action="ManageClaims">Manage Claims</a></li>
+</ul>
+</li>
+ 
+                            <!-- Dropdown for Hospitals -->
+<li class="nav-item dropdown mx-2">
+<a class="nav-link dropdown-toggle text-dark" href="#" id="hospitalDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+<i class="fa fa-hospital-o" aria-hidden="true"></i> Hospitals
+</a>
+<ul class="dropdown-menu" aria-labelledby="hospitalDropdown">
+<li><a class="dropdown-item" asp-area="" asp-controller="Hospital" asp-action="ManageHospitals">Manage Hospitals</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+</nav>
+</header>
+
+    }
+<div class="container">
+<main role="main" class="pb-3">
+
+            @RenderBody()
+</main>
+</div>
+ 
+    <footer class="border-top footer text-muted">
+<div class="container">
+&copy; 2024 - WebApplication1 - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+</div>
+</footer>
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+ 
+<script>
+
+    function ConfirmLogout() {
+
+        if (confirm("Are you sure you want to logout?")) {
+
+            window.location.href = '@Url.Action("Logout", "Account")';
+
+        }
+
+    }
+</script>
+ 
+@inherits LayoutComponentBase
+<link rel="stylesheet"
+
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
+
+      integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8sh+5n5z5ta3FX7jB4I6bzdu16f7A5t5F5Fj2xj"
+
+      crossorigin="anonymous" />
+
+ 
+    <header>
+
+<div class="top">
+<a class="m-3">
+<i></i>Welcome to FNFI Training!
+</a>
+<a class="m-3">
+<i class="fa fa-dashboard"></i>Hi Trainer!
+</a>
+ 
+            <a class="m-3">About</a>
+ 
+            <a class="m-3">Logout</a>
+ 
+        </div>
+</header>
+ 
+ 
+<div>
+ 
+    <main>
+
+        @Body
+ 
+ 
+    </main>
+</div>
+ 
+<div>
+<footer>
+<i>&copy; 2012 - 2024 Fidelity National Financial<br>All rights reserved.</i>
+</footer>
+</div>
+
+ footer {
+    width: 100%;
+    bottom: 0;
+    background-color: #375b8a;
+    padding: 20px;
+    text-align: center;
+    color: white;
+}
+header {
+    color: white;
+    width: 100%;
+    padding: 20px;
+    background-color: #375b8a;
+}
+has context menu
