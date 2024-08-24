@@ -99,19 +99,26 @@
     async function toggleStatus(id, checkbox) {
         let newStatus = checkbox.checked ? 1 : 0; // Set status based on checkbox state
 
-        const response = await fetch(`/PolicyHolder/${id}/status`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(newStatus)
-        });
+        try {
+            const response = await fetch(`/PolicyHolder/${id}/status`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ status: newStatus }) // Ensure the payload matches the API's expected format
+            });
 
-        if (response.ok) {
-            // Optionally, you can update the UI or notify the user
-        } else {
-            alert('Failed to update status');
-            checkbox.checked = !checkbox.checked; // Revert checkbox state if update fails
+            if (response.ok) {
+                console.log('Status updated successfully');
+            } else {
+                console.error('Failed to update status');
+                checkbox.checked = !checkbox.checked; // Revert checkbox state if update fails
+                alert('Failed to update status');
+            }
+        } catch (error) {
+            console.error('Error occurred while updating status:', error);
+            checkbox.checked = !checkbox.checked; // Revert checkbox state if an error occurs
+            alert('Error occurred while updating status');
         }
     }
 </script>
