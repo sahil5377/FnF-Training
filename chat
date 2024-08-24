@@ -1,46 +1,51 @@
 using InsuranceApi.DTOs;
-using System.Net.Http;
-using System.Text;
-using System.Text.Json;
+using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
-using System.Collections.Generic;
 
-public class PolicyHolderService : IPolicyHolderService
+namespace WebApplication1.Controllers
 {
-    private readonly HttpClient _httpClient;
-
-    public PolicyHolderService(HttpClient httpClient)
+    public class PolicyHolderController : Controller
     {
-        _httpClient = httpClient;
+        private readonly IPolicyHolderService _policyHolderService;
+
+        public PolicyHolderController(IPolicyHolderService policyHolderService)
+        {
+            _policyHolderService = policyHolderService;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ManageCustomers()
+        {
+            var policyHolders = await _policyHolderService.GetPolicyHoldersAsync();
+            return View(policyHolders);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateStatus(int id, int status)
+        {
+            if (id <= 0 || (status != 0 && status != 1))
+            {
+                return BadRequest("Invalid request parameters.");
+            }
+
+            try
+            {
+                // Call the service to update the status
+                bool result = await _policyHolderService.UpdatePolicyHolderStatusAsync(id, status);
+                if (result)
+                {
+                    return Ok();
+                }
+                else
+                {
+                    return StatusCode(500, "Error updating status.");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions, log error
+                return StatusCode(500, "An error occurred: " + ex.Message);
+            }
+        }
     }
-
-    public async Task<List<PolicyHolderDto>> GetPolicyHoldersAsync()
-    {
-        string endpoint = "PolicyHolder";
-        var response = await _httpClient.GetAsync(endpoint);
-        response.EnsureSuccessStatusCode();
-
-        var jsonResponse = await response.Content.ReadAsStringAsync();
-        var customers = JsonSerializer.Deserialize<List<PolicyHolderDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-        return customers;
-    }
-
-    public async Task<bool> UpdatePolicyHolderStatusAsync(int id, int status)
-    {
-        string endpoint = $"PolicyHolder/{id}/status";
-        var payload = new { Status = status };
-        var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-
-        var response = await _httpClient.PutAsync(endpoint, content);
-
-        return response.IsSuccessStatusCode;
-    }
-}
-
-// Moved the interface outside of the PolicyHolderService class
-public interface IPolicyHolderService
-{
-    Task<List<PolicyHolderDto>> GetPolicyHoldersAsync();
-    Task<bool> UpdatePolicyHolderStatusAsync(int id, int status);
 }
