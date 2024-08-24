@@ -1,4 +1,7 @@
 using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using WebApplication1.Services;
 
 namespace WebApplication1
@@ -33,6 +36,18 @@ namespace WebApplication1
                 client.BaseAddress = new Uri("http://localhost:5230/api/");
             });
 
+            // Configure CORS
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy("AllowSpecificOrigin",
+                    builder =>
+                    {
+                        builder.WithOrigins("http://localhost:5187") // Replace with your frontend origin
+                               .AllowAnyHeader()
+                               .AllowAnyMethod();
+                    });
+            });
+
             // Configure authentication
             builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(options =>
@@ -52,7 +67,12 @@ namespace WebApplication1
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
+
             app.UseRouting();
+
+            // Use CORS policy
+            app.UseCors("AllowSpecificOrigin");
+
             app.UseAuthentication();
             app.UseAuthorization();
 
