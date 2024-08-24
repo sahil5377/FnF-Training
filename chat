@@ -1,57 +1,11 @@
-@model List<InsuranceApi.DTOs.PolicyHolderDto>
-
-@{
-    ViewData["Title"] = "Manage Customers";
-}
-
-<h2>Manage Customers</h2>
-
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Policy Holder ID</th>
-            <th>Name</th>
-            <th>Address</th>
-            <th>Phone</th>
-            <th>Email</th>
-            <th>Status</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var policyHolder in Model)
-        {
-            <tr>
-                <td>@policyHolder.PolicyHolderId</td>
-                <td>@policyHolder.Name</td>
-                <td>@policyHolder.Address</td>
-                <td>@policyHolder.Phone</td>
-                <td>@policyHolder.Email</td>
-                <td>@policyHolder.Status</td>
-                <td>
-                    <button class="btn btn-primary" onclick="toggleStatus(@policyHolder.PolicyHolderId, @policyHolder.Status)">Toggle Status</button>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
-
-<script>
-    async function toggleStatus(id, currentStatus) {
-        let newStatus = currentStatus === 1 ? 0 : 1; // Assuming status is binary (active/inactive)
-        
-        const response = await fetch(`/PolicyHolder/${id}/status`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(newStatus)
-        });
-
-        if (response.ok) {
-            location.reload(); // Reload the page to reflect changes
-        } else {
-            alert('Failed to update status');
-        }
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=InsuranceDb;Trusted_Connection=True;MultipleActiveResultSets=true"
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Warning"
     }
-</script>
+  },
+  "AllowedHosts": "*"
+}
