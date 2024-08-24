@@ -1,45 +1,37 @@
+using InsuranceApi.Data;
 using InsuranceApi.DTOs;
-using InsuranceApi.Services;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System.Text.Json;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace InsuranceApi.Controllers
 {
-    public interface IPolicyHolderController
-    {
-        Task<IActionResult> Add(PolicyHolderDto policyHolderDto);
-        Task<IActionResult> Delete(int id);
-        Task<IActionResult> GetAll();
-        Task<IActionResult> GetById(int id);
-        Task<IActionResult> Update(PolicyHolderDto policyHolderDto);
-    }
-
     [Route("api/[controller]")]
     [ApiController]
     public class PolicyHolderController : ControllerBase
     {
-        private readonly IPolicyHolderService service;
+        private readonly IPolicyHolderService _service;
+
         public PolicyHolderController(IPolicyHolderService service)
         {
-            this.service = service;
+            _service = service;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            List<PolicyHolderDto> policyHolderDtos = await service.GetAll();
+            List<PolicyHolderDto> policyHolderDtos = await _service.GetAll();
             return Ok(policyHolderDtos);
         }
 
-        [HttpDelete]
-        [Route("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
         {
             try
             {
-                await service.Delete(id);
-                return Ok();
+                var found = await _service.GetById(id);
+                return Ok(found);
             }
             catch (NullReferenceException)
             {
@@ -50,7 +42,7 @@ namespace InsuranceApi.Controllers
         [HttpPost]
         public async Task<IActionResult> Add(PolicyHolderDto policyHolderDto)
         {
-            await service.Add(policyHolderDto);
+            await _service.Add(policyHolderDto);
             return Ok();
         }
 
@@ -59,7 +51,7 @@ namespace InsuranceApi.Controllers
         {
             try
             {
-                await service.Update(policyHolderDto);
+                await _service.Update(policyHolderDto);
                 return Ok();
             }
             catch (NullReferenceException)
@@ -68,27 +60,27 @@ namespace InsuranceApi.Controllers
             }
         }
 
-        [HttpGet]
-        [Route("{id}")]
-        public async Task<IActionResult> GetById(int id)
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
         {
             try
             {
-                var found = await service.GetById(id);
-                return Ok(found);
+                await _service.Delete(id);
+                return Ok();
             }
             catch (NullReferenceException)
             {
                 return NotFound();
             }
         }
+
         [HttpPut("{id}/status")]
         public async Task<IActionResult> UpdateStatus(int id, [FromBody] JsonElement jsonElement)
         {
             try
             {
-                var status = jsonElement.GetProperty("status").GetInt32();
-                await service.UpdateStatus(id, status);
+                var status = jsonElement.GetInt32();
+                await _service.UpdateStatus(id, status);
                 return Ok();
             }
             catch (NullReferenceException)
@@ -98,317 +90,3 @@ namespace InsuranceApi.Controllers
         }
     }
 }
-
-API PolicyHolderController
-using InsuranceApi.Data;
-using InsuranceApi.DTOs;
-using Microsoft.EntityFrameworkCore;
-
-namespace InsuranceApi.Services
-{
-    public interface IPolicyHolderService
-    {
-        Task Add(PolicyHolderDto policyHolderDto);
-        Task Delete(int id);
-        Task<List<PolicyHolderDto>> GetAll();
-        Task<PolicyHolderDto> GetById(int id);
-        Task Update(PolicyHolderDto policyHolderDto);
-        Task UpdateStatus(int id, int status);
-    }
-
-    public class PolicyHolderService : IPolicyHolderService
-    {
-        private readonly FnfProjectContext context;
-
-        public PolicyHolderService(FnfProjectContext context)
-        {
-            this.context = context;
-        }
-
-        public async Task<List<PolicyHolderDto>> GetAll()
-        {
-            List<PolicyHolderDto> policyHolderDtos = [];
-            await foreach (var policyHolderTable in context.PolicyHolders)
-            {
-                var policyHolderDto = ConvertToDto(policyHolderTable);
-                policyHolderDtos.Add(policyHolderDto);
-            }
-            return policyHolderDtos;
-        }
-
-        public async Task Delete(int id)
-        {
-            var found = await context.PolicyHolders.FirstOrDefaultAsync((policyHolderTable) =>
-                policyHolderTable.PolicyHolderId == id);
-            if (found != null)
-            {
-                context.PolicyHolders.Remove(found);
-                await context.SaveChangesAsync();
-                return;
-            }
-            throw new NullReferenceException();
-        }
-
-        public async Task Add(PolicyHolderDto policyHolderDto)
-        {
-            PolicyHolder policyHolderTable = new();
-            ConvertToTable(policyHolderDto, policyHolderTable);
-            context.PolicyHolders.Add(policyHolderTable);
-            await context.SaveChangesAsync();
-            return;
-        }
-
-        public async Task Update(PolicyHolderDto policyHolderDto)
-        {
-            var found = await context.PolicyHolders.FirstOrDefaultAsync((policyHolderTable) =>
-                policyHolderTable.PolicyHolderId == policyHolderDto.PolicyHolderId);
-            if (found != null)
-            {
-                ConvertToTable(policyHolderDto, found);
-                await context.SaveChangesAsync();
-                return;
-            }
-            throw new NullReferenceException();
-        }
-
-        public async Task<PolicyHolderDto> GetById(int id)
-        {
-            var found = await context.PolicyHolders.FirstOrDefaultAsync((policyHolderTable) =>
-                policyHolderTable.PolicyHolderId == id);
-
-            if (found != null)
-                return ConvertToDto(found);
-
-            throw new NullReferenceException();
-        }
-        public async Task UpdateStatus(int id, int status)
-        {
-            var found = await context.PolicyHolders.FirstOrDefaultAsync(ph => ph.PolicyHolderId == id);
-            if (found != null)
-            {
-                found.Status = status;
-                await context.SaveChangesAsync();
-                return;
-            }
-            throw new NullReferenceException();
-        }
-
-        private PolicyHolderDto ConvertToDto(PolicyHolder policyHolderTable)
-        {
-            PolicyHolderDto policyHolderDto = new()
-            {
-                PolicyHolderId = policyHolderTable.PolicyHolderId,
-                Name = policyHolderTable.Name,
-                Address = policyHolderTable.Address,
-                Email = policyHolderTable.Email,
-                PasswordHash = policyHolderTable.PasswordHash,
-                Phone = policyHolderTable.Phone,
-                Status = policyHolderTable.Status,
-            };
-            return policyHolderDto;
-        }
-
-        private void ConvertToTable(PolicyHolderDto policyHolderDto, PolicyHolder policyHolderTable)
-        {
-            policyHolderTable.PolicyHolderId = policyHolderDto.PolicyHolderId;
-            policyHolderTable.Name = policyHolderDto.Name;
-            policyHolderTable.Address = policyHolderDto.Address;
-            policyHolderTable.Email = policyHolderDto.Email;
-            policyHolderTable.PasswordHash = policyHolderDto.PasswordHash;
-            policyHolderTable.Phone = policyHolderDto.Phone;
-            policyHolderTable.Status = policyHolderDto.Status;
-            return;
-        }
-    }
-}
-API POLICY SERVICES
-using InsuranceApi.DTOs;
-using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
-namespace WebApplication1.Controllers
-{
-    public class CustomerController : Controller
-    {
-        private readonly PolicyHolderService _policyHolderService;
-
-        public CustomerController(PolicyHolderService policyHolderService)
-        {
-            _policyHolderService = policyHolderService;
-        }
-
-        public async Task<IActionResult> ManageCustomers()
-        {
-            var policyHolders = await _policyHolderService.GetPolicyHoldersAsync();
-            return View(policyHolders);
-        }
-    }
-}
-
-using InsuranceApi.DTOs;
-using System.Net.Http;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-using System.Collections.Generic;
-
-public class PolicyHolderService
-{
-    private readonly HttpClient _httpClient;
-
-    public PolicyHolderService(HttpClient httpClient)
-    {
-        _httpClient = httpClient;
-    }
-
-    public async Task<List<PolicyHolderDto>> GetPolicyHoldersAsync()
-    {
-        string endpoint = "PolicyHolder";
-        var response = await _httpClient.GetAsync(endpoint);
-        response.EnsureSuccessStatusCode();
-
-        var jsonResponse = await response.Content.ReadAsStringAsync();
-        var customers = JsonSerializer.Deserialize<List<PolicyHolderDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-        return customers;
-    }
-
-    // Add this method to update the status of a policy holder
-    public async Task UpdateStatusAsync(int id, int status)
-    {
-        string endpoint = $"PolicyHolder/{id}/status";
-        var content = new StringContent(JsonSerializer.Serialize(status), Encoding.UTF8, "application/json");
-
-        var response = await _httpClient.PutAsync(endpoint, content);
-        response.EnsureSuccessStatusCode();
-    }
-}
-
-@model List<InsuranceApi.DTOs.PolicyHolderDto>
-
-@{
-    ViewData["Title"] = "Manage Customers";
-}
-
-<h2>Manage Customers</h2>
-
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Policy Holder ID</th>
-            <th>Name</th>
-            <th>Address</th>
-            <th>Phone</th>
-            <th>Email</th>
-            <th>Status</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var holder in Model)
-        {
-            <tr>
-                <td>@holder.PolicyHolderId</td>
-                <td>@holder.Name</td>
-                <td>@holder.Address</td>
-                <td>@holder.Phone</td>
-                <td>@holder.Email</td>
-                <td>
-                    <span class="status-text">@((holder.Status == 1) ? "Active" : "Blocked")</span>
-                </td>
-                <td>
-                    <label class="switch">
-                        <input type="checkbox" onchange="toggleStatus(@holder.PolicyHolderId, this)" @(holder.Status == 1 ? "checked" : "")>
-                        <span class="slider round"></span>
-                    </label>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
-
-@section Scripts {
-    <script>
-        function toggleStatus(policyHolderId, checkbox) {
-            const status = checkbox.checked ? 1 : 0;
-            fetch(`/api/PolicyHolder/${policyHolderId}/status`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ status: status }) // Send status as an object
-            })
-                .then(response => {
-                    if (response.ok) {
-                        const statusText = checkbox.checked ? "Active" : "Blocked";
-                        checkbox.closest('tr').querySelector('.status-text').textContent = statusText;
-                    } else {
-                        alert('Failed to update status.');
-                        checkbox.checked = !checkbox.checked;  // Revert checkbox state if update fails
-                    }
-                })
-                .catch(error => {
-                    console.error('Error updating status:', error);
-                    alert('An error occurred while updating status.');
-                    checkbox.checked = !checkbox.checked;  // Revert checkbox state if an error occurs
-                });
-        }
-    </script>
-}
-
-<style>
-    .switch {
-        position: relative;
-        display: inline-block;
-        width: 60px;
-        height: 34px;
-    }
-
-        .switch input {
-            display: none;
-        }
-
-    .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: #ccc;
-        transition: .4s;
-    }
-
-        .slider:before {
-            position: absolute;
-            content: "";
-            height: 26px;
-            width: 26px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-        }
-
-    input:checked + .slider {
-        background-color: #2196F3;
-    }
-
-        input:checked + .slider:before {
-            transform: translateX(26px);
-        }
-
-    .slider.round {
-        border-radius: 34px;
-    }
-
-        .slider.round:before {
-            border-radius: 50%;
-        }
-</style>
-
-
-Still not working
-Thsi are my files go through it. Check if any function is missing and look for the erros to
-MVC Controller
