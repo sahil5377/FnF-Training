@@ -1,45 +1,69 @@
-using InsuranceApi.DTOs;
-using System.Net.Http;
-using System.Text;
-using System.Text.Json;
-using System.Threading.Tasks;
-using System.Collections.Generic;
+@model List<InsuranceApi.DTOs.PolicyHolderDto>
 
-public class PolicyHolderService : IPolicyHolderService
-{
-    private readonly HttpClient _httpClient;
-
-    public PolicyHolderService(HttpClient httpClient)
-    {
-        _httpClient = httpClient;
-    }
-
-    public async Task<List<PolicyHolderDto>> GetPolicyHoldersAsync()
-    {
-        string endpoint = "PolicyHolder";
-        var response = await _httpClient.GetAsync(endpoint);
-        response.EnsureSuccessStatusCode();
-
-        var jsonResponse = await response.Content.ReadAsStringAsync();
-        var customers = JsonSerializer.Deserialize<List<PolicyHolderDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-        return customers;
-    }
-
-    public async Task<bool> UpdatePolicyHolderStatusAsync(int id, int status)
-    {
-        string endpoint = $"PolicyHolder/{id}/status";
-        var payload = new { Status = status };
-        var content = new StringContent(JsonSerializer.Serialize(payload), Encoding.UTF8, "application/json");
-
-        var response = await _httpClient.PutAsync(endpoint, content);
-
-        return response.IsSuccessStatusCode;
-    }
+@{
+    ViewData["Title"] = "Manage Customers";
 }
 
-public interface IPolicyHolderService
-{
-    Task<List<PolicyHolderDto>> GetPolicyHoldersAsync();
-    Task<bool> UpdatePolicyHolderStatusAsync(int id, int status);
+<h2>Manage Customers</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Address</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var customer in Model)
+        {
+            <tr>
+                <td>@customer.Name</td>
+                <td>@customer.Address</td>
+                <td>@customer.Phone</td>
+                <td>@customer.Email</td>
+                <td>@(customer.Status == 1 ? "Active" : "Blocked")</td>
+                <td>
+                    <button class="btn btn-primary @(customer.Status == 1 ? "disabled" : "")"
+                            onclick="confirmUpdateStatus(@customer.PolicyHolderId, 1, '@customer.Name')"
+                            @(customer.Status == 1 ? "disabled" : "")>
+                        Active
+                    </button>
+                    <button class="btn btn-secondary @(customer.Status == 0 ? "disabled" : "")"
+                            onclick="confirmUpdateStatus(@customer.PolicyHolderId, 0, '@customer.Name')"
+                            @(customer.Status == 0 ? "disabled" : "")>
+                        Block
+                    </button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts {
+    <script>
+        function confirmUpdateStatus(policyHolderId, status, name) {
+            var action = status === 1 ? "activate" : "block";
+            if (confirm("Are you sure you want to " + action + " customer " + name + "?")) {
+                updateStatus(policyHolderId, status);
+            }
+        }
+
+        function updateStatus(policyHolderId, status) {
+            $.ajax({
+                url: '@Url.Action("UpdateStatus", "PolicyHolder")',
+                type: 'POST',
+                data: { id: policyHolderId, status: status },
+                success: function () {
+                    location.reload();
+                },
+                error: function () {
+                    alert('Error updating status');
+                }
+            });
+        }
+    </script>
 }
