@@ -1,76 +1,3 @@
-<li class="nav-item dropdown">
-    <a class="nav-link dropdown-toggle" href="#" id="manageCustomersDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-        Customers
-    </a>
-    <ul class="dropdown-menu" aria-labelledby="manageCustomersDropdown">
-        <li>
-            <a class="dropdown-item" asp-controller="Customer" asp-action="ManageCustomers">Manage Customers</a>
-        </li>
-    </ul>
-</li>
-
-controller 
-using InsuranceApi.DTOs;
-using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-
-namespace YourNamespace.Controllers
-{
-    public class CustomerController : Controller
-    {
-        private readonly PolicyHolderService _policyHolderService;
-
-        public CustomerController(PolicyHolderService policyHolderService)
-        {
-            _policyHolderService = policyHolderService;
-        }
-
-        public async Task<IActionResult> ManageCustomers()
-        {
-            var policyHolders = await _policyHolderService.GetPolicyHoldersAsync();
-            return View(policyHolders);
-        }
-    }
-}
-
-
-managecustom.cshtml
-@model IEnumerable<InsuranceApi.DTOs.PolicyHolderDto>
-
-@{
-    ViewData["Title"] = "Manage Customers";
-}
-
-<h2>Manage Customers</h2>
-
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Policy Holder ID</th>
-            <th>Name</th>
-            <th>Address</th>
-            <th>Phone</th>
-            <th>Email</th>
-            <th>Status</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var holder in Model)
-        {
-            <tr>
-                <td>@holder.PolicyHolderId</td>
-                <td>@holder.Name</td>
-                <td>@holder.Address</td>
-                <td>@holder.Phone</td>
-                <td>@holder.Email</td>
-                <td>@holder.Status</td>
-            </tr>
-        }
-    </tbody>
-</table>
-
-
 using InsuranceApi.DTOs;
 using System.Net.Http;
 using System.Text.Json;
@@ -87,45 +14,14 @@ public class PolicyHolderService
 
     public async Task<List<PolicyHolderDto>> GetPolicyHoldersAsync()
     {
-        var response = await _httpClient.GetAsync("api/PolicyHolder");
+        string endpoint = "PolicyHolder";
+        var response = await _httpClient.GetAsync(endpoint);
         response.EnsureSuccessStatusCode();
 
-        var content = await response.Content.ReadAsStringAsync();
-        var policyHolders = JsonSerializer.Deserialize<List<PolicyHolderDto>>(content);
+        var jsonResponse = await response.Content.ReadAsStringAsync();
+        var customers = JsonSerializer.Deserialize<List<PolicyHolderDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
 
-        return policyHolders ?? new List<PolicyHolderDto>();
+        return customers;
     }
+   
 }
-
-
-var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-builder.Services.AddControllersWithViews();
-
-builder.Services.AddHttpClient<PolicyHolderService>(client =>
-{
-    client.BaseAddress = new Uri("https://your-api-base-url");
-});
-
-var app = builder.Build();
-
-// Configure the HTTP request pipeline.
-if (!app.Environment.IsDevelopment())
-{
-    app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
-}
-
-app.UseHttpsRedirection();
-app.UseStaticFiles();
-
-app.UseRouting();
-
-app.UseAuthorization();
-
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}");
-
-app.Run();
