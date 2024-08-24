@@ -50,43 +50,41 @@
 <style>
     .toggle-button {
         position: relative;
-        width: 80px;
+        width: 60px;
         height: 34px;
         border: none;
-        border-radius: 50px;
+        border-radius: 34px;
         cursor: pointer;
         outline: none;
+        background-color: grey; /* Default background */
         transition: background-color 0.3s;
     }
 
     .btn-primary {
         background-color: blue;
-        color: white;
     }
 
     .btn-secondary {
         background-color: grey;
-        color: white;
     }
 
     .toggle-slider {
         position: absolute;
-        top: 50%;
-        left: 4px;
-        width: 26px;
-        height: 26px;
+        top: 2px;
+        left: 2px;
+        width: 30px;
+        height: 30px;
         border-radius: 50%;
         background-color: white;
-        transform: translateY(-50%);
-        transition: transform 0.3s;
+        transition: transform 0.3s ease, background-color 0.3s ease;
     }
 
     .toggle-button.btn-primary .toggle-slider {
-        transform: translateX(46px) translateY(-50%);
+        transform: translateX(26px);
     }
 
     .toggle-button.btn-secondary .toggle-slider {
-        transform: translateX(4px) translateY(-50%);
+        transform: translateX(0);
     }
 </style>
 
