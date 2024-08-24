@@ -29,96 +29,34 @@
                 <td>@policyHolder.Email</td>
                 <td>@policyHolder.Status</td>
                 <td>
-                    <label class="switch">
-                        <input type="checkbox" id="statusToggle_@policyHolder.PolicyHolderId" 
-                               @(policyHolder.Status == 1 ? "checked" : "") 
-                               onchange="toggleStatus(@policyHolder.PolicyHolderId, this)">
-                        <span class="slider round"></span>
-                    </label>
+                    <button class="btn btn-primary" onclick="toggleStatus(@policyHolder.PolicyHolderId, @policyHolder.Status)">Action</button>
                 </td>
             </tr>
         }
     </tbody>
 </table>
 
-<style>
-    .switch {
-        position: relative;
-        display: inline-block;
-        width: 60px;
-        height: 34px;
-    }
-
-    .switch input {
-        opacity: 0;
-        width: 0;
-        height: 0;
-    }
-
-    .slider {
-        position: absolute;
-        cursor: pointer;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background-color: #ccc;
-        transition: .4s;
-    }
-
-    .slider:before {
-        position: absolute;
-        content: "";
-        height: 26px;
-        width: 26px;
-        border-radius: 50%;
-        left: 4px;
-        bottom: 4px;
-        background-color: white;
-        transition: .4s;
-    }
-
-    input:checked + .slider {
-        background-color: #2196F3;
-    }
-
-    input:checked + .slider:before {
-        transform: translateX(26px);
-    }
-
-    .slider.round {
-        border-radius: 34px;
-    }
-
-    .slider.round:before {
-        border-radius: 50%;
-    }
-</style>
-
 <script>
-    async function toggleStatus(id, checkbox) {
-        let newStatus = checkbox.checked ? 1 : 0; // Set status based on checkbox state
+    async function toggleStatus(id, currentStatus) {
+        let newStatus = currentStatus === 1 ? 0 : 1; // Assuming status is binary (active/inactive)
 
-        try {
-            const response = await fetch(`/PolicyHolder/${id}/status`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ status: newStatus }) // Ensure the payload matches the API's expected format
-            });
+        const response = await fetch(`/PolicyHolder/${id}/status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(newStatus)
+        });
 
-            if (response.ok) {
-                console.log('Status updated successfully');
-            } else {
-                console.error('Failed to update status');
-                checkbox.checked = !checkbox.checked; // Revert checkbox state if update fails
-                alert('Failed to update status');
-            }
-        } catch (error) {
-            console.error('Error occurred while updating status:', error);
-            checkbox.checked = !checkbox.checked; // Revert checkbox state if an error occurs
-            alert('Error occurred while updating status');
+        if (response.ok) {
+            location.reload(); // Reload the page to reflect changes
+        } else {
+            alert('Failed to update status');
         }
     }
 </script>
+
+In this i click on action button
+
+when status is = 0 the button should turn grey if status = 1 the button should turn blue dont change the above scrpit file just make changes in the ui
+if u make cahnge in the scrpit the staus will not get upatated
