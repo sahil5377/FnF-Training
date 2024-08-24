@@ -1,13 +1,52 @@
-[HttpPut("{id}/status")]
-public async Task<IActionResult> UpdateStatus(int id, [FromBody] int status)
+using InsuranceApi.DTOs;
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
+
+namespace WebApplication1.Controllers
 {
-    try
+    public class PolicyHolderController : Controller
     {
-        await service.UpdateStatus(id, status);
-        return Ok();
-    }
-    catch (NullReferenceException)
-    {
-        return NotFound();
+        private readonly IPolicyHolderService _policyHolderService;
+
+        public PolicyHolderController(IPolicyHolderService policyHolderService)
+        {
+            _policyHolderService = policyHolderService;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ManageCustomers()
+        {
+            var policyHolders = await _policyHolderService.GetPolicyHoldersAsync();
+            return View(policyHolders);
+        }
+
+        // New action method for updating status
+        [HttpPost]
+        public async Task<IActionResult> UpdateStatus(int id, int status)
+        {
+            if (id <= 0 || (status != 0 && status != 1))
+            {
+                return BadRequest("Invalid request parameters.");
+            }
+
+            try
+            {
+                // Call the service to update the status
+                bool result = await _policyHolderService.UpdatePolicyHolderStatusAsync(id, status);
+                if (result)
+                {
+                    return Ok();
+                }
+                else
+                {
+                    return StatusCode(500, "Error updating status.");
+                }
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions, log error
+                return StatusCode(500, "An error occurred: " + ex.Message);
+            }
+        }
     }
 }
