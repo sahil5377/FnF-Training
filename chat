@@ -27,12 +27,12 @@
                 <td>@policyHolder.Address</td>
                 <td>@policyHolder.Phone</td>
                 <td>@policyHolder.Email</td>
-                <td>
-                    <span class="status-text">@((policyHolder.Status == 1) ? "Active" : "Blocked")</span>
-                </td>
+                <td>@policyHolder.Status</td>
                 <td>
                     <label class="switch">
-                        <input type="checkbox" onchange="toggleStatus(@policyHolder.PolicyHolderId, this)" @(policyHolder.Status == 1 ? "checked" : "")>
+                        <input type="checkbox" id="statusToggle_@policyHolder.PolicyHolderId" 
+                               @(policyHolder.Status == 1 ? "checked" : "") 
+                               onchange="toggleStatus(@policyHolder.PolicyHolderId, this)">
                         <span class="slider round"></span>
                     </label>
                 </td>
@@ -40,29 +40,6 @@
         }
     </tbody>
 </table>
-
-@section Scripts {
-    <script>
-        async function toggleStatus(id, checkbox) {
-            let status = checkbox.checked ? 1 : 0; // Convert checkbox state to status value
-
-            const response = await fetch(`/api/PolicyHolder/${id}/status`, {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(status) // Send status as an integer
-            });
-
-            if (response.ok) {
-                checkbox.closest('tr').querySelector('.status-text').textContent = checkbox.checked ? "Active" : "Blocked";
-            } else {
-                alert('Failed to update status');
-                checkbox.checked = !checkbox.checked; // Revert checkbox state if update fails
-            }
-        }
-    </script>
-}
 
 <style>
     .switch {
@@ -117,3 +94,24 @@
         border-radius: 50%;
     }
 </style>
+
+<script>
+    async function toggleStatus(id, checkbox) {
+        let newStatus = checkbox.checked ? 1 : 0; // Set status based on checkbox state
+
+        const response = await fetch(`/PolicyHolder/${id}/status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(newStatus)
+        });
+
+        if (response.ok) {
+            // Optionally, you can update the UI or notify the user
+        } else {
+            alert('Failed to update status');
+            checkbox.checked = !checkbox.checked; // Revert checkbox state if update fails
+        }
+    }
+</script>
