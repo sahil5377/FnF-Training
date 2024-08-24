@@ -1,53 +1,57 @@
-@inherits LayoutComponentBase
-<link rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css"
-      integrity="sha384-B4gt1jrGC7Jh4AgTPSdUtOBvfO8sh+5n5z5ta3FX7jB4I6bzdu16f7A5t5F5Fj2xj"
-      crossorigin="anonymous" />
+@model List<InsuranceApi.DTOs.PolicyHolderDto>
 
- 
-    <header>
-
-<div class="top">
-<a class="m-3">
-<i></i>Welcome to FNFI Training!
-</a>
-<a class="m-3">
-<i class="fa fa-dashboard"></i>Hi Trainer!
-</a>
- 
-            <a class="m-3">About</a>
- 
-            <a class="m-3">Logout</a>
- 
-        </div>
-</header>
- 
- 
-<div>
- 
-    <main>
-        @Body
- 
- 
-    </main>
-</div>
- 
-<div>
-<footer>
-<i>&copy; 2012 - 2024 Fidelity National Financial<br>All rights reserved.</i>
-</footer>
-
-footer {
-    width: 100%;
-    bottom: 0;
-    background-color: #375b8a;
-    padding: 20px;
-    text-align: center;
-    color: white;
+@{
+    ViewData["Title"] = "Manage Customers";
 }
-header {
-    color: white;
-    width: 100%;
-    padding: 20px;
-    background-color: #375b8a;
-}
+
+<h2>Manage Customers</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Policy Holder ID</th>
+            <th>Name</th>
+            <th>Address</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var policyHolder in Model)
+        {
+            <tr>
+                <td>@policyHolder.PolicyHolderId</td>
+                <td>@policyHolder.Name</td>
+                <td>@policyHolder.Address</td>
+                <td>@policyHolder.Phone</td>
+                <td>@policyHolder.Email</td>
+                <td>@policyHolder.Status</td>
+                <td>
+                    <button class="btn btn-primary" onclick="toggleStatus(@policyHolder.PolicyHolderId, @policyHolder.Status)">Action</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<script>
+    async function toggleStatus(id, currentStatus) {
+        let newStatus = currentStatus === 1 ? 0 : 1; // Assuming status is binary (active/inactive)
+
+        const response = await fetch(`/PolicyHolder/${id}/status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(newStatus)
+        });
+
+        if (response.ok) {
+            location.reload(); // Reload the page to reflect changes
+        } else {
+            alert('Failed to update status');
+        }
+    }
+</script>
