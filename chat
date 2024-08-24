@@ -1,124 +1,39 @@
-using InsuranceApi.Data;
 using InsuranceApi.DTOs;
-using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
+using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using WebApplication1.Services;
 
-namespace InsuranceApi.Services
+namespace WebApplication1.Controllers
 {
-    public interface IPolicyHolderService
+    [EnableCors("AllowSpecificOrigin")]  // Ensure CORS policy is applied
+    public class CustomerController : Controller
     {
-        Task Add(PolicyHolderDto policyHolderDto);
-        Task Delete(int id);
-        Task<List<PolicyHolderDto>> GetAll();
-        Task<PolicyHolderDto> GetById(int id);
-        Task Update(PolicyHolderDto policyHolderDto);
-        Task UpdateStatus(int id, int status);
-    }
+        private readonly PolicyHolderService _policyHolderService;
 
-    public class PolicyHolderService : IPolicyHolderService
-    {
-        private readonly FnfProjectContext context;
-
-        public PolicyHolderService(FnfProjectContext context)
+        public CustomerController(PolicyHolderService policyHolderService)
         {
-            this.context = context;
+            _policyHolderService = policyHolderService;
         }
 
-        public async Task<List<PolicyHolderDto>> GetAll()
+        public async Task<IActionResult> ManageCustomers()
         {
-            List<PolicyHolderDto> policyHolderDtos = new List<PolicyHolderDto>();
-            await foreach (var policyHolderTable in context.PolicyHolders)
+            var policyHolders = await _policyHolderService.GetPolicyHoldersAsync();
+            return View(policyHolders);
+        }
+
+        [HttpPut]
+        [Route("PolicyHolder/{id}/status")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] int status)
+        {
+            try
             {
-                var policyHolderDto = ConvertToDto(policyHolderTable);
-                policyHolderDtos.Add(policyHolderDto);
+                await _policyHolderService.UpdateStatusAsync(id, status);
+                return Ok();
             }
-            return policyHolderDtos;
-        }
-
-        public async Task Delete(int id)
-        {
-            var found = await context.PolicyHolders.FirstOrDefaultAsync((policyHolderTable) =>
-                policyHolderTable.PolicyHolderId == id);
-            if (found != null)
+            catch
             {
-                context.PolicyHolders.Remove(found);
-                await context.SaveChangesAsync();
-                return;
+                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while updating the status.");
             }
-            throw new NullReferenceException();
-        }
-
-        public async Task Add(PolicyHolderDto policyHolderDto)
-        {
-            PolicyHolder policyHolderTable = new();
-            ConvertToTable(policyHolderDto, policyHolderTable);
-            context.PolicyHolders.Add(policyHolderTable);
-            await context.SaveChangesAsync();
-            return;
-        }
-
-        public async Task Update(PolicyHolderDto policyHolderDto)
-        {
-            var found = await context.PolicyHolders.FirstOrDefaultAsync((policyHolderTable) =>
-                policyHolderTable.PolicyHolderId == policyHolderDto.PolicyHolderId);
-            if (found != null)
-            {
-                ConvertToTable(policyHolderDto, found);
-                await context.SaveChangesAsync();
-                return;
-            }
-            throw new NullReferenceException();
-        }
-
-        public async Task<PolicyHolderDto> GetById(int id)
-        {
-            var found = await context.PolicyHolders.FirstOrDefaultAsync((policyHolderTable) =>
-                policyHolderTable.PolicyHolderId == id);
-
-            if (found != null)
-                return ConvertToDto(found);
-
-            throw new NullReferenceException();
-        }
-
-        public async Task UpdateStatus(int id, int status)
-        {
-            var found = await context.PolicyHolders.FirstOrDefaultAsync(ph => ph.PolicyHolderId == id);
-            if (found != null)
-            {
-                found.Status = status;
-                await context.SaveChangesAsync();
-                return;
-            }
-            throw new NullReferenceException();
-        }
-
-        private PolicyHolderDto ConvertToDto(PolicyHolder policyHolderTable)
-        {
-            PolicyHolderDto policyHolderDto = new()
-            {
-                PolicyHolderId = policyHolderTable.PolicyHolderId,
-                Name = policyHolderTable.Name,
-                Address = policyHolderTable.Address,
-                Email = policyHolderTable.Email,
-                PasswordHash = policyHolderTable.PasswordHash,
-                Phone = policyHolderTable.Phone,
-                Status = policyHolderTable.Status,
-            };
-            return policyHolderDto;
-        }
-
-        private void ConvertToTable(PolicyHolderDto policyHolderDto, PolicyHolder policyHolderTable)
-        {
-            policyHolderTable.PolicyHolderId = policyHolderDto.PolicyHolderId;
-            policyHolderTable.Name = policyHolderDto.Name;
-            policyHolderTable.Address = policyHolderDto.Address;
-            policyHolderTable.Email = policyHolderDto.Email;
-            policyHolderTable.PasswordHash = policyHolderDto.PasswordHash;
-            policyHolderTable.Phone = policyHolderDto.Phone;
-            policyHolderTable.Status = policyHolderDto.Status;
-            return;
         }
     }
 }
