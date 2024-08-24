@@ -1,91 +1,37 @@
-using InsuranceApi.Data;
 using InsuranceApi.DTOs;
+using InsuranceApi.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 
-namespace InsuranceApi.Controllers
+namespace WebApplication1.Controllers
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class PolicyHolderController : ControllerBase
+    public class CustomerController : Controller
     {
-        private readonly IPolicyHolderService _service;
+        private readonly PolicyHolderService _policyHolderService;
 
-        public PolicyHolderController(IPolicyHolderService service)
+        public CustomerController(PolicyHolderService policyHolderService)
         {
-            _service = service;
+            _policyHolderService = policyHolderService;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> ManageCustomers()
         {
-            List<PolicyHolderDto> policyHolderDtos = await _service.GetAll();
-            return Ok(policyHolderDtos);
-        }
-
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id)
-        {
-            try
-            {
-                var found = await _service.GetById(id);
-                return Ok(found);
-            }
-            catch (NullReferenceException)
-            {
-                return NotFound();
-            }
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Add(PolicyHolderDto policyHolderDto)
-        {
-            await _service.Add(policyHolderDto);
-            return Ok();
+            var policyHolders = await _policyHolderService.GetPolicyHoldersAsync();
+            return View(policyHolders);
         }
 
         [HttpPut]
-        public async Task<IActionResult> Update(PolicyHolderDto policyHolderDto)
+        [Route("api/PolicyHolder/{id}/status")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] int status)
         {
             try
             {
-                await _service.Update(policyHolderDto);
+                await _policyHolderService.UpdateStatusAsync(id, status);
                 return Ok();
             }
-            catch (NullReferenceException)
+            catch
             {
-                return NotFound();
-            }
-        }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            try
-            {
-                await _service.Delete(id);
-                return Ok();
-            }
-            catch (NullReferenceException)
-            {
-                return NotFound();
-            }
-        }
-
-        [HttpPut("{id}/status")]
-        public async Task<IActionResult> UpdateStatus(int id, [FromBody] JsonElement jsonElement)
-        {
-            try
-            {
-                var status = jsonElement.GetInt32();
-                await _service.UpdateStatus(id, status);
-                return Ok();
-            }
-            catch (NullReferenceException)
-            {
-                return NotFound();
+                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while updating the status.");
             }
         }
     }
