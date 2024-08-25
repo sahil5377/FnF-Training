@@ -76,3 +76,26 @@
         }
     </script>
 }
+
+
+@model WebApplication1.Controllers.ReviewPolicyRequestViewModel
+
+<div>
+    <p><strong>Policy Holder Name:</strong> @Model.PolicyHolderName</p>
+    <p><strong>Insured ID:</strong> @Model.InsuredId</p>
+    <p><strong>Insured Policy ID:</strong> @Model.InsuredPolicyId</p>
+    <p><strong>Policy ID:</strong> @Model.PolicyId</p>
+    <p><strong>Admin ID:</strong> @Model.AdminId</p>
+    <p><strong>Premium Amount:</strong> @Model.PremiumAmount</p>
+    <p><strong>Payment ID:</strong> @Model.PaymentId</p>
+    <p><strong>Payment Amount:</strong> @Model.PaymentAmount</p>
+    <p><strong>Payment Date:</strong> @Model.PaymentDate?.ToString("yyyy-MM-dd")</p>
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn btn-success" onclick="updateApprovalStatus(@Model.InsuredPolicyId, 'Approved')">Approve</button>
+    <button type="button" class="btn btn-danger" onclick="updateApprovalStatus(@Model.InsuredPolicyId, 'Rejected')">Reject</button>
+    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+</div>
+
+this are my files make changes in this
