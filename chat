@@ -1,12 +1,6 @@
-using Microsoft.AspNetCore.Mvc;
-
-namespace WebApplication1.Controllers
-{
-    public class PolicyRequestController : Controller
-    {
-        public IActionResult Index()
-        {
-            return View();
-        }
-    }
+@{
+    ViewData["Title"] = "Policy Request";
 }
+
+<h2>Policy Request</h2>
+<p>Here you can manage policy requests.</p>
