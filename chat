@@ -1,34 +1,51 @@
-public async Task<IActionResult> Review(int insuredPolicyId)
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
+
+namespace WebApplication1.Controllers
 {
-    // Attempt to retrieve the insured policy
-    var insuredPolicy = await policyRequestService.GetInsuredPolicyAsync(insuredPolicyId);
-    
-    // Check if the insuredPolicy object is null
-    if (insuredPolicy == null)
+    public class PolicyRequestController : Controller
     {
-        // Handle the null case - you could return a NotFound result or a specific error view
-        return NotFound("Policy not found.");
+        private readonly IPolicyRequestService _policyRequestService;
+
+        // Constructor for Dependency Injection
+        public PolicyRequestController(IPolicyRequestService policyRequestService)
+        {
+            _policyRequestService = policyRequestService;
+        }
+
+        public async Task<IActionResult> Review(int insuredPolicyId)
+        {
+            // Attempt to retrieve the insured policy
+            var insuredPolicy = await _policyRequestService.GetInsuredPolicyAsync(insuredPolicyId);
+
+            // Check if the insuredPolicy object is null
+            if (insuredPolicy == null)
+            {
+                // Handle the null case - you could return a NotFound result or a specific error view
+                return NotFound("Policy not found.");
+            }
+
+            // Proceed if insuredPolicy is not null
+            var policyHolder = await _policyRequestService.GetPolicyHolderAsync(insuredPolicy.InsuredId);
+
+            // Check if the policyHolder object is null
+            if (policyHolder == null)
+            {
+                return NotFound("Policy holder not found.");
+            }
+
+            var viewModel = new PolicyRequestViewModel
+            {
+                InsuredPolicyId = insuredPolicy.InsuredPolicyId,
+                InsuredId = insuredPolicy.InsuredId,
+                PolicyId = insuredPolicy.PolicyId,
+                PolicyHolderId = insuredPolicy.PolicyHolderId,
+                Name = policyHolder.Name,
+                ApprovalStatus = insuredPolicy.ApprovalStatus,
+                ApprovalDate = insuredPolicy.ApprovalDate
+            };
+
+            return View(viewModel);
+        }
     }
-
-    // Proceed if insuredPolicy is not null
-    var policyHolder = await policyRequestService.GetPolicyHolderAsync(insuredPolicy.InsuredId);
-
-    // Check if the policyHolder object is null
-    if (policyHolder == null)
-    {
-        return NotFound("Policy holder not found.");
-    }
-
-    var viewModel = new PolicyRequestViewModel
-    {
-        InsuredPolicyId = insuredPolicy.InsuredPolicyId,
-        InsuredId = insuredPolicy.InsuredId,
-        PolicyId = insuredPolicy.PolicyId,
-        PolicyHolderId = insuredPolicy.PolicyHolderId,
-        Name = policyHolder.Name,
-        ApprovalStatus = insuredPolicy.ApprovalStatus,
-        ApprovalDate = insuredPolicy.ApprovalDate
-    };
-
-    return View(viewModel);
 }
