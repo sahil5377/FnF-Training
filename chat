@@ -1,13 +1,59 @@
 using InsuranceApi.DTOs;
-using System.Collections.Generic;
+using Microsoft.AspNetCore.Mvc;
 using System.Threading.Tasks;
+using WebApplication1.Services;
 
-namespace WebApplication1.Services
+namespace WebApplication1.Controllers
 {
-    public interface IInsuranceService
+    public class PlansController : Controller
     {
-        Task<List<InsuranceTypeDto>> GetActivePlansAsync();
-        Task<bool> AddPlanAsync(InsuranceTypeDto newPlan);
-        Task<bool> DeletePlanAsync(int id);
+        private readonly IInsuranceService _insuranceService;
+
+        public PlansController(IInsuranceService insuranceService)
+        {
+            _insuranceService = insuranceService;
+        }
+
+        public IActionResult ManagePlans()
+        {
+            return View();
+        }
+
+        public async Task<IActionResult> ViewActivePlans()
+        {
+            var activePlans = await _insuranceService.GetActivePlansAsync();
+            return View(activePlans);
+        }
+
+        public async Task<IActionResult> AddNewPlan(InsuranceTypeDto newPlan)
+        {
+            if (newPlan != null && ModelState.IsValid)
+            {
+                bool success = await _insuranceService.AddPlanAsync(newPlan);
+                if (success)
+                {
+                    return RedirectToAction("ViewActivePlans");
+                }
+                else
+                {
+                    ModelState.AddModelError("", "Failed to add new plan");
+                }
+            }
+            return View(newPlan);
+        }
+
+        [HttpDelete]
+        public async Task<IActionResult> Delete(int id)
+        {
+            bool success = await _insuranceService.DeletePlanAsync(id);
+            if (success)
+            {
+                return Ok();
+            }
+            else
+            {
+                return BadRequest();
+            }
+        }
     }
 }
