@@ -7,7 +7,7 @@ namespace WebApplication1.Controllers
     {
         private readonly IPolicyRequestService _policyRequestService;
 
-        // Constructor for Dependency Injection
+        // Correct constructor for dependency injection
         public PolicyRequestController(IPolicyRequestService policyRequestService)
         {
             _policyRequestService = policyRequestService;
@@ -15,17 +15,17 @@ namespace WebApplication1.Controllers
 
         public async Task<IActionResult> Review(int insuredPolicyId)
         {
-            // Attempt to retrieve the insured policy
+            // Use await to properly retrieve the insured policy asynchronously
             var insuredPolicy = await _policyRequestService.GetInsuredPolicyAsync(insuredPolicyId);
 
             // Check if the insuredPolicy object is null
             if (insuredPolicy == null)
             {
-                // Handle the null case - you could return a NotFound result or a specific error view
+                // Return NotFound result if no policy is found
                 return NotFound("Policy not found.");
             }
 
-            // Proceed if insuredPolicy is not null
+            // Use await to properly retrieve the policy holder asynchronously
             var policyHolder = await _policyRequestService.GetPolicyHolderAsync(insuredPolicy.InsuredId);
 
             // Check if the policyHolder object is null
@@ -34,6 +34,7 @@ namespace WebApplication1.Controllers
                 return NotFound("Policy holder not found.");
             }
 
+            // Create and return a view model
             var viewModel = new PolicyRequestViewModel
             {
                 InsuredPolicyId = insuredPolicy.InsuredPolicyId,
