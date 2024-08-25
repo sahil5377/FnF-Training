@@ -1,29 +1,24 @@
-using InsuranceApi.DTOs;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Threading.Tasks;
+@model List<InsuranceApi.DTOs.InsuranceTypeDto>
 
-namespace WebApplication1.Services
-{
-    public class InsuranceService : IInsuranceService
-    {
-        private readonly HttpClient _httpClient;
-
-        public InsuranceService(HttpClient httpClient)
-        {
-            _httpClient = httpClient;
-        }
-
-        public async Task<List<InsuranceTypeDto>> GetActivePlansAsync()
-        {
-            var response = await _httpClient.GetAsync("InsuranceTypes"); // Ensure your API endpoint matches
-            if (response.IsSuccessStatusCode)
-            {
-                var plans = await response.Content.ReadFromJsonAsync<List<InsuranceTypeDto>>();
-                return plans ?? new List<InsuranceTypeDto>();
-            }
-            return new List<InsuranceTypeDto>();
-        }
-    }
+@{
+    ViewData["Title"] = "View Active Plans";
 }
+
+<h2>Active Plans</h2>
+
+<div class="row">
+    @foreach (var plan in Model)
+    {
+        <div class="col-md-3 mb-4">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title">@plan.InsuranceType</h5>
+                    <p class="card-text">@plan.Description</p>
+                    <p class="card-text"><strong>Base Rate:</strong> @plan.BaseRate</p>
+                    <p class="card-text"><strong>Coverage Size:</strong> @plan.CoverageSize</p>
+                    <a href="#" class="btn btn-primary">Details</a>
+                </div>
+            </div>
+        </div>
+    }
+</div>
