@@ -1,6 +1,75 @@
-@{
-    ViewData["Title"] = "Policy Request";
+Your Next task is to get the data from the back end(Swagger) running behind the backend
+This task is very difficult
+
+A Customer will buy the policy and the following details in the form of the table and it will come and i am the admin for me its comes for approval (ApprovalStatus) 
+From this table Approval satus (Withdraw, Approved, Rejected, Pedning)
+In the table only insuredpolicyid, insuredid,policyid,PolicyHolderID,Name, Approval status and dateTime should be shown.
+*Where pending should be deafult staus
+*Admin should able to accept and reject the policy
+*There will be one action button Review 
+*After Clicking on Review i should get a pop up window and  i should able to see all the deatils in that -> PolicyHolder-name,Insured Id, InsuredPolicyId, PolicyId, AdminId and admin name
+primeium amoumnt, Payment id, Paymentamount,PAyment date 
+*Inside review there will be two buttons approve and reject this twpo buttons should reflect the staus approval status dynamically
+
+
+There mutiplr tables in one api running behind
+
+For complete details use this table
+namespace InsuranceApi.DTOs
+{
+    public class InsuredPolicyDto
+    {
+        public int InsuredPolicyId { get; set; }
+        public int InsuredId { get; set; }
+        public int PolicyId { get; set; }
+        public string ApprovalStatus { get; set; } = null!;
+        public string RenewalStatus { get; set; } = null!;
+        public int AdminId { get; set; }
+        public DateTime? ApprovalDate { get; set; }
+    }
 }
 
-<h2>Policy Request</h2>
-<p>Here you can manage policy requests.</p>
+For customer(PolicyHolder) use this table
+namespace InsuranceApi.DTOs
+{
+    public class PolicyHolderDto
+    {
+        public int PolicyHolderId { get; set; }
+        public string Name { get; set; } = null!;
+        public string Address { get; set; } = null!;
+        public string Phone { get; set; } = null!;
+        public string Email { get; set; } = null!;
+        public int Status { get; set; }
+    }
+}
+
+Policy purchase table
+namespace InsuranceApi.DTOs
+{
+    public class PolicyDto
+    {
+        public int PolicyId { get; set; }
+        public string PolicyNumber { get; set; } = null!;
+        public int InsuranceTypeId { get; set; }
+        public DateTime StartDate { get; set; }
+        public DateTime EndDate { get; set; }
+        public decimal PremiumAmount { get; set; }
+    }
+}
+
+Payment table for payment things
+
+namespace InsuranceApi.DTOs
+{
+    public class PaymentDto
+    {
+        public int PaymentId { get; set; }
+        public int InsuredPolicyId { get; set; }
+        public int PolicyHolderId { get; set; }
+        public DateTime PaymentDate { get; set; }
+        public decimal PaymentAmount { get; set; }
+    }
+}
+
+
+*All the tables should be interconnect all the changes made should dynamically refelect in the database
