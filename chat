@@ -1,6 +1,7 @@
-Your Next task is to get the data from the back end(Swagger) running behind the backend
+Your Next task is when i click on Policy Request it should get the data from the back end(Swagger) running behind the backend
 This task is very difficult
 
+IT SHOULD GET THE FOLLWOING FUNCTIONALITY
 A Customer will buy the policy and the following details in the form of the table and it will come and i am the admin for me its comes for approval (ApprovalStatus) 
 From this table Approval satus (Withdraw, Approved, Rejected, Pedning)
 In the table only insuredpolicyid, insuredid,policyid,PolicyHolderID,Name, Approval status and dateTime should be shown.
