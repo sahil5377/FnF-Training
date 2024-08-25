@@ -1,22 +1,5 @@
 using InsuranceApi.DTOs;
 using System.Collections.Generic;
-using System.Threading.Tasks;
-
-namespace WebApplication1.Services
-{
-    public interface IPolicyRequestService
-    {
-        Task<List<InsuredPolicyDto>> GetPendingPolicyRequestsAsync();
-        Task<PolicyHolderDto> GetPolicyHolderDetailsAsync(int policyHolderId);
-        Task<PolicyDto> GetPolicyDetailsAsync(int policyId);
-        Task<PaymentDto> GetPaymentDetailsAsync(int insuredPolicyId);
-        Task<bool> UpdateApprovalStatusAsync(int insuredPolicyId, string status, int adminId);
-    }
-}
-
-
-using InsuranceApi.DTOs;
-using System.Collections.Generic;
 using System.Net.Http;
 using System.Net.Http.Json;
 using System.Text.Json;
@@ -33,51 +16,65 @@ namespace WebApplication1.Services
             _httpClient = httpClient;
         }
 
-        public async Task<List<InsuredPolicyDto>> GetPendingPolicyRequestsAsync()
+        public async Task<List<InsuredPolicyDto>> GetInsuredPoliciesAsync()
         {
             var response = await _httpClient.GetAsync("InsuredPolicy");
             response.EnsureSuccessStatusCode();
-
-            var jsonResponse = await response.Content.ReadAsStringAsync();
-            var policyRequests = JsonSerializer.Deserialize<List<InsuredPolicyDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            return policyRequests?.FindAll(p => p.ApprovalStatus == "Pending");
+            return await response.Content.ReadFromJsonAsync<List<InsuredPolicyDto>>();
         }
 
-        public async Task<PolicyHolderDto> GetPolicyHolderDetailsAsync(int policyHolderId)
+        public async Task<PolicyHolderDto> GetPolicyHolderAsync(int policyHolderId)
         {
             var response = await _httpClient.GetAsync($"PolicyHolder/{policyHolderId}");
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadFromJsonAsync<PolicyHolderDto>();
         }
 
-        public async Task<PolicyDto> GetPolicyDetailsAsync(int policyId)
+        public async Task<PolicyDto> GetPolicyAsync(int policyId)
         {
             var response = await _httpClient.GetAsync($"Policy/{policyId}");
             response.EnsureSuccessStatusCode();
             return await response.Content.ReadFromJsonAsync<PolicyDto>();
         }
 
-        public async Task<PaymentDto> GetPaymentDetailsAsync(int insuredPolicyId)
+        public async Task<List<PaymentDto>> GetPaymentsByInsuredPolicyIdAsync(int insuredPolicyId)
         {
-            var response = await _httpClient.GetAsync($"Payment/{insuredPolicyId}");
+            var response = await _httpClient.GetAsync($"Payment?insuredPolicyId={insuredPolicyId}");
             response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<PaymentDto>();
+            return await response.Content.ReadFromJsonAsync<List<PaymentDto>>();
         }
 
-        public async Task<bool> UpdateApprovalStatusAsync(int insuredPolicyId, string status, int adminId)
+        public async Task<bool> UpdateApprovalStatusAsync(int insuredPolicyId, string approvalStatus)
         {
-            var requestBody = new { InsuredPolicyId = insuredPolicyId, ApprovalStatus = status, AdminId = adminId };
-            var response = await _httpClient.PutAsJsonAsync("InsuredPolicy", requestBody);
+            var content = JsonContent.Create(new { ApprovalStatus = approvalStatus });
+            var response = await _httpClient.PutAsync($"InsuredPolicy/{insuredPolicyId}/ApprovalStatus", content);
             return response.IsSuccessStatusCode;
         }
     }
 }
 
 
+using InsuranceApi.DTOs;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace WebApplication1.Services
+{
+    public interface IPolicyRequestService
+    {
+        Task<List<InsuredPolicyDto>> GetInsuredPoliciesAsync();
+        Task<PolicyHolderDto> GetPolicyHolderAsync(int policyHolderId);
+        Task<PolicyDto> GetPolicyAsync(int policyId);
+        Task<List<PaymentDto>> GetPaymentsByInsuredPolicyIdAsync(int insuredPolicyId);
+        Task<bool> UpdateApprovalStatusAsync(int insuredPolicyId, string approvalStatus);
+    }
+}
+
 
 using InsuranceApi.DTOs;
 using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using WebApplication1.Services;
 
@@ -94,39 +91,80 @@ namespace WebApplication1.Controllers
 
         public async Task<IActionResult> Index()
         {
-            var pendingRequests = await _policyRequestService.GetPendingPolicyRequestsAsync();
-            return View(pendingRequests);
-        }
+            var insuredPolicies = await _policyRequestService.GetInsuredPoliciesAsync();
 
-        public async Task<IActionResult> Review(int id)
-        {
-            var policyRequest = await _policyRequestService.GetPendingPolicyRequestsAsync();
-            var request = policyRequest.Find(p => p.InsuredPolicyId == id);
-
-            var policyHolder = await _policyRequestService.GetPolicyHolderDetailsAsync(request.PolicyHolderId);
-            var policyDetails = await _policyRequestService.GetPolicyDetailsAsync(request.PolicyId);
-            var paymentDetails = await _policyRequestService.GetPaymentDetailsAsync(request.InsuredPolicyId);
-
-            var model = new ReviewPolicyRequestViewModel
+            var policyRequests = new List<PolicyRequestViewModel>();
+            foreach (var policy in insuredPolicies)
             {
-                PolicyHolder = policyHolder,
-                Policy = policyDetails,
-                Payment = paymentDetails,
-                InsuredPolicy = request
-            };
-
-            return PartialView("_ReviewPolicyRequest", model);
-        }
-
-        public async Task<IActionResult> UpdateStatus(int id, string status)
-        {
-            bool success = await _policyRequestService.UpdateApprovalStatusAsync(id, status, /* AdminId */ 1);
-            if (success)
-            {
-                return Json(new { success = true });
+                var policyHolder = await _policyRequestService.GetPolicyHolderAsync(policy.InsuredId);
+                policyRequests.Add(new PolicyRequestViewModel
+                {
+                    InsuredPolicyId = policy.InsuredPolicyId,
+                    InsuredId = policy.InsuredId,
+                    PolicyId = policy.PolicyId,
+                    PolicyHolderId = policyHolder.PolicyHolderId,
+                    Name = policyHolder.Name,
+                    ApprovalStatus = policy.ApprovalStatus,
+                    ApprovalDate = policy.ApprovalDate
+                });
             }
 
-            return Json(new { success = false });
+            return View(policyRequests);
         }
+
+        public async Task<IActionResult> Review(int insuredPolicyId)
+        {
+            var insuredPolicy = (await _policyRequestService.GetInsuredPoliciesAsync())
+                .FirstOrDefault(p => p.InsuredPolicyId == insuredPolicyId);
+            var policyHolder = await _policyRequestService.GetPolicyHolderAsync(insuredPolicy.InsuredId);
+            var policy = await _policyRequestService.GetPolicyAsync(insuredPolicy.PolicyId);
+            var payments = await _policyRequestService.GetPaymentsByInsuredPolicyIdAsync(insuredPolicy.InsuredPolicyId);
+
+            var viewModel = new ReviewPolicyRequestViewModel
+            {
+                PolicyHolderName = policyHolder.Name,
+                InsuredId = insuredPolicy.InsuredId,
+                InsuredPolicyId = insuredPolicy.InsuredPolicyId,
+                PolicyId = insuredPolicy.PolicyId,
+                AdminId = insuredPolicy.AdminId,
+                PremiumAmount = policy.PremiumAmount,
+                PaymentId = payments.FirstOrDefault()?.PaymentId ?? 0,
+                PaymentAmount = payments.FirstOrDefault()?.PaymentAmount ?? 0,
+                PaymentDate = payments.FirstOrDefault()?.PaymentDate ?? null
+            };
+
+            return PartialView("_ReviewPolicyRequest", viewModel);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateApprovalStatus(int insuredPolicyId, string status)
+        {
+            var success = await _policyRequestService.UpdateApprovalStatusAsync(insuredPolicyId, status);
+            return Json(new { success });
+        }
+    }
+
+    public class PolicyRequestViewModel
+    {
+        public int InsuredPolicyId { get; set; }
+        public int InsuredId { get; set; }
+        public int PolicyId { get; set; }
+        public int PolicyHolderId { get; set; }
+        public string Name { get; set; }
+        public string ApprovalStatus { get; set; }
+        public DateTime? ApprovalDate { get; set; }
+    }
+
+    public class ReviewPolicyRequestViewModel
+    {
+        public string PolicyHolderName { get; set; }
+        public int InsuredId { get; set; }
+        public int InsuredPolicyId { get; set; }
+        public int PolicyId { get; set; }
+        public int AdminId { get; set; }
+        public decimal PremiumAmount { get; set; }
+        public int PaymentId { get; set; }
+        public decimal PaymentAmount { get; set; }
+        public DateTime? PaymentDate { get; set; }
     }
 }
