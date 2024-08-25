@@ -1,75 +1,16 @@
 using InsuranceApi.DTOs;
-using InsuranceApi.Services;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
-namespace InsuranceApi.Controllers
+namespace InsuranceApi.Services
 {
-    [Route("api/[controller]")]
-    [ApiController]
-    public class InsuredPolicyController : ControllerBase
+    public interface IInsuredPolicyService
     {
-        private readonly IInsuredPolicyService _service;
-
-        public InsuredPolicyController(IInsuredPolicyService service)
-        {
-            _service = service;
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> GetAll()
-        {
-            var insuredPolicyDtos = await _service.GetAll();
-            return Ok(insuredPolicyDtos);
-        }
-
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
-        {
-            try
-            {
-                await _service.Delete(id);
-                return Ok();
-            }
-            catch (NullReferenceException)
-            {
-                return NotFound();
-            }
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Add(InsuredPolicyDto insuredPolicyDto)
-        {
-            await _service.Add(insuredPolicyDto);
-            return Ok();
-        }
-
-        [HttpPut("{id}")]
-        public async Task<IActionResult> Update(int id, [FromBody] string approvalStatus)
-        {
-            try
-            {
-                await _service.UpdateApprovalStatus(id, approvalStatus);
-                return Ok();
-            }
-            catch (NullReferenceException)
-            {
-                return NotFound();
-            }
-        }
-
-        [HttpGet("{id}/details")]
-        public async Task<IActionResult> GetPolicyDetails(int id)
-        {
-            try
-            {
-                var details = await _service.GetPolicyDetails(id);
-                return Ok(details);
-            }
-            catch (NullReferenceException)
-            {
-                return NotFound();
-            }
-        }
+        Task Add(InsuredPolicyDto insuredPolicyDto);
+        Task Delete(int id);
+        Task<List<InsuredPolicyDto>> GetAll();
+        Task<InsuredPolicyDto> GetById(int id);
+        Task UpdateApprovalStatus(int id, string approvalStatus);
+        Task<InsuredPolicyDetailsDto> GetPolicyDetails(int id);
     }
 }
