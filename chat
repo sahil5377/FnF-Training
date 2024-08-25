@@ -1,85 +1,34 @@
-@model IEnumerable<WebApplication1.Controllers.PolicyRequestViewModel>
+public async Task<IActionResult> Review(int insuredPolicyId)
+{
+    // Attempt to retrieve the insured policy
+    var insuredPolicy = await policyRequestService.GetInsuredPolicyAsync(insuredPolicyId);
+    
+    // Check if the insuredPolicy object is null
+    if (insuredPolicy == null)
+    {
+        // Handle the null case - you could return a NotFound result or a specific error view
+        return NotFound("Policy not found.");
+    }
 
-@{
-    ViewData["Title"] = "Policy Requests";
-}
+    // Proceed if insuredPolicy is not null
+    var policyHolder = await policyRequestService.GetPolicyHolderAsync(insuredPolicy.InsuredId);
 
-<h2>Policy Requests</h2>
+    // Check if the policyHolder object is null
+    if (policyHolder == null)
+    {
+        return NotFound("Policy holder not found.");
+    }
 
-<table class="table">
-    <thead>
-        <tr>
-            <th>Insured Policy ID</th>
-            <th>Name</th>
-            <th>Current Approval Status</th>
-            <th>Action</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@item.InsuredPolicyId</td>
-                <td>@item.Name</td>
-                <td>@item.ApprovalStatus</td>
-                <td>
-                    <a href="@Url.Action("Review", "PolicyRequest", new { id = item.InsuredPolicyId })" class="btn btn-primary">Review</a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+    var viewModel = new PolicyRequestViewModel
+    {
+        InsuredPolicyId = insuredPolicy.InsuredPolicyId,
+        InsuredId = insuredPolicy.InsuredId,
+        PolicyId = insuredPolicy.PolicyId,
+        PolicyHolderId = insuredPolicy.PolicyHolderId,
+        Name = policyHolder.Name,
+        ApprovalStatus = insuredPolicy.ApprovalStatus,
+        ApprovalDate = insuredPolicy.ApprovalDate
+    };
 
-@section Scripts {
-    <!-- Include the centralized JavaScript file -->
-    <script src="~/js/policyRequest.js"></script>
-}
-
-
-@model WebApplication1.Controllers.PolicyRequestViewModel
-
-@{
-    ViewData["Title"] = "Review Policy Request";
-}
-
-<h2>Review Policy Request</h2>
-
-<!-- Display Policy Details -->
-<div class="card">
-    <div class="card-header">
-        Policy Details
-    </div>
-    <div class="card-body">
-        <h5 class="card-title">Insured Policy ID: @Model.InsuredPolicyId</h5>
-        <p class="card-text">
-            <strong>Insured ID:</strong> @Model.InsuredId <br />
-            <strong>Policy ID:</strong> @Model.PolicyId <br />
-            <strong>Policy Holder ID:</strong> @Model.PolicyHolderId <br />
-            <strong>Name:</strong> @Model.Name <br />
-            <strong>Current Approval Status:</strong> @Model.ApprovalStatus <br />
-            <strong>Approval Date:</strong> @Model.ApprovalDate?.ToString("yyyy-MM-dd HH:mm:ss")
-        </p>
-    </div>
-    <div class="card-footer text-muted">
-        <!-- Buttons for Approval and Rejection -->
-        <button class="btn btn-success" onclick="updateApprovalStatus(@Model.InsuredPolicyId, 'Approved')">Approve</button>
-        <button class="btn btn-danger" onclick="updateApprovalStatus(@Model.InsuredPolicyId, 'Rejected')">Reject</button>
-        <a href="@Url.Action("Index", "PolicyRequest")" class="btn btn-secondary">Back to List</a>
-    </div>
-</div>
-
-@section Scripts {
-    <!-- Include the centralized JavaScript file -->
-    <script src="~/js/policyRequest.js"></script>
-}
-
-function updateApprovalStatus(insuredPolicyId, status) {
-    $.post('/PolicyRequest/UpdateApprovalStatus', { insuredPolicyId: insuredPolicyId, approvalStatus: status })
-        .done(function () {
-            alert('Approval status updated successfully.');
-            window.location.href = '/PolicyRequest/Index';
-        })
-        .fail(function () {
-            alert('Failed to update approval status.');
-        });
+    return View(viewModel);
 }
