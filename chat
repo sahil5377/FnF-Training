@@ -1,48 +1,24 @@
-using InsuranceApi.DTOs;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text.Json;
-using System.Threading.Tasks;
-
-namespace WebApplication1.Services
-{
-    public class InsuranceService : IInsuranceService
-    {
-        private readonly HttpClient _httpClient;
-
-        public InsuranceService(HttpClient httpClient)
-        {
-            _httpClient = httpClient;
-        }
-
-        public async Task<List<InsuranceTypeDto>> GetActivePlansAsync()
-        {
-            string endpoint = "InsuranceType";
-            var response = await _httpClient.GetAsync(endpoint);
-            response.EnsureSuccessStatusCode();
-
-            var jsonResponse = await response.Content.ReadAsStringAsync();
-            var plans = JsonSerializer.Deserialize<List<InsuranceTypeDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-            return plans;
-        }
-
-        public async Task<bool> AddPlanAsync(InsuranceTypeDto newPlan)
-        {
-            string endpoint = "InsuranceType"; // Assuming this is the correct endpoint for adding a plan
-            var response = await _httpClient.PostAsJsonAsync(endpoint, newPlan);
-
-            return response.IsSuccessStatusCode;
-        }
-
-        public async Task<bool> DeletePlanAsync(int id)
-        {
-            string endpoint = $"InsuranceType/{id}"; // Assuming this is the correct endpoint for deleting a plan
-            var response = await _httpClient.DeleteAsync(endpoint);
-
-            return response.IsSuccessStatusCode;
-        }
-    }
-}
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <a class="navbar-brand" asp-controller="Home" asp-action="Index">YourAppName</a>
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ml-auto">
+            <!-- Existing navbar items -->
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="Plans" asp-action="ManagePlans">
+                    <i class="fas fa-folder"></i> Plans
+                </a>
+            </li>
+            
+            <!-- New Policy Request navbar item -->
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="PolicyRequest" asp-action="Index">
+                    <i class="fas fa-file-alt"></i> Policy Request
+                </a>
+            </li>
+        </ul>
+    </div>
+</nav>
 
