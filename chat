@@ -1,4 +1,231 @@
 using InsuranceApi.DTOs;
+using InsuranceApi.Services;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+
+namespace InsuranceApi.Controllers
+{
+    public interface IInsuredPolicyController
+    {
+        Task<IActionResult> Add(InsuredPolicyDto insuredPolicyDto);
+        Task<IActionResult> Delete(int id);
+        Task<IActionResult> GetAll();
+        Task<IActionResult> GetById(int id);
+        Task<IActionResult> Update(InsuredPolicyDto insuredPolicyDto);
+    }
+
+    [Route("api/[controller]")]
+    [ApiController]
+    public class InsuredPolicyController : ControllerBase, IInsuredPolicyController
+    {
+        private readonly IInsuredPolicyService service;
+        public InsuredPolicyController(IInsuredPolicyService service)
+        {
+            this.service = service;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            List<InsuredPolicyDto> insuredPolicyDtos = await service.GetAll();
+            return Ok(insuredPolicyDtos);
+        }
+
+        [HttpDelete]
+        [Route("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                await service.Delete(id);
+                return Ok();
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Add(InsuredPolicyDto insuredPolicyDto)
+        {
+            await service.Add(insuredPolicyDto);
+            return Ok();
+        }
+
+        [HttpPut]
+        public async Task<IActionResult> Update(InsuredPolicyDto insuredPolicyDto)
+        {
+            try
+            {
+                await service.Update(insuredPolicyDto);
+                return Ok();
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpPut("{id}/ApprovalStatus")]
+        public async Task<IActionResult> UpdateApprovalStatus(int id, [FromBody] string approvalStatus)
+        {
+            try
+            {
+                await service.UpdateApprovalStatus(id, approvalStatus);
+                return Ok();
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpGet]
+        [Route("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            try
+            {
+                var found = await service.GetById(id);
+                return Ok(found);
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
+        }
+    }
+}
+
+This is API InsuredPolicy Controller
+
+using InsuranceApi.Data;
+using InsuranceApi.DTOs;
+using Microsoft.EntityFrameworkCore;
+
+namespace InsuranceApi.Services
+{
+    public interface IInsuredPolicyService
+    {
+        Task Add(InsuredPolicyDto insuredPolicyDto);
+        Task Delete(int id);
+        Task<List<InsuredPolicyDto>> GetAll();
+        Task<InsuredPolicyDto> GetById(int id);
+        Task Update(InsuredPolicyDto insuredPolicyDto);
+        Task UpdateApprovalStatus(int id, string approvalStatus);
+    }
+
+    public class InsuredPolicyService : IInsuredPolicyService
+    {
+        private readonly FnfProjectContext context;
+
+        public InsuredPolicyService(FnfProjectContext context)
+        {
+            this.context = context;
+        }
+
+        public async Task<List<InsuredPolicyDto>> GetAll()
+        {
+            List<InsuredPolicyDto> insuredPolicyDtos = [];
+            await foreach (var insuredPolicyTable in context.InsuredPolicies)
+            {
+                var insuredPolicyDto = ConvertToDto(insuredPolicyTable);
+                insuredPolicyDtos.Add(insuredPolicyDto);
+            }
+            return insuredPolicyDtos;
+        }
+
+        public async Task Delete(int id)
+        {
+            var found = await context.InsuredPolicies.FirstOrDefaultAsync((insuredPolicyTable) =>
+                insuredPolicyTable.InsuredPolicyId == id);
+            if (found != null)
+            {
+                context.InsuredPolicies.Remove(found);
+                await context.SaveChangesAsync();
+                return;
+            }
+            throw new NullReferenceException();
+        }
+
+        public async Task Add(InsuredPolicyDto insuredPolicyDto)
+        {
+            InsuredPolicy insuredPolicyTable = new();
+            ConvertToTable(insuredPolicyDto, insuredPolicyTable);
+            context.InsuredPolicies.Add(insuredPolicyTable);
+            await context.SaveChangesAsync();
+            return;
+        }
+
+        public async Task Update(InsuredPolicyDto insuredPolicyDto)
+        {
+            var found = await context.InsuredPolicies.FirstOrDefaultAsync((insuredPolicyTable) =>
+                insuredPolicyTable.InsuredPolicyId == insuredPolicyDto.InsuredPolicyId);
+            if (found != null)
+            {
+                ConvertToTable(insuredPolicyDto, found);
+                await context.SaveChangesAsync();
+                return;
+            }
+            throw new NullReferenceException();
+        }
+
+        public async Task<InsuredPolicyDto> GetById(int id)
+        {
+            var found = await context.InsuredPolicies.FirstOrDefaultAsync((insuredPolicyTable) =>
+                insuredPolicyTable.InsuredPolicyId == id);
+
+            if (found != null)
+                return ConvertToDto(found);
+
+            throw new NullReferenceException();
+        }
+        public async Task UpdateApprovalStatus(int id, string approvalStatus)
+        {
+            var found = await context.InsuredPolicies.FirstOrDefaultAsync(ip => ip.InsuredPolicyId == id);
+            if (found != null)
+            {
+                found.ApprovalStatus = approvalStatus;
+                context.InsuredPolicies.Update(found);
+                await context.SaveChangesAsync();
+                return;
+            }
+            throw new NullReferenceException();
+        }
+
+        private InsuredPolicyDto ConvertToDto(InsuredPolicy insuredPolicyTable)
+        {
+            InsuredPolicyDto insuredPolicyDto = new()
+            {
+                InsuredPolicyId = insuredPolicyTable.InsuredPolicyId,
+                PolicyId = insuredPolicyTable.PolicyId,
+                InsuredId = insuredPolicyTable.InsuredId,
+                ApprovalStatus = insuredPolicyTable.ApprovalStatus,
+                RenewalStatus = insuredPolicyTable.RenewalStatus,
+                AdminId = insuredPolicyTable.AdminId,
+                ApprovalDate = DateTime.Parse(insuredPolicyTable.ApprovalDate.ToString()),
+            };
+            return insuredPolicyDto;
+        }
+
+        private void ConvertToTable(InsuredPolicyDto insuredPolicyDto, InsuredPolicy insuredPolicyTable)
+        {
+            insuredPolicyTable.InsuredPolicyId = insuredPolicyDto.InsuredPolicyId;
+            insuredPolicyTable.PolicyId = insuredPolicyDto.PolicyId;
+            insuredPolicyTable.InsuredId = insuredPolicyDto.InsuredId;
+            insuredPolicyTable.ApprovalStatus = insuredPolicyDto.ApprovalStatus;
+            insuredPolicyTable.RenewalStatus = insuredPolicyDto.RenewalStatus;
+            insuredPolicyTable.AdminId = insuredPolicyDto.AdminId;
+            insuredPolicyTable.ApprovalDate = DateOnly.FromDateTime((DateTime)insuredPolicyDto.ApprovalDate);
+            return;
+        }
+    }
+}
+
+This is API InsuredPolicy Service
+
+using InsuranceApi.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Linq;
@@ -64,16 +291,20 @@ namespace WebApplication1.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> UpdateApprovalStatus(int insuredPolicyId, string approvalStatus)
+        public async Task<IActionResult> UpdateApprovalStatus([FromBody] UpdateApprovalStatusModel model)
         {
-            var success = await _policyRequestService.UpdateApprovalStatusAsync(insuredPolicyId, approvalStatus);
+            var success = await _policyRequestService.UpdateApprovalStatusAsync(model.InsuredPolicyId, model.ApprovalStatus);
             if (success)
                 return RedirectToAction("Index");
             else
                 return BadRequest("Failed to update");
-                
         }
-        
+        public class UpdateApprovalStatusModel
+        {
+            public int InsuredPolicyId { get; set; }
+            public string ApprovalStatus { get; set; }
+        }
+
     }
 
     public class PolicyRequestViewModel
@@ -100,8 +331,7 @@ namespace WebApplication1.Controllers
         public DateTime? PaymentDate { get; set; }
     }
 }
-
-Controller File
+PolicyRequest Controller in MVC
 
 using InsuranceApi.DTOs;
 using System.Collections.Generic;
@@ -165,6 +395,45 @@ public interface IPolicyRequestService
     Task<List<PaymentDto>> GetPaymentsByInsuredPolicyIdAsync(int insuredPolicyId);
     Task<bool> UpdateApprovalStatusAsync(int insuredPolicyId, string approvalStatus);
 }
+
+PolicyRequestService
+@model WebApplication1.Controllers.ReviewPolicyRequestViewModel
+
+<div>
+    <p><strong>Policy Holder Name:</strong> @Model.PolicyHolderName</p>
+    <p><strong>Insured ID:</strong> @Model.InsuredId</p>
+    <p><strong>Insured Policy ID:</strong> @Model.InsuredPolicyId</p>
+    <p><strong>Policy ID:</strong> @Model.PolicyId</p>
+    <p><strong>Admin ID:</strong> @Model.AdminId</p>
+    <p><strong>Premium Amount:</strong> @Model.PremiumAmount</p>
+    <p><strong>Payment ID:</strong> @Model.PaymentId</p>
+    <p><strong>Payment Amount:</strong> @Model.PaymentAmount</p>
+    <p><strong>Payment Date:</strong> @Model.PaymentDate?.ToString("yyyy-MM-dd")</p>
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn btn-success" id="approveButton">Approve</button>
+    <button type="button" class="btn btn-danger" id="rejectButton">Reject</button>
+    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+</div>
+
+@section Scripts {
+    <script src="https://ajax.aspnetcdn.com/ajax/jQuery/3.5.1/jquery.min.js"></script>
+    <script>
+        function updateApprovalStatus(insuredPolicyId, status) {
+            $.post('@Url.Action("UpdateApprovalStatus", "PolicyRequest")', { insuredPolicyId: insuredPolicyId, approvalStatus: status })
+                .done(function () {
+                    alert('Approval status updated successfully.');
+                    $('#reviewModal').modal('hide');
+                    location.reload();
+                })
+                .fail(function () {
+                    alert('Failed to update approval status.');
+                });
+        }
+    </script>
+}
+_reviewPolicyrequest.cshtml
 @model List<WebApplication1.Controllers.PolicyRequestViewModel>
 
 @{
@@ -233,62 +502,40 @@ public interface IPolicyRequestService
         }
     </script>
 }
+Index.cshtml
+$(document).ready(function () {
+    function updateApprovalStatus(insuredPolicyId, status) {
+        console.log(`Updating approval status to ${status} for insured policy ID ${insuredPolicyId}`);
+        $.post('@Url.Action("UpdateApprovalStatus", "PolicyRequest")', { insuredPolicyId: insuredPolicyId, approvalStatus: status })
+            .done(function (data) {
+                console.log('Approval status updated successfully:', data);
+                window.location.href = '@Url.Action("Index", "PolicyRequest")';
+            })
+            .fail(function (xhr, status, error) {
+                console.error('Failed to update approval status:', xhr, status, error);
+            });
+    }
 
-@model WebApplication1.Controllers.ReviewPolicyRequestViewModel
+    function rejectApprovalStatus(insuredPolicyId, status) {
+        console.log(`Rejecting approval status to ${status} for insured policy ID ${insuredPolicyId}`);
+        $.post('@Url.Action("UpdateApprovalStatus", "PolicyRequest")', { insuredPolicyId: insuredPolicyId, approvalStatus: status })
+            .done(function (data) {
+                console.log('Approval status updated successfully:', data);
+                window.location.href = '@Url.Action("Index", "PolicyRequest")';
+            })
+            .fail(function (xhr, status, error) {
+                console.error('Failed to update approval status:', xhr, status, error);
+            });
+    }
 
-<div>
-    <p><strong>Policy Holder Name:</strong> @Model.PolicyHolderName</p>
-    <p><strong>Insured ID:</strong> @Model.InsuredId</p>
-    <p><strong>Insured Policy ID:</strong> @Model.InsuredPolicyId</p>
-    <p><strong>Policy ID:</strong> @Model.PolicyId</p>
-    <p><strong>Admin ID:</strong> @Model.AdminId</p>
-    <p><strong>Premium Amount:</strong> @Model.PremiumAmount</p>
-    <p><strong>Payment ID:</strong> @Model.PaymentId</p>
-    <p><strong>Payment Amount:</strong> @Model.PaymentAmount</p>
-    <p><strong>Payment Date:</strong> @Model.PaymentDate?.ToString("yyyy-MM-dd")</p>
-</div>
+    // Attach event listeners to the buttons
+    $('#approveButton').on('click', function () {
+        updateApprovalStatus(@Model.InsuredPolicyId, 'Approved');
+    });
 
-<div class="modal-footer">
-    <button type="button" class="btn btn-success" onclick="updateApprovalStatus(@Model.InsuredPolicyId, 'Approved')">Approve</button>
-    <button type="button" class="btn btn-danger" onclick="updateApprovalStatus(@Model.InsuredPolicyId, 'Rejected')">Reject</button>
-    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-</div>
+    $('#rejectButton').on('click', function () {
+        rejectApprovalStatus(@Model.InsuredPolicyId, 'Rejected');
+    });
+});
 
-@section Scripts {
-    <script src="https://ajax.aspnetcdn.com/ajax/jQuery/3.5.1/jquery.min.js"></script>
-    <script>
-        function updateApprovalStatus(insuredPolicyId, status) {
-            $.post('@Url.Action("UpdateApprovalStatus", "PolicyRequest")', { insuredPolicyId: insuredPolicyId, approvalStatus: status })
-                .done(function () {
-                    alert('Approval status updated successfully.');
-                    $('#reviewModal').modal('hide');
-                    location.reload();
-                })
-                .fail(function () {
-                    alert('Failed to update approval status.');
-                });
-        }
-    </script>
-}
-
-
-function updateApprovalStatus(insuredPolicyId, status) {
-    $.post('/PolicyRequest/UpdateApprovalStatus', { insuredPolicyId: insuredPolicyId, approvalStatus: status })
-        .done(function () {
-            alert('Approval status updated successfully.');
-            window.location.href = '/PolicyRequest/Index';
-        })
-        .fail(function () {
-            alert('Failed to update approval status.');
-        });
-}
-
-
-These are my files rewiew it once.
-My update approval status is working properly on api with the help of id
-
-But on the MVC Frontend side its not working properly. approval status is not at all working.
-
-This is how my swagger takes input "Approved"
-
-Do not affect my existing functionaltiy of the code. if any changes required do it. to work the approval status and give me all the files
+these are all files not change the exsiting functionaly just find why i am not able to change the approval status
