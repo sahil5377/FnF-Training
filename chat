@@ -1,16 +1,114 @@
 using InsuranceApi.DTOs;
+using InsuranceApi.Data;
+using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 
 namespace InsuranceApi.Services
 {
-    public interface IInsuredPolicyService
+    public class InsuredPolicyService : IInsuredPolicyService
     {
-        Task Add(InsuredPolicyDto insuredPolicyDto);
-        Task Delete(int id);
-        Task<List<InsuredPolicyDto>> GetAll();
-        Task<InsuredPolicyDto> GetById(int id);
-        Task UpdateApprovalStatus(int id, string approvalStatus);
-        Task<InsuredPolicyDetailsDto> GetPolicyDetails(int id);
+        private readonly FnfProjectContext _context;
+
+        public InsuredPolicyService(FnfProjectContext context)
+        {
+            _context = context;
+        }
+
+        public async Task<List<InsuredPolicyDto>> GetAll()
+        {
+            var insuredPolicyDtos = await _context.InsuredPolicies
+                .Select(p => new InsuredPolicyDto
+                {
+                    InsuredPolicyId = p.InsuredPolicyId,
+                    PolicyId = p.PolicyId,
+                    InsuredId = p.InsuredId,
+                    ApprovalStatus = p.ApprovalStatus,
+                    RenewalStatus = p.RenewalStatus,
+                    AdminId = p.AdminId,
+                    ApprovalDate = p.ApprovalDate
+                }).ToListAsync();
+            return insuredPolicyDtos;
+        }
+
+        public async Task Delete(int id)
+        {
+            var found = await _context.InsuredPolicies.FindAsync(id);
+            if (found != null)
+            {
+                _context.InsuredPolicies.Remove(found);
+                await _context.SaveChangesAsync();
+                return;
+            }
+            throw new NullReferenceException();
+        }
+
+        public async Task Add(InsuredPolicyDto insuredPolicyDto)
+        {
+            var insuredPolicyTable = new InsuredPolicy
+            {
+                PolicyId = insuredPolicyDto.PolicyId,
+                InsuredId = insuredPolicyDto.InsuredId,
+                ApprovalStatus = insuredPolicyDto.ApprovalStatus,
+                RenewalStatus = insuredPolicyDto.RenewalStatus,
+                AdminId = insuredPolicyDto.AdminId,
+                ApprovalDate = insuredPolicyDto.ApprovalDate
+            };
+            _context.InsuredPolicies.Add(insuredPolicyTable);
+            await _context.SaveChangesAsync();
+        }
+
+        public async Task UpdateApprovalStatus(int id, string approvalStatus)
+        {
+            var found = await _context.InsuredPolicies.FindAsync(id);
+            if (found != null)
+            {
+                found.ApprovalStatus = approvalStatus;
+                found.ApprovalDate = DateTime.UtcNow;
+                _context.InsuredPolicies.Update(found);
+                await _context.SaveChangesAsync();
+                return;
+            }
+            throw new NullReferenceException();
+        }
+
+        public async Task<InsuredPolicyDetailsDto> GetPolicyDetails(int id)
+        {
+            var policy = await _context.InsuredPolicies
+                .Where(p => p.InsuredPolicyId == id)
+                .Select(p => new InsuredPolicyDetailsDto
+                {
+                    InsuredPolicyId = p.InsuredPolicyId,
+                    InsuredId = p.InsuredId,
+                    PolicyId = p.PolicyId,
+                    ApprovalStatus = p.ApprovalStatus,
+                    RenewalStatus = p.RenewalStatus,
+                    AdminId = p.AdminId,
+                    ApprovalDate = p.ApprovalDate,
+                    PolicyHolder = _context.PolicyHolders.Where(ph => ph.PolicyHolderId == p.PolicyHolderId).Select(ph => new PolicyHolderDto
+                    {
+                        PolicyHolderId = ph.PolicyHolderId,
+                        Name = ph.Name
+                    }).FirstOrDefault(),
+                    Policy = _context.Policies.Where(pol => pol.PolicyId == p.PolicyId).Select(pol => new PolicyDto
+                    {
+                        PolicyId = pol.PolicyId,
+                        PolicyNumber = pol.PolicyNumber,
+                        PremiumAmount = pol.PremiumAmount
+                    }).FirstOrDefault(),
+                    Payments = _context.Payments.Where(pay => pay.InsuredPolicyId == p.InsuredPolicyId).Select(pay => new PaymentDto
+                    {
+                        PaymentId = pay.PaymentId,
+                        PaymentAmount = pay.PaymentAmount,
+                        PaymentDate = pay.PaymentDate
+                    }).ToList()
+                }).FirstOrDefaultAsync();
+
+            if (policy != null)
+                return policy;
+
+            throw new NullReferenceException();
+        }
     }
 }
