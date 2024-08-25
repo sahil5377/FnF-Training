@@ -25,15 +25,9 @@ namespace WebApplication1.Controllers
             return View(activePlans);
         }
 
-        public IActionResult AddNewPlan()
-        {
-            return View();
-        }
-
-        [HttpPost]
         public async Task<IActionResult> AddNewPlan(InsuranceTypeDto newPlan)
         {
-            if (ModelState.IsValid)
+            if (newPlan != null && ModelState.IsValid)
             {
                 bool success = await _insuranceService.AddPlanAsync(newPlan);
                 if (success)
