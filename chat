@@ -1,108 +1,55 @@
-@model List<InsuranceApi.DTOs.InsuranceTypeDto>
+using InsuranceApi.DTOs;
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
+using WebApplication1.Services;
 
-@{
-    ViewData["Title"] = "View Active Plans";
-}
-
-<h2>Active Plans</h2>
-
-<div class="row">
-    @foreach (var plan in Model)
+namespace WebApplication1.Controllers
+{
+    public class PlansController : Controller
     {
-        <div class="col-md-3 mb-4">
-            <div class="card shadow-sm">
-                <div class="card-body">
-                    <h5 class="card-title"><strong>@plan.InsuranceType</strong></h5>
-                    <p class="card-text"><strong>Description:</strong><br>@plan.Description</p>
-                    <p class="card-text"><strong>Base Rate:</strong> @plan.BaseRate</p>
-                    <p class="card-text"><strong>Coverage Size:</strong> @plan.CoverageSize</p>
-                    <button class="btn btn-warning" onclick="showUpdateModal(@plan.InsuranceId)">Update Details</button>
-                    <button class="btn btn-danger" onclick="deletePlan(@plan.InsuranceId)">Delete</button>
-                </div>
-            </div>
-        </div>
-    }
-</div>
+        private readonly IInsuranceService _insuranceService;
 
-<!-- Update Plan Modal -->
-<div class="modal fade" id="updatePlanModal" tabindex="-1" aria-labelledby="updatePlanModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="updatePlanModalLabel">Update Plan Details</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <form id="updatePlanForm">
-                    <div class="mb-3">
-                        <label for="insuranceType" class="form-label">Insurance Type</label>
-                        <input type="text" class="form-control" id="insuranceType" name="InsuranceType">
-                    </div>
-                    <div class="mb-3">
-                        <label for="description" class="form-label">Description</label>
-                        <textarea class="form-control" id="description" name="Description"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label for="baseRate" class="form-label">Base Rate</label>
-                        <input type="number" class="form-control" id="baseRate" name="BaseRate">
-                    </div>
-                    <div class="mb-3">
-                        <label for="coverageSize" class="form-label">Coverage Size</label>
-                        <input type="number" class="form-control" id="coverageSize" name="CoverageSize">
-                    </div>
-                    <input type="hidden" id="insuranceId" name="InsuranceId">
-                    <button type="button" class="btn btn-primary" onclick="updatePlanDetails()">Save Changes</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    function showUpdateModal(insuranceId) {
-        // Fill the form with existing data
-        const plan = @Html.Raw(Json.Serialize(Model.FirstOrDefault(p => p.InsuranceId == insuranceId)));
-        if (plan) {
-            document.getElementById('insuranceType').value = plan.InsuranceType;
-            document.getElementById('description').value = plan.Description;
-            document.getElementById('baseRate').value = plan.BaseRate;
-            document.getElementById('coverageSize').value = plan.CoverageSize;
-            document.getElementById('insuranceId').value = plan.InsuranceId;
+        public PlansController(IInsuranceService insuranceService)
+        {
+            _insuranceService = insuranceService;
         }
-        $('#updatePlanModal').modal('show');
-    }
 
-    async function updatePlanDetails() {
-        const form = document.getElementById('updatePlanForm');
-        const data = new FormData(form);
-        const jsonData = {};
-        data.forEach((value, key) => { jsonData[key] = value });
+        public IActionResult ManagePlans()
+        {
+            return View();
+        }
 
-        const response = await fetch('/Plans/UpdatePlan', {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(jsonData)
-        });
+        public async Task<IActionResult> ViewActivePlans()
+        {
+            // Fetch active plans from the service
+            var activePlans = await _insuranceService.GetActivePlansAsync();
+            return View(activePlans);
+        }
 
-        if (response.ok) {
-            $('#updatePlanModal').modal('hide');
-            location.reload(); // Reload the page to reflect changes
-        } else {
-            alert('Failed to update plan');
+        public IActionResult AddNewPlan()
+        {
+            // Your logic to add a new plan (form view)
+            return View();
+        }
+
+        [HttpPut]
+        public async Task<IActionResult> UpdatePlan([FromBody] InsuranceTypeDto plan)
+        {
+            var success = await _insuranceService.UpdatePlanAsync(plan);
+            if (success)
+                return Ok();
+            else
+                return BadRequest();
+        }
+
+        [HttpDelete]
+        public async Task<IActionResult> DeletePlan(int id)
+        {
+            var success = await _insuranceService.DeletePlanAsync(id);
+            if (success)
+                return Ok();
+            else
+                return BadRequest();
         }
     }
-
-    async function deletePlan(insuranceId) {
-        const response = await fetch(`/Plans/DeletePlan/${insuranceId}`, {
-            method: 'DELETE'
-        });
-
-        if (response.ok) {
-            location.reload(); // Reload the page to reflect changes
-        } else {
-            alert('Failed to delete plan');
-        }
-    }
-</script>
+}
