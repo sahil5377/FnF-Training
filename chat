@@ -73,3 +73,60 @@ namespace WebApplication1.Services
         }
     }
 }
+
+
+
+using InsuranceApi.DTOs;
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
+using WebApplication1.Services;
+
+namespace WebApplication1.Controllers
+{
+    public class PolicyRequestController : Controller
+    {
+        private readonly IPolicyRequestService _policyRequestService;
+
+        public PolicyRequestController(IPolicyRequestService policyRequestService)
+        {
+            _policyRequestService = policyRequestService;
+        }
+
+        public async Task<IActionResult> Index()
+        {
+            var pendingRequests = await _policyRequestService.GetPendingPolicyRequestsAsync();
+            return View(pendingRequests);
+        }
+
+        public async Task<IActionResult> Review(int id)
+        {
+            var policyRequest = await _policyRequestService.GetPendingPolicyRequestsAsync();
+            var request = policyRequest.Find(p => p.InsuredPolicyId == id);
+
+            var policyHolder = await _policyRequestService.GetPolicyHolderDetailsAsync(request.PolicyHolderId);
+            var policyDetails = await _policyRequestService.GetPolicyDetailsAsync(request.PolicyId);
+            var paymentDetails = await _policyRequestService.GetPaymentDetailsAsync(request.InsuredPolicyId);
+
+            var model = new ReviewPolicyRequestViewModel
+            {
+                PolicyHolder = policyHolder,
+                Policy = policyDetails,
+                Payment = paymentDetails,
+                InsuredPolicy = request
+            };
+
+            return PartialView("_ReviewPolicyRequest", model);
+        }
+
+        public async Task<IActionResult> UpdateStatus(int id, string status)
+        {
+            bool success = await _policyRequestService.UpdateApprovalStatusAsync(id, status, /* AdminId */ 1);
+            if (success)
+            {
+                return Json(new { success = true });
+            }
+
+            return Json(new { success = false });
+        }
+    }
+}
