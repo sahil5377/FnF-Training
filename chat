@@ -1,76 +1,75 @@
-Your Next task is when i click on Policy Request it should get the data from the back end(Swagger) running behind the backend
-This task is very difficult
+using InsuranceApi.DTOs;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
-IT SHOULD GET THE FOLLWOING FUNCTIONALITY
-A Customer will buy the policy and the following details in the form of the table and it will come and i am the admin for me its comes for approval (ApprovalStatus) 
-From this table Approval satus (Withdraw, Approved, Rejected, Pedning)
-In the table only insuredpolicyid, insuredid,policyid,PolicyHolderID,Name, Approval status and dateTime should be shown.
-*Where pending should be deafult staus
-*Admin should able to accept and reject the policy
-*There will be one action button Review 
-*After Clicking on Review i should get a pop up window and  i should able to see all the deatils in that -> PolicyHolder-name,Insured Id, InsuredPolicyId, PolicyId, AdminId and admin name
-primeium amoumnt, Payment id, Paymentamount,PAyment date 
-*Inside review there will be two buttons approve and reject this twpo buttons should reflect the staus approval status dynamically
-
-
-There mutiplr tables in one api running behind
-
-For complete details use this table
-namespace InsuranceApi.DTOs
+namespace WebApplication1.Services
 {
-    public class InsuredPolicyDto
+    public interface IPolicyRequestService
     {
-        public int InsuredPolicyId { get; set; }
-        public int InsuredId { get; set; }
-        public int PolicyId { get; set; }
-        public string ApprovalStatus { get; set; } = null!;
-        public string RenewalStatus { get; set; } = null!;
-        public int AdminId { get; set; }
-        public DateTime? ApprovalDate { get; set; }
-    }
-}
-
-For customer(PolicyHolder) use this table
-namespace InsuranceApi.DTOs
-{
-    public class PolicyHolderDto
-    {
-        public int PolicyHolderId { get; set; }
-        public string Name { get; set; } = null!;
-        public string Address { get; set; } = null!;
-        public string Phone { get; set; } = null!;
-        public string Email { get; set; } = null!;
-        public int Status { get; set; }
-    }
-}
-
-Policy purchase table
-namespace InsuranceApi.DTOs
-{
-    public class PolicyDto
-    {
-        public int PolicyId { get; set; }
-        public string PolicyNumber { get; set; } = null!;
-        public int InsuranceTypeId { get; set; }
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
-        public decimal PremiumAmount { get; set; }
-    }
-}
-
-Payment table for payment things
-
-namespace InsuranceApi.DTOs
-{
-    public class PaymentDto
-    {
-        public int PaymentId { get; set; }
-        public int InsuredPolicyId { get; set; }
-        public int PolicyHolderId { get; set; }
-        public DateTime PaymentDate { get; set; }
-        public decimal PaymentAmount { get; set; }
+        Task<List<InsuredPolicyDto>> GetPendingPolicyRequestsAsync();
+        Task<PolicyHolderDto> GetPolicyHolderDetailsAsync(int policyHolderId);
+        Task<PolicyDto> GetPolicyDetailsAsync(int policyId);
+        Task<PaymentDto> GetPaymentDetailsAsync(int insuredPolicyId);
+        Task<bool> UpdateApprovalStatusAsync(int insuredPolicyId, string status, int adminId);
     }
 }
 
 
-*All the tables should be interconnect all the changes made should dynamically refelect in the database
+using InsuranceApi.DTOs;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text.Json;
+using System.Threading.Tasks;
+
+namespace WebApplication1.Services
+{
+    public class PolicyRequestService : IPolicyRequestService
+    {
+        private readonly HttpClient _httpClient;
+
+        public PolicyRequestService(HttpClient httpClient)
+        {
+            _httpClient = httpClient;
+        }
+
+        public async Task<List<InsuredPolicyDto>> GetPendingPolicyRequestsAsync()
+        {
+            var response = await _httpClient.GetAsync("InsuredPolicy");
+            response.EnsureSuccessStatusCode();
+
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            var policyRequests = JsonSerializer.Deserialize<List<InsuredPolicyDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            return policyRequests?.FindAll(p => p.ApprovalStatus == "Pending");
+        }
+
+        public async Task<PolicyHolderDto> GetPolicyHolderDetailsAsync(int policyHolderId)
+        {
+            var response = await _httpClient.GetAsync($"PolicyHolder/{policyHolderId}");
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<PolicyHolderDto>();
+        }
+
+        public async Task<PolicyDto> GetPolicyDetailsAsync(int policyId)
+        {
+            var response = await _httpClient.GetAsync($"Policy/{policyId}");
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<PolicyDto>();
+        }
+
+        public async Task<PaymentDto> GetPaymentDetailsAsync(int insuredPolicyId)
+        {
+            var response = await _httpClient.GetAsync($"Payment/{insuredPolicyId}");
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<PaymentDto>();
+        }
+
+        public async Task<bool> UpdateApprovalStatusAsync(int insuredPolicyId, string status, int adminId)
+        {
+            var requestBody = new { InsuredPolicyId = insuredPolicyId, ApprovalStatus = status, AdminId = adminId };
+            var response = await _httpClient.PutAsJsonAsync("InsuredPolicy", requestBody);
+            return response.IsSuccessStatusCode;
+        }
+    }
+}
