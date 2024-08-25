@@ -1,24 +1,37 @@
+using InsuranceApi.DTOs;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
+using WebApplication1.Services;
 
 namespace WebApplication1.Controllers
 {
     public class PlansController : Controller
     {
+        private readonly IInsuranceService _insuranceService;
+
+        public PlansController(IInsuranceService insuranceService)
+        {
+            _insuranceService = insuranceService;
+        }
+
         public IActionResult ManagePlans()
         {
             return View();
         }
 
-        public IActionResult ViewActivePlans()
+        public async Task<IActionResult> ViewActivePlans()
         {
-            // Your logic to fetch active plans
-            return View();
+            // Fetch active plans from the service
+            var activePlans = await _insuranceService.GetActivePlansAsync();
+            return View(activePlans);
         }
 
         public IActionResult AddNewPlan()
         {
-            // Your logic to add a new plan
+            // Your logic to add a new plan (form view)
             return View();
         }
+
+        // Additional actions for plan management can be added here
     }
 }
