@@ -1,24 +1,4 @@
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" asp-controller="Home" asp-action="Index">YourAppName</a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav ml-auto">
-            <!-- Existing navbar items -->
-            <li class="nav-item">
-                <a class="nav-link" asp-controller="Plans" asp-action="ManagePlans">
-                    <i class="fas fa-folder"></i> Plans
-                </a>
-            </li>
-            
-            <!-- New Policy Request navbar item -->
-            <li class="nav-item">
-                <a class="nav-link" asp-controller="PolicyRequest" asp-action="Index">
-                    <i class="fas fa-file-alt"></i> Policy Request
-                </a>
-            </li>
-        </ul>
-    </div>
-</nav>
-
+<head>
+    <!-- Other head content -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+</head>
