@@ -1,38 +1,31 @@
+@model List<InsuranceApi.DTOs.InsuranceTypeDto>
+
 @{
-    ViewData["Title"] = "Manage Plans";
+    ViewData["Title"] = "Active Plans";
 }
 
-<div class="container mt-5">
-    <div class="row">
-        <!-- Card 1: View Active Plans -->
-        <div class="col-md-6">
-            <div class="card text-center shadow-lg mb-4">
-                <div class="card-body">
-                    <div class="icon mb-3">
-                        <i class="fas fa-list fa-3x text-primary"></i>
-                    </div>
-                    <h5 class="card-title">View Active Plans</h5>
-                    <p class="card-text">View all currently active insurance plans and manage them.</p>
-                    <a asp-controller="Plans" asp-action="ViewActivePlans" class="btn btn-primary">View Plans</a>
-                </div>
-            </div>
-        </div>
+<h2>Active Plans</h2>
 
-        <!-- Card 2: Add New Plan -->
-        <div class="col-md-6">
-            <div class="card text-center shadow-lg mb-4">
-                <div class="card-body">
-                    <div class="icon mb-3">
-                        <i class="fas fa-plus-circle fa-3x text-success"></i>
-                    </div>
-                    <h5 class="card-title">Add New Plan</h5>
-                    <p class="card-text">Create and add new insurance plans to the system.</p>
-                    <a asp-controller="Plans" asp-action="AddNewPlan" class="btn btn-success">Add Plan</a>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<!-- Load Font Awesome for icons -->
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
+<table class="table table-bordered table-striped">
+    <thead>
+        <tr>
+            <th>Insurance ID</th>
+            <th>Insurance Type</th>
+            <th>Description</th>
+            <th>Base Rate</th>
+            <th>Coverage Size</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var plan in Model)
+        {
+            <tr>
+                <td>@plan.InsuranceId</td>
+                <td>@plan.InsuranceType</td>
+                <td>@plan.Description</td>
+                <td>@plan.BaseRate</td>
+                <td>@plan.CoverageSize</td>
+            </tr>
+        }
+    </tbody>
+</table>
