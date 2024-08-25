@@ -51,23 +51,32 @@
             <div class="modal-body" id="reviewModalBody">
                 <!-- Review details will be loaded here -->
             </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-success" onclick="updateApprovalStatus('Approved')">Approve</button>
+                <button type="button" class="btn btn-danger" onclick="updateApprovalStatus('Rejected')">Reject</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
     <script>
+        var currentInsuredPolicyId;
+
         function reviewPolicy(insuredPolicyId) {
-            $.get('@Url.Action("Review", "PolicyRequest")', { insuredPolicyId: insuredPolicyId }, function (data) {
+            currentInsuredPolicyId = insuredPolicyId;
+            $.get('@Url.Action("Review", "PolicyRequest")', { id: insuredPolicyId }, function (data) {
                 $('#reviewModalBody').html(data);
                 $('#reviewModal').modal('show');
             });
         }
 
-        function updateApprovalStatus(insuredPolicyId, status) {
-            $.post('@Url.Action("UpdateApprovalStatus", "PolicyRequest")', { insuredPolicyId: insuredPolicyId, status: status }, function (response) {
+        function updateApprovalStatus(status) {
+            $.post('@Url.Action("UpdateApprovalStatus", "PolicyRequest")', { insuredPolicyId: currentInsuredPolicyId, status: status }, function (response) {
                 if (response.success) {
                     alert('Approval status updated successfully.');
+                    $('#reviewModal').modal('hide');
                     location.reload();
                 } else {
                     alert('Failed to update approval status.');
@@ -92,10 +101,5 @@
     <p><strong>Payment Date:</strong> @Model.PaymentDate?.ToString("yyyy-MM-dd")</p>
 </div>
 
-<div class="modal-footer">
-    <button type="button" class="btn btn-success" onclick="updateApprovalStatus(@Model.InsuredPolicyId, 'Approved')">Approve</button>
-    <button type="button" class="btn btn-danger" onclick="updateApprovalStatus(@Model.InsuredPolicyId, 'Rejected')">Reject</button>
-    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-</div>
-
-this are my files make changes in this
+<!-- No need to repeat modal footer in this file -->
+ 
