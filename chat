@@ -1,59 +1,27 @@
-using InsuranceApi.DTOs;
-using Microsoft.AspNetCore.Mvc;
-using System.Threading.Tasks;
-using WebApplication1.Services;
+@model InsuranceApi.DTOs.InsuranceTypeDto
 
-namespace WebApplication1.Controllers
-{
-    public class PlansController : Controller
-    {
-        private readonly IInsuranceService _insuranceService;
-
-        public PlansController(IInsuranceService insuranceService)
-        {
-            _insuranceService = insuranceService;
-        }
-
-        public IActionResult ManagePlans()
-        {
-            return View();
-        }
-
-        public async Task<IActionResult> ViewActivePlans()
-        {
-            var activePlans = await _insuranceService.GetActivePlansAsync();
-            return View(activePlans);
-        }
-
-        public async Task<IActionResult> AddNewPlan(InsuranceTypeDto newPlan)
-        {
-            if (newPlan != null && ModelState.IsValid)
-            {
-                bool success = await _insuranceService.AddPlanAsync(newPlan);
-                if (success)
-                {
-                    return RedirectToAction("ViewActivePlans");
-                }
-                else
-                {
-                    ModelState.AddModelError("", "Failed to add new plan");
-                }
-            }
-            return View(newPlan);
-        }
-
-        [HttpDelete]
-        public async Task<IActionResult> Delete(int id)
-        {
-            bool success = await _insuranceService.DeletePlanAsync(id);
-            if (success)
-            {
-                return Ok();
-            }
-            else
-            {
-                return BadRequest();
-            }
-        }
-    }
+@{
+    ViewData["Title"] = "Add New Plan";
 }
+
+<h2>Add New Plan</h2>
+
+<form asp-action="AddNewPlan" method="post">
+    <div class="form-group">
+        <label for="InsuranceType">Insurance Type</label>
+        <input type="text" class="form-control" id="InsuranceType" name="InsuranceType" required />
+    </div>
+    <div class="form-group">
+        <label for="Description">Description</label>
+        <textarea class="form-control" id="Description" name="Description" rows="3" required></textarea>
+    </div>
+    <div class="form-group">
+        <label for="BaseRate">Base Rate</label>
+        <input type="number" step="0.01" class="form-control" id="BaseRate" name="BaseRate" required />
+    </div>
+    <div class="form-group">
+        <label for="CoverageSize">Coverage Size</label>
+        <input type="number" class="form-control" id="CoverageSize" name="CoverageSize" required />
+    </div>
+    <button type="submit" class="btn btn-primary">Add Plan</button>
+</form>
