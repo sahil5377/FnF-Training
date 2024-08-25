@@ -1,31 +1,30 @@
-@model List<InsuranceApi.DTOs.InsuranceTypeDto>
+using InsuranceApi.DTOs;
+using Microsoft.AspNetCore.Mvc;
+using System.Net.Http;
+using System.Net.Http.Json;
 
-@{
-    ViewData["Title"] = "Active Plans";
-}
+public class PlansController : Controller
+{
+    private readonly IHttpClientFactory _clientFactory;
 
-<h2>Active Plans</h2>
+    public PlansController(IHttpClientFactory clientFactory)
+    {
+        _clientFactory = clientFactory;
+    }
 
-<table class="table table-bordered table-striped">
-    <thead>
-        <tr>
-            <th>Insurance ID</th>
-            <th>Insurance Type</th>
-            <th>Description</th>
-            <th>Base Rate</th>
-            <th>Coverage Size</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var plan in Model)
+    public async Task<IActionResult> ActivePlans()
+    {
+        var client = _clientFactory.CreateClient();
+        client.BaseAddress = new Uri("http://localhost:5230/api/"); // Adjust the base address to your API URL
+
+        var response = await client.GetAsync("InsuranceType"); // Adjust the endpoint to match your API
+
+        if (response.IsSuccessStatusCode)
         {
-            <tr>
-                <td>@plan.InsuranceId</td>
-                <td>@plan.InsuranceType</td>
-                <td>@plan.Description</td>
-                <td>@plan.BaseRate</td>
-                <td>@plan.CoverageSize</td>
-            </tr>
+            var insurancePlans = await response.Content.ReadFromJsonAsync<List<InsuranceTypeDto>>();
+            return View(insurancePlans);
         }
-    </tbody>
-</table>
+
+        return View(new List<InsuranceTypeDto>()); // Return an empty list if the API call fails
+    }
+}
