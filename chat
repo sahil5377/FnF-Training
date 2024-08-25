@@ -1,3 +1,41 @@
+@model IEnumerable<WebApplication1.Controllers.PolicyRequestViewModel>
+
+@{
+    ViewData["Title"] = "Policy Requests";
+}
+
+<h2>Policy Requests</h2>
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Insured Policy ID</th>
+            <th>Name</th>
+            <th>Current Approval Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.InsuredPolicyId</td>
+                <td>@item.Name</td>
+                <td>@item.ApprovalStatus</td>
+                <td>
+                    <a href="@Url.Action("Review", "PolicyRequest", new { id = item.InsuredPolicyId })" class="btn btn-primary">Review</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@section Scripts {
+    <!-- Include the centralized JavaScript file -->
+    <script src="~/js/policyRequest.js"></script>
+}
+
+
 @model WebApplication1.Controllers.PolicyRequestViewModel
 
 @{
@@ -31,16 +69,17 @@
 </div>
 
 @section Scripts {
-    <script>
-        function updateApprovalStatus(insuredPolicyId, status) {
-            $.post('@Url.Action("UpdateApprovalStatus", "PolicyRequest")', { insuredPolicyId: insuredPolicyId, approvalStatus: status })
-                .done(function () {
-                    alert('Approval status updated successfully.');
-                    window.location.href = '@Url.Action("Index", "PolicyRequest")';
-                })
-                .fail(function () {
-                    alert('Failed to update approval status.');
-                });
-        }
-    </script>
+    <!-- Include the centralized JavaScript file -->
+    <script src="~/js/policyRequest.js"></script>
+}
+
+function updateApprovalStatus(insuredPolicyId, status) {
+    $.post('/PolicyRequest/UpdateApprovalStatus', { insuredPolicyId: insuredPolicyId, approvalStatus: status })
+        .done(function () {
+            alert('Approval status updated successfully.');
+            window.location.href = '/PolicyRequest/Index';
+        })
+        .fail(function () {
+            alert('Failed to update approval status.');
+        });
 }
