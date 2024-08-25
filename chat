@@ -1,28 +1,20 @@
-<!-- Update your navbar code here -->
-<nav class="navbar navbar-expand-lg navbar-light bg-light">
-    <a class="navbar-brand" asp-controller="Home" asp-action="Index">YourAppName</a>
-    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
-        <ul class="navbar-nav">
-            <li class="nav-item active">
-                <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
-            </li>
-            <!-- Other nav items -->
+public class PlansController : Controller
+{
+    public IActionResult ManagePlans()
+    {
+        return View();
+    }
 
-            <!-- Updated nav item for Plans with dropdown -->
-            <li class="nav-item dropdown">
-                <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownPlans" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                    Plans
-                </a>
-                <div class="dropdown-menu" aria-labelledby="navbarDropdownPlans">
-                    <a class="dropdown-item" asp-controller="Plans" asp-action="Manage">Manage Plans</a>
-                    <!-- Add more dropdown items if needed -->
-                </div>
-            </li>
+    public IActionResult ViewActivePlans()
+    {
+        // Your logic to fetch active plans
+        return View();
+    }
 
-            <!-- More nav items -->
-        </ul>
-    </div>
-</nav>
+    public IActionResult AddNewPlan()
+    {
+        // Your logic to add a new plan
+        return View();
+    }
+}
+
