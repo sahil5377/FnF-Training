@@ -1,13 +1,12 @@
-[HttpPut("{id}/ApprovalStatus")]
-public async Task<IActionResult> UpdateApprovalStatus(int id, [FromBody] string approvalStatus)
+public async Task UpdateApprovalStatus(int id, string approvalStatus)
 {
-    try
+    var found = await context.InsuredPolicies.FirstOrDefaultAsync(ip => ip.InsuredPolicyId == id);
+    if (found != null)
     {
-        await service.UpdateApprovalStatus(id, approvalStatus);
-        return Ok();
+        found.ApprovalStatus = approvalStatus;
+        context.InsuredPolicies.Update(found);
+        await context.SaveChangesAsync();
+        return;
     }
-    catch (NullReferenceException)
-    {
-        return NotFound();
-    }
+    throw new NullReferenceException();
 }
