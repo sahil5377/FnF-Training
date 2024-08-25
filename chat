@@ -1,62 +1,32 @@
-@model List<WebApplication1.Controllers.PolicyRequestViewModel>
+@model WebApplication1.Controllers.PolicyRequestViewModel
 
 @{
-    ViewData["Title"] = "Policy Requests";
+    ViewData["Title"] = "Review Policy Request";
 }
 
-<h2>Policy Requests</h2>
+<h2>Review Policy Request</h2>
 
-<table class="table table-bordered">
-    <thead>
-        <tr>
-            <th>Insured Policy ID</th>
-            <th>Insured ID</th>
-            <th>Policy ID</th>
-            <th>Policy Holder ID</th>
-            <th>Name</th>
-            <th>Approval Status</th>
-            <th>Approval Date</th>
-            <th>Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@item.InsuredPolicyId</td>
-                <td>@item.InsuredId</td>
-                <td>@item.PolicyId</td>
-                <td>@item.PolicyHolderId</td>
-                <td>@item.Name</td>
-                <td>@item.ApprovalStatus</td>
-                <td>@item.ApprovalDate?.ToString("yyyy-MM-dd HH:mm:ss")</td>
-                <td>
-                    <button class="btn btn-info" onclick="reviewPolicy(@item.InsuredPolicyId)">Review</button>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
-
-<!-- Modal -->
-<div class="modal fade" id="reviewModal" tabindex="-1" role="dialog" aria-labelledby="reviewModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="reviewModalLabel">Review Policy Request</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
-            </div>
-            <div class="modal-body" id="reviewModalBody">
-                <!-- Review details will be loaded here -->
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-success" onclick="updateApprovalStatus(@Model.InsuredPolicyId, 'Approved')">Approve</button>
-                <button type="button" class="btn btn-danger" onclick="updateApprovalStatus(@Model.InsuredPolicyId, 'Rejected')">Reject</button>
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-            </div>
-        </div>
+<!-- Display Policy Details -->
+<div class="card">
+    <div class="card-header">
+        Policy Details
+    </div>
+    <div class="card-body">
+        <h5 class="card-title">Insured Policy ID: @Model.InsuredPolicyId</h5>
+        <p class="card-text">
+            <strong>Insured ID:</strong> @Model.InsuredId <br />
+            <strong>Policy ID:</strong> @Model.PolicyId <br />
+            <strong>Policy Holder ID:</strong> @Model.PolicyHolderId <br />
+            <strong>Name:</strong> @Model.Name <br />
+            <strong>Current Approval Status:</strong> @Model.ApprovalStatus <br />
+            <strong>Approval Date:</strong> @Model.ApprovalDate?.ToString("yyyy-MM-dd HH:mm:ss")
+        </p>
+    </div>
+    <div class="card-footer text-muted">
+        <!-- Buttons for Approval and Rejection -->
+        <button class="btn btn-success" onclick="updateApprovalStatus(@Model.InsuredPolicyId, 'Approved')">Approve</button>
+        <button class="btn btn-danger" onclick="updateApprovalStatus(@Model.InsuredPolicyId, 'Rejected')">Reject</button>
+        <a href="@Url.Action("Index", "PolicyRequest")" class="btn btn-secondary">Back to List</a>
     </div>
 </div>
 
@@ -66,19 +36,11 @@
             $.post('@Url.Action("UpdateApprovalStatus", "PolicyRequest")', { insuredPolicyId: insuredPolicyId, approvalStatus: status })
                 .done(function () {
                     alert('Approval status updated successfully.');
-                    $('#reviewModal').modal('hide');
-                    location.reload();
+                    window.location.href = '@Url.Action("Index", "PolicyRequest")';
                 })
                 .fail(function () {
                     alert('Failed to update approval status.');
                 });
-        }
-
-        function reviewPolicy(insuredPolicyId) {
-            $.get('@Url.Action("Review", "PolicyRequest")', { insuredPolicyId: insuredPolicyId }, function (data) {
-                $('#reviewModalBody').html(data);
-                $('#reviewModal').modal('show');
-            });
         }
     </script>
 }
