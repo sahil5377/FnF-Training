@@ -5,39 +5,30 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace InsuranceApi.Controllers
 {
-    public interface IInsuredPolicyController
-    {
-        Task<IActionResult> Add(InsuredPolicyDto insuredPolicyDto);
-        Task<IActionResult> Delete(int id);
-        Task<IActionResult> GetAll();
-        Task<IActionResult> GetById(int id);
-        Task<IActionResult> Update(InsuredPolicyDto insuredPolicyDto);
-    }
-
     [Route("api/[controller]")]
     [ApiController]
-    public class InsuredPolicyController : ControllerBase, IInsuredPolicyController
+    public class InsuredPolicyController : ControllerBase
     {
-        private readonly IInsuredPolicyService service;
+        private readonly IInsuredPolicyService _service;
+
         public InsuredPolicyController(IInsuredPolicyService service)
         {
-            this.service = service;
+            _service = service;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            List<InsuredPolicyDto> insuredPolicyDtos = await service.GetAll();
+            var insuredPolicyDtos = await _service.GetAll();
             return Ok(insuredPolicyDtos);
         }
 
-        [HttpDelete]
-        [Route("{id}")]
+        [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
             try
             {
-                await service.Delete(id);
+                await _service.Delete(id);
                 return Ok();
             }
             catch (NullReferenceException)
@@ -49,16 +40,16 @@ namespace InsuranceApi.Controllers
         [HttpPost]
         public async Task<IActionResult> Add(InsuredPolicyDto insuredPolicyDto)
         {
-            await service.Add(insuredPolicyDto);
+            await _service.Add(insuredPolicyDto);
             return Ok();
         }
 
-        [HttpPut]
-        public async Task<IActionResult> Update(InsuredPolicyDto insuredPolicyDto)
+        [HttpPut("{id}")]
+        public async Task<IActionResult> Update(int id, [FromBody] string approvalStatus)
         {
             try
             {
-                await service.Update(insuredPolicyDto);
+                await _service.UpdateApprovalStatus(id, approvalStatus);
                 return Ok();
             }
             catch (NullReferenceException)
@@ -67,14 +58,13 @@ namespace InsuranceApi.Controllers
             }
         }
 
-        [HttpGet]
-        [Route("{id}")]
-        public async Task<IActionResult> GetById(int id)
+        [HttpGet("{id}/details")]
+        public async Task<IActionResult> GetPolicyDetails(int id)
         {
             try
             {
-                var found = await service.GetById(id);
-                return Ok(found);
+                var details = await _service.GetPolicyDetails(id);
+                return Ok(details);
             }
             catch (NullReferenceException)
             {
@@ -83,115 +73,3 @@ namespace InsuranceApi.Controllers
         }
     }
 }
-
-using InsuranceApi.Data;
-using InsuranceApi.DTOs;
-using Microsoft.EntityFrameworkCore;
-
-namespace InsuranceApi.Services
-{
-    public interface IInsuredPolicyService
-    {
-        Task Add(InsuredPolicyDto insuredPolicyDto);
-        Task Delete(int id);
-        Task<List<InsuredPolicyDto>> GetAll();
-        Task<InsuredPolicyDto> GetById(int id);
-        Task Update(InsuredPolicyDto insuredPolicyDto);
-    }
-
-    public class InsuredPolicyService : IInsuredPolicyService
-    {
-        private readonly FnfProjectContext context;
-
-        public InsuredPolicyService(FnfProjectContext context)
-        {
-            this.context = context;
-        }
-
-        public async Task<List<InsuredPolicyDto>> GetAll()
-        {
-            List<InsuredPolicyDto> insuredPolicyDtos = [];
-            await foreach (var insuredPolicyTable in context.InsuredPolicies)
-            {
-                var insuredPolicyDto = ConvertToDto(insuredPolicyTable);
-                insuredPolicyDtos.Add(insuredPolicyDto);
-            }
-            return insuredPolicyDtos;
-        }
-
-        public async Task Delete(int id)
-        {
-            var found = await context.InsuredPolicies.FirstOrDefaultAsync((insuredPolicyTable) =>
-                insuredPolicyTable.InsuredPolicyId == id);
-            if (found != null)
-            {
-                context.InsuredPolicies.Remove(found);
-                await context.SaveChangesAsync();
-                return;
-            }
-            throw new NullReferenceException();
-        }
-
-        public async Task Add(InsuredPolicyDto insuredPolicyDto)
-        {
-            InsuredPolicy insuredPolicyTable = new();
-            ConvertToTable(insuredPolicyDto, insuredPolicyTable);
-            context.InsuredPolicies.Add(insuredPolicyTable);
-            await context.SaveChangesAsync();
-            return;
-        }
-
-        public async Task Update(InsuredPolicyDto insuredPolicyDto)
-        {
-            var found = await context.InsuredPolicies.FirstOrDefaultAsync((insuredPolicyTable) =>
-                insuredPolicyTable.InsuredPolicyId == insuredPolicyDto.InsuredPolicyId);
-            if (found != null)
-            {
-                ConvertToTable(insuredPolicyDto, found);
-                await context.SaveChangesAsync();
-                return;
-            }
-            throw new NullReferenceException();
-        }
-
-        public async Task<InsuredPolicyDto> GetById(int id)
-        {
-            var found = await context.InsuredPolicies.FirstOrDefaultAsync((insuredPolicyTable) =>
-                insuredPolicyTable.InsuredPolicyId == id);
-
-            if (found != null)
-                return ConvertToDto(found);
-
-            throw new NullReferenceException();
-        }
-
-        private InsuredPolicyDto ConvertToDto(InsuredPolicy insuredPolicyTable)
-        {
-            InsuredPolicyDto insuredPolicyDto = new()
-            {
-                InsuredPolicyId = insuredPolicyTable.InsuredPolicyId,
-                PolicyId = insuredPolicyTable.PolicyId,
-                InsuredId = insuredPolicyTable.InsuredId,
-                ApprovalStatus = insuredPolicyTable.ApprovalStatus,
-                RenewalStatus = insuredPolicyTable.RenewalStatus,
-                AdminId = insuredPolicyTable.AdminId,
-                ApprovalDate = DateTime.Parse(insuredPolicyTable.ApprovalDate.ToString()),
-            };
-            return insuredPolicyDto;
-        }
-
-        private void ConvertToTable(InsuredPolicyDto insuredPolicyDto, InsuredPolicy insuredPolicyTable)
-        {
-            insuredPolicyTable.InsuredPolicyId = insuredPolicyDto.InsuredPolicyId;
-            insuredPolicyTable.PolicyId = insuredPolicyDto.PolicyId;
-            insuredPolicyTable.InsuredId = insuredPolicyDto.InsuredId;
-            insuredPolicyTable.ApprovalStatus = insuredPolicyDto.ApprovalStatus;
-            insuredPolicyTable.RenewalStatus = insuredPolicyDto.RenewalStatus;
-            insuredPolicyTable.AdminId = insuredPolicyDto.AdminId;
-            insuredPolicyTable.ApprovalDate = DateOnly.FromDateTime((DateTime)insuredPolicyDto.ApprovalDate);
-            return;
-        }
-    }
-}
-
-these are my backend api files
