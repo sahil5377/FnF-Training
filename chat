@@ -1,170 +1,102 @@
-using InsuranceApi.DTOs;
-using System.Collections.Generic;
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text.Json;
-using System.Threading.Tasks;
+@model List<WebApplication1.Controllers.PolicyRequestViewModel>
 
-namespace WebApplication1.Services
-{
-    public class PolicyRequestService : IPolicyRequestService
-    {
-        private readonly HttpClient _httpClient;
+@{
+    ViewData["Title"] = "Policy Requests";
+}
 
-        public PolicyRequestService(HttpClient httpClient)
+<h2>Policy Requests</h2>
+
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Insured Policy ID</th>
+            <th>Insured ID</th>
+            <th>Policy ID</th>
+            <th>Policy Holder ID</th>
+            <th>Name</th>
+            <th>Approval Status</th>
+            <th>Approval Date</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
         {
-            _httpClient = httpClient;
+            <tr>
+                <td>@item.InsuredPolicyId</td>
+                <td>@item.InsuredId</td>
+                <td>@item.PolicyId</td>
+                <td>@item.PolicyHolderId</td>
+                <td>@item.Name</td>
+                <td>@item.ApprovalStatus</td>
+                <td>@item.ApprovalDate?.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                <td>
+                    <button class="btn btn-info" onclick="reviewPolicy(@item.InsuredPolicyId)">Review</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Modal -->
+<div class="modal fade" id="reviewModal" tabindex="-1" role="dialog" aria-labelledby="reviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="reviewModalLabel">Review Policy Request</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="reviewModalBody">
+                <!-- Review details will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function reviewPolicy(insuredPolicyId) {
+            $.get('@Url.Action("Review", "PolicyRequest")', { insuredPolicyId: insuredPolicyId }, function(data) {
+                $('#reviewModalBody').html(data);
+                $('#reviewModal').modal('show');
+            });
         }
 
-        public async Task<List<InsuredPolicyDto>> GetInsuredPoliciesAsync()
-        {
-            var response = await _httpClient.GetAsync("InsuredPolicy");
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<List<InsuredPolicyDto>>();
+        function updateApprovalStatus(insuredPolicyId, status) {
+            $.post('@Url.Action("UpdateApprovalStatus", "PolicyRequest")', { insuredPolicyId: insuredPolicyId, status: status }, function(response) {
+                if (response.success) {
+                    alert('Approval status updated successfully.');
+                    location.reload();
+                } else {
+                    alert('Failed to update approval status.');
+                }
+            });
         }
-
-        public async Task<PolicyHolderDto> GetPolicyHolderAsync(int policyHolderId)
-        {
-            var response = await _httpClient.GetAsync($"PolicyHolder/{policyHolderId}");
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<PolicyHolderDto>();
-        }
-
-        public async Task<PolicyDto> GetPolicyAsync(int policyId)
-        {
-            var response = await _httpClient.GetAsync($"Policy/{policyId}");
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<PolicyDto>();
-        }
-
-        public async Task<List<PaymentDto>> GetPaymentsByInsuredPolicyIdAsync(int insuredPolicyId)
-        {
-            var response = await _httpClient.GetAsync($"Payment?insuredPolicyId={insuredPolicyId}");
-            response.EnsureSuccessStatusCode();
-            return await response.Content.ReadFromJsonAsync<List<PaymentDto>>();
-        }
-
-        public async Task<bool> UpdateApprovalStatusAsync(int insuredPolicyId, string approvalStatus)
-        {
-            var content = JsonContent.Create(new { ApprovalStatus = approvalStatus });
-            var response = await _httpClient.PutAsync($"InsuredPolicy/{insuredPolicyId}/ApprovalStatus", content);
-            return response.IsSuccessStatusCode;
-        }
-    }
+    </script>
 }
 
 
-using InsuranceApi.DTOs;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+@model WebApplication1.Controllers.ReviewPolicyRequestViewModel
 
-namespace WebApplication1.Services
-{
-    public interface IPolicyRequestService
-    {
-        Task<List<InsuredPolicyDto>> GetInsuredPoliciesAsync();
-        Task<PolicyHolderDto> GetPolicyHolderAsync(int policyHolderId);
-        Task<PolicyDto> GetPolicyAsync(int policyId);
-        Task<List<PaymentDto>> GetPaymentsByInsuredPolicyIdAsync(int insuredPolicyId);
-        Task<bool> UpdateApprovalStatusAsync(int insuredPolicyId, string approvalStatus);
-    }
-}
+<div>
+    <p><strong>Policy Holder Name:</strong> @Model.PolicyHolderName</p>
+    <p><strong>Insured ID:</strong> @Model.InsuredId</p>
+    <p><strong>Insured Policy ID:</strong> @Model.InsuredPolicyId</p>
+    <p><strong>Policy ID:</strong> @Model.PolicyId</p>
+    <p><strong>Admin ID:</strong> @Model.AdminId</p>
+    <p><strong>Premium Amount:</strong> @Model.PremiumAmount</p>
+    <p><strong>Payment ID:</strong> @Model.PaymentId</p>
+    <p><strong>Payment Amount:</strong> @Model.PaymentAmount</p>
+    <p><strong>Payment Date:</strong> @Model.PaymentDate?.ToString("yyyy-MM-dd")</p>
+</div>
+
+<div class="modal-footer">
+    <button type="button" class="btn btn-success" onclick="updateApprovalStatus(@Model.InsuredPolicyId, 'Approved')">Approve</button>
+    <button type="button" class="btn btn-danger" onclick="updateApprovalStatus(@Model.InsuredPolicyId, 'Rejected')">Reject</button>
+    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+</div>
 
 
-using InsuranceApi.DTOs;
-using Microsoft.AspNetCore.Mvc;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using WebApplication1.Services;
 
-namespace WebApplication1.Controllers
-{
-    public class PolicyRequestController : Controller
-    {
-        private readonly IPolicyRequestService _policyRequestService;
-
-        public PolicyRequestController(IPolicyRequestService policyRequestService)
-        {
-            _policyRequestService = policyRequestService;
-        }
-
-        public async Task<IActionResult> Index()
-        {
-            var insuredPolicies = await _policyRequestService.GetInsuredPoliciesAsync();
-
-            var policyRequests = new List<PolicyRequestViewModel>();
-            foreach (var policy in insuredPolicies)
-            {
-                var policyHolder = await _policyRequestService.GetPolicyHolderAsync(policy.InsuredId);
-                policyRequests.Add(new PolicyRequestViewModel
-                {
-                    InsuredPolicyId = policy.InsuredPolicyId,
-                    InsuredId = policy.InsuredId,
-                    PolicyId = policy.PolicyId,
-                    PolicyHolderId = policyHolder.PolicyHolderId,
-                    Name = policyHolder.Name,
-                    ApprovalStatus = policy.ApprovalStatus,
-                    ApprovalDate = policy.ApprovalDate
-                });
-            }
-
-            return View(policyRequests);
-        }
-
-        public async Task<IActionResult> Review(int insuredPolicyId)
-        {
-            var insuredPolicy = (await _policyRequestService.GetInsuredPoliciesAsync())
-                .FirstOrDefault(p => p.InsuredPolicyId == insuredPolicyId);
-            var policyHolder = await _policyRequestService.GetPolicyHolderAsync(insuredPolicy.InsuredId);
-            var policy = await _policyRequestService.GetPolicyAsync(insuredPolicy.PolicyId);
-            var payments = await _policyRequestService.GetPaymentsByInsuredPolicyIdAsync(insuredPolicy.InsuredPolicyId);
-
-            var viewModel = new ReviewPolicyRequestViewModel
-            {
-                PolicyHolderName = policyHolder.Name,
-                InsuredId = insuredPolicy.InsuredId,
-                InsuredPolicyId = insuredPolicy.InsuredPolicyId,
-                PolicyId = insuredPolicy.PolicyId,
-                AdminId = insuredPolicy.AdminId,
-                PremiumAmount = policy.PremiumAmount,
-                PaymentId = payments.FirstOrDefault()?.PaymentId ?? 0,
-                PaymentAmount = payments.FirstOrDefault()?.PaymentAmount ?? 0,
-                PaymentDate = payments.FirstOrDefault()?.PaymentDate ?? null
-            };
-
-            return PartialView("_ReviewPolicyRequest", viewModel);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> UpdateApprovalStatus(int insuredPolicyId, string status)
-        {
-            var success = await _policyRequestService.UpdateApprovalStatusAsync(insuredPolicyId, status);
-            return Json(new { success });
-        }
-    }
-
-    public class PolicyRequestViewModel
-    {
-        public int InsuredPolicyId { get; set; }
-        public int InsuredId { get; set; }
-        public int PolicyId { get; set; }
-        public int PolicyHolderId { get; set; }
-        public string Name { get; set; }
-        public string ApprovalStatus { get; set; }
-        public DateTime? ApprovalDate { get; set; }
-    }
-
-    public class ReviewPolicyRequestViewModel
-    {
-        public string PolicyHolderName { get; set; }
-        public int InsuredId { get; set; }
-        public int InsuredPolicyId { get; set; }
-        public int PolicyId { get; set; }
-        public int AdminId { get; set; }
-        public decimal PremiumAmount { get; set; }
-        public int PaymentId { get; set; }
-        public decimal PaymentAmount { get; set; }
-        public DateTime? PaymentDate { get; set; }
-    }
-}
