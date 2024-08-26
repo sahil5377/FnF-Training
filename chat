@@ -1,10 +1,10 @@
 @model List<InsuranceApi.DTOs.PolicyHolderDto>
 
 @{
-    ViewData["Title"] = "Blacklist Customers";
+    ViewData["Title"] = "Manage Customers";
 }
 
-<h2>Blacklist Customers</h2>
+<h2>Manage Customers</h2>
 
 <table class="table table-striped">
     <thead>
@@ -21,31 +21,44 @@
     <tbody>
         @foreach (var policyHolder in Model)
         {
-            if (policyHolder.Status == 0) // Assuming status '0' indicates a blacklisted customer
-            {
-                <tr>
-                    <td>@policyHolder.PolicyHolderId</td>
-                    <td>@policyHolder.Name</td>
-                    <td>@policyHolder.Address</td>
-                    <td>@policyHolder.Phone</td>
-                    <td>@policyHolder.Email</td>
-                    <td>
+            <tr>
+                <td>@policyHolder.PolicyHolderId</td>
+                <td>@policyHolder.Name</td>
+                <td>@policyHolder.Address</td>
+                <td>@policyHolder.Phone</td>
+                <td>@policyHolder.Email</td>
+                <td>
+                    @if (policyHolder.Status == 0)
+                    {
                         <span>Blacklisted</span>
-                    </td>
-                    <td>
-                        <button class="btn btn-danger" onclick="unblockCustomer(@policyHolder.PolicyHolderId)">
+                    }
+                    else
+                    {
+                        <span>Active</span>
+                    }
+                </td>
+                <td>
+                    @if (policyHolder.Status == 0)
+                    {
+                        <button class="btn btn-success" onclick="changeStatus(@policyHolder.PolicyHolderId, 1)">
                             Unblock
                         </button>
-                    </td>
-                </tr>
-            }
+                    }
+                    else
+                    {
+                        <button class="btn btn-danger" onclick="changeStatus(@policyHolder.PolicyHolderId, 0)">
+                            Block
+                        </button>
+                    }
+                </td>
+            </tr>
         }
     </tbody>
 </table>
 
 <script>
-    async function unblockCustomer(id) {
-        const response = await fetch(`/Customer/UnblockCustomer/${id}`, {
+    async function changeStatus(id, status) {
+        const response = await fetch(`/Customer/UpdateStatus/${id}/${status}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'
@@ -55,7 +68,7 @@
         if (response.ok) {
             location.reload(); // Reload the page to reflect changes
         } else {
-            alert('Failed to unblock customer');
+            alert('Failed to update status');
         }
     }
 </script>
