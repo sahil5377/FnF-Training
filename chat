@@ -1,11 +1,61 @@
-public async Task<List<PolicyHolderDto>> GetBlacklistedPolicyHoldersAsync()
-{
-    string endpoint = "PolicyHolder/blacklisted";
-    var response = await _httpClient.GetAsync(endpoint);
-    response.EnsureSuccessStatusCode();
+@model List<InsuranceApi.DTOs.PolicyHolderDto>
 
-    var jsonResponse = await response.Content.ReadAsStringAsync();
-    var blacklistedCustomers = JsonSerializer.Deserialize<List<PolicyHolderDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-    return blacklistedCustomers;
+@{
+    ViewData["Title"] = "Blacklist Customers";
 }
+
+<h2>Blacklist Customers</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Policy Holder ID</th>
+            <th>Name</th>
+            <th>Address</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var policyHolder in Model)
+        {
+            if (policyHolder.Status == 0) // Assuming status '0' indicates a blacklisted customer
+            {
+                <tr>
+                    <td>@policyHolder.PolicyHolderId</td>
+                    <td>@policyHolder.Name</td>
+                    <td>@policyHolder.Address</td>
+                    <td>@policyHolder.Phone</td>
+                    <td>@policyHolder.Email</td>
+                    <td>
+                        <span>Blacklisted</span>
+                    </td>
+                    <td>
+                        <button class="btn btn-danger" onclick="unblockCustomer(@policyHolder.PolicyHolderId)">
+                            Unblock
+                        </button>
+                    </td>
+                </tr>
+            }
+        }
+    </tbody>
+</table>
+
+<script>
+    async function unblockCustomer(id) {
+        const response = await fetch(`/Customer/UnblockCustomer/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (response.ok) {
+            location.reload(); // Reload the page to reflect changes
+        } else {
+            alert('Failed to unblock customer');
+        }
+    }
+</script>
