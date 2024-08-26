@@ -1,40 +1,542 @@
-@model WebApplication1.Controllers.ReviewPolicyRequestViewModel
+using InsuranceApi.Data;
+using InsuranceApi.DTOs;
+using InsuranceApi.Services;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
-<div>
-    <h4>Review Policy Request</h4>
-    <hr />
-    <!-- Display policy details as before -->
+namespace InsuranceApi.Controllers
+{
+    [Route("api/[controller]")]
+    [ApiController]
+    public class PolicyHolderController : ControllerBase
+    {
+        private readonly IPolicyHolderService _service;
 
-    <div class="form-group">
-        <button class="btn btn-success" onclick="updateApprovalStatus(@Model.InsuredPolicyId, 'Approved')">Accept</button>
-        <button class="btn btn-danger" onclick="updateApprovalStatus(@Model.InsuredPolicyId, 'Rejected')">Reject</button>
-        <button class="btn btn-secondary" data-dismiss="modal">Close</button>
-    </div>
-</div>
-
-@Html.AntiForgeryToken() <!-- Add the anti-forgery token here -->
-
-@section Scripts {
-    <script>
-        function updateApprovalStatus(insuredPolicyId, approvalStatus) {
-            var token = $('input[name="__RequestVerificationToken"]').val();
-            $.ajax({
-                url: '@Url.Action("UpdateApprovalStatus", "PolicyRequest")',
-                type: 'POST',
-                data: {
-                    __RequestVerificationToken: token,
-                    insuredPolicyId: insuredPolicyId,
-                    approvalStatus: approvalStatus
-                },
-                success: function (result) {
-                    $('#reviewModal').modal('hide');
-                    window.location.reload();
-                },
-                error: function (xhr, status, error) {
-                    console.error('Error:', xhr.responseText); // Log the error for debugging
-                    alert('Error: ' + xhr.responseText);
-                }
-            });
+        public PolicyHolderController(IPolicyHolderService service)
+        {
+            _service = service;
         }
-    </script>
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll()
+        {
+            List<PolicyHolderDto> policyHolderDtos = await _service.GetAll();
+            return Ok(policyHolderDtos);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            try
+            {
+                var found = await _service.GetById(id);
+                return Ok(found);
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Add(PolicyHolderDto policyHolderDto)
+        {
+            await _service.Add(policyHolderDto);
+            return Ok();
+        }
+
+        [HttpPut]
+        public async Task<IActionResult> Update(PolicyHolderDto policyHolderDto)
+        {
+            try
+            {
+                await _service.Update(policyHolderDto);
+                return Ok();
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpDelete("{id}")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            try
+            {
+                await _service.Delete(id);
+                return Ok();
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpPut("{id}/status")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] int status)
+        {
+            try
+            {
+                await _service.UpdateStatus(id, status);
+                return Ok();
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
+        }
+    }
 }
+
+
+This API COntroller
+using InsuranceApi.Data;
+using InsuranceApi.DTOs;
+using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace InsuranceApi.Services
+{
+    public interface IPolicyHolderService
+    {
+        Task Add(PolicyHolderDto policyHolderDto);
+        Task Delete(int id);
+        Task<List<PolicyHolderDto>> GetAll();
+        Task<PolicyHolderDto> GetById(int id);
+        Task Update(PolicyHolderDto policyHolderDto);
+        Task UpdateStatus(int id, int status);
+    }
+
+    public class PolicyHolderService : IPolicyHolderService
+    {
+        private readonly FnfProjectContext context;
+
+        public PolicyHolderService(FnfProjectContext context)
+        {
+            this.context = context;
+        }
+
+        public async Task<List<PolicyHolderDto>> GetAll()
+        {
+            List<PolicyHolderDto> policyHolderDtos = new List<PolicyHolderDto>();
+            await foreach (var policyHolderTable in context.PolicyHolders)
+            {
+                var policyHolderDto = ConvertToDto(policyHolderTable);
+                policyHolderDtos.Add(policyHolderDto);
+            }
+            return policyHolderDtos;
+        }
+
+        public async Task Delete(int id)
+        {
+            var found = await context.PolicyHolders.FirstOrDefaultAsync((policyHolderTable) =>
+                policyHolderTable.PolicyHolderId == id);
+            if (found != null)
+            {
+                context.PolicyHolders.Remove(found);
+                await context.SaveChangesAsync();
+                return;
+            }
+            throw new NullReferenceException();
+        }
+
+        public async Task Add(PolicyHolderDto policyHolderDto)
+        {
+            PolicyHolder policyHolderTable = new();
+            ConvertToTable(policyHolderDto, policyHolderTable);
+            context.PolicyHolders.Add(policyHolderTable);
+            await context.SaveChangesAsync();
+            return;
+        }
+
+        public async Task Update(PolicyHolderDto policyHolderDto)
+        {
+            var found = await context.PolicyHolders.FirstOrDefaultAsync((policyHolderTable) =>
+                policyHolderTable.PolicyHolderId == policyHolderDto.PolicyHolderId);
+            if (found != null)
+            {
+                ConvertToTable(policyHolderDto, found);
+                await context.SaveChangesAsync();
+                return;
+            }
+            throw new NullReferenceException();
+        }
+
+        public async Task<PolicyHolderDto> GetById(int id)
+        {
+            var found = await context.PolicyHolders.FirstOrDefaultAsync((policyHolderTable) =>
+                policyHolderTable.PolicyHolderId == id);
+
+            if (found != null)
+                return ConvertToDto(found);
+
+            throw new NullReferenceException();
+        }
+
+        public async Task UpdateStatus(int id, int status)
+        {
+            var found = await context.PolicyHolders.FirstOrDefaultAsync(ph => ph.PolicyHolderId == id);
+            if (found != null)
+            {
+                found.Status = status;
+                await context.SaveChangesAsync();
+                return;
+            }
+            throw new NullReferenceException();
+        }
+
+        private PolicyHolderDto ConvertToDto(PolicyHolder policyHolderTable)
+        {
+            PolicyHolderDto policyHolderDto = new()
+            {
+                PolicyHolderId = policyHolderTable.PolicyHolderId,
+                Name = policyHolderTable.Name,
+                Address = policyHolderTable.Address,
+                Email = policyHolderTable.Email,
+                PasswordHash = policyHolderTable.PasswordHash,
+                Phone = policyHolderTable.Phone,
+                Status = policyHolderTable.Status,
+            };
+            return policyHolderDto;
+        }
+
+        private void ConvertToTable(PolicyHolderDto policyHolderDto, PolicyHolder policyHolderTable)
+        {
+            policyHolderTable.PolicyHolderId = policyHolderDto.PolicyHolderId;
+            policyHolderTable.Name = policyHolderDto.Name;
+            policyHolderTable.Address = policyHolderDto.Address;
+            policyHolderTable.Email = policyHolderDto.Email;
+            policyHolderTable.PasswordHash = policyHolderDto.PasswordHash;
+            policyHolderTable.Phone = policyHolderDto.Phone;
+            policyHolderTable.Status = policyHolderDto.Status;
+            return;
+        }
+    }
+}
+The Api Service
+using InsuranceApi.DTOs;
+using Microsoft.AspNetCore.Cors;
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
+using WebApplication1.Services;
+
+namespace WebApplication1.Controllers
+{
+    [EnableCors("AllowSpecificOrigin")]  // Ensure CORS policy is applied
+    public class CustomerController : Controller
+    {
+        private readonly PolicyHolderService _policyHolderService;
+
+        public CustomerController(PolicyHolderService policyHolderService)
+        {
+            _policyHolderService = policyHolderService;
+        }
+
+        public async Task<IActionResult> ManageCustomers()
+        {
+            var policyHolders = await _policyHolderService.GetPolicyHoldersAsync();
+            return View(policyHolders);
+        }
+
+        [HttpPut]
+        [Route("PolicyHolder/{id}/status")]
+        public async Task<IActionResult> UpdateStatus(int id, [FromBody] int status)
+        {
+            try
+            {
+                await _policyHolderService.UpdateStatusAsync(id, status);
+                return Ok();
+            }
+            catch
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, "An error occurred while updating the status.");
+            }
+        }
+    }
+}
+MVC Controller
+using InsuranceApi.DTOs;
+using System.Net.Http;
+using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+
+public class PolicyHolderService
+{
+    private readonly HttpClient _httpClient;
+
+    public PolicyHolderService(HttpClient httpClient)
+    {
+        _httpClient = httpClient;
+    }
+
+    public async Task<List<PolicyHolderDto>> GetPolicyHoldersAsync()
+    {
+        string endpoint = "PolicyHolder";
+        var response = await _httpClient.GetAsync(endpoint);
+        response.EnsureSuccessStatusCode();
+
+        var jsonResponse = await response.Content.ReadAsStringAsync();
+        var customers = JsonSerializer.Deserialize<List<PolicyHolderDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+        return customers;
+    }
+
+    // Update this method to send status as an integer
+    public async Task UpdateStatusAsync(int id, int status)
+    {
+        string endpoint = $"PolicyHolder/{id}/status";
+        var content = new StringContent(JsonSerializer.Serialize(status), Encoding.UTF8, "application/json");
+
+        var response = await _httpClient.PutAsync(endpoint, content);
+        response.EnsureSuccessStatusCode();
+    }
+}
+MVC Service
+
+@model List<InsuranceApi.DTOs.PolicyHolderDto>
+
+@{
+    ViewData["Title"] = "Manage Customers";
+}
+
+<h2>Manage Customers</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Policy Holder ID</th>
+            <th>Name</th>
+            <th>Address</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var policyHolder in Model)
+        {
+            <tr>
+                <td>@policyHolder.PolicyHolderId</td>
+                <td>@policyHolder.Name</td>
+                <td>@policyHolder.Address</td>
+                <td>@policyHolder.Phone</td>
+                <td>@policyHolder.Email</td>
+                <td>
+                    @if (policyHolder.Status == 1)
+                    {
+                        <span>Active</span>
+                    }
+                    else
+                    {
+                        <span>Blocked</span>
+                    }
+                </td>
+                <td>
+                    <button class="btn toggle-button @(policyHolder.Status == 1 ? "btn-primary" : "btn-secondary")" onclick="toggleStatus(@policyHolder.PolicyHolderId, @policyHolder.Status)">
+                        <span class="toggle-slider @(policyHolder.Status == 1 ? "active" : "inactive")"></span>
+                    </button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<style>
+    .toggle-button {
+        position: relative;
+        width: 60px;
+        height: 34px;
+        border: none;
+        border-radius: 34px;
+        cursor: pointer;
+        outline: none;
+        background-color: grey; /* Default background */
+        transition: background-color 0.3s;
+    }
+
+    .btn-primary {
+        background-color: blue;
+    }
+
+    .btn-secondary {
+        background-color: grey;
+    }
+
+    .toggle-slider {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background-color: white;
+        transition: transform 0.3s ease, background-color 0.3s ease;
+    }
+
+    .toggle-button.btn-primary .toggle-slider {
+        transform: translateX(26px);
+    }
+
+    .toggle-button.btn-secondary .toggle-slider {
+        transform: translateX(0);
+    }
+</style>
+
+<script>
+    async function toggleStatus(id, currentStatus) {
+        let newStatus = currentStatus === 1 ? 0 : 1; // Assuming status is binary (active/inactive)
+
+        const response = await fetch(`/PolicyHolder/${id}/status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(newStatus)
+        });
+
+        if (response.ok) {
+            location.reload(); // Reload the page to reflect changes
+        } else {
+            alert('Failed to update status');
+        }
+    }
+</script>
+Managecustomer.cshtml
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - WebApplication1</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/WebApplication1.styles.css" asp-append-version="true" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"> <!-- Added Font Awesome -->
+</head>
+
+<body>
+    @if (User.Identity.IsAuthenticated)
+    {
+        <header>
+            <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+                <div class="container-fluid">
+                    <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
+                        <img src="~/images/CompanyLogo.png" alt="Company Logo" style="height: 40px;" />
+                    </a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                            aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+
+                    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                        <ul class="navbar-nav flex-grow-1 justify-content-end">
+                            <!-- Dashboard -->
+                            <li class="nav-item mx-2">
+                                <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Dashboard">
+                                    <i class="fa fa-dashboard" aria-hidden="true"></i> Dashboard
+                                </a>
+                            </li>
+
+                            <!-- Customers -->
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-black" href="#" id="manageCustomersDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fa fa-users" aria-hidden="true"></i> Customers
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="manageCustomersDropdown">
+                                    <li>
+                                        <a class="dropdown-item" asp-controller="Customer" asp-action="ManageCustomers">Manage Customers</a>
+                                    </li>
+                                </ul>
+                            </li>
+                            <!-- Policies -->
+                            <li class="nav-item">
+                                <a class="nav-link text-dark" asp-controller="PolicyRequest" asp-action="Index">
+                                    <i class="fas fa-file-alt"></i> Policy Request
+                                </a>
+                            </li>
+
+
+                            <!-- Plans -->
+                            <li class="nav-item dropdown mx-2">
+                                <a class="nav-link dropdown-toggle text-dark" href="#" id="navbarDropdownPlans" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fa fa-file-text-o" aria-hidden="true"></i> Plans
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="navbarDropdownPlans">
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="Plans" asp-action="ManagePlans">Manage Plans</a></li>
+                                </ul>
+                            </li>
+
+                            <!-- Claims -->
+                            <li class="nav-item dropdown mx-2">
+                                <a class="nav-link dropdown-toggle text-dark" href="#" id="claimDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fa fa-exclamation-triangle" aria-hidden="true"></i> Claims
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="claimDropdown">
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="Claim" asp-action="ManageClaims">Manage Claims</a></li>
+                                </ul>
+                            </li>
+
+                            <!-- Dropdown for Hospitals -->
+                            <li class="nav-item dropdown mx-2">
+                                <a class="nav-link dropdown-toggle text-dark" href="#" id="hospitalDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="fa fa-hospital-o" aria-hidden="true"></i> Hospitals
+                                </a>
+                                <ul class="dropdown-menu" aria-labelledby="hospitalDropdown">
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="Hospital" asp-action="ManageHospitals">Manage Hospitals</a></li>
+                                </ul>
+                            </li>
+
+                            <!-- Profile Section -->
+                            <li class="nav-item dropdown mx-2">
+                                <a class="nav-link dropdown-toggle text-dark d-flex align-items-center" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <div class="rounded-circle bg-primary text-white d-flex justify-content-center align-items-center" style="width: 35px; height: 35px;">
+                                        <h5>@User.Identity.Name[0]</h5>
+                                    </div>
+                                </a>
+                                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="Home" asp-action="Profile">Profile</a></li>
+                                    <li><a class="dropdown-item" asp-area="" asp-controller="Account" asp-action="Logout">Logout</a></li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+        </header>
+    }
+    <div class="container">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted">
+        <div class="container">
+            &copy; 2024 - WebApplication1 - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
+
+<script>
+    function ConfirmLogout() {
+        if (confirm("Are you sure you want to logout?")) {
+            window.location.href = '@Url.Action("Logout", "Account")';
+        }
+    }
+</script>
+
+This my layout Page
