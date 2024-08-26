@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,79 +11,113 @@
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
     <style>
+        /* Navbar brand logo with rotation */
         .navbar-brand img {
-            transition: transform 0.3s ease;
+            transition: transform 0.5s ease;
         }
 
-            .navbar-brand img:hover {
-                transform: scale(1.1);
-            }
+        .navbar-brand img:hover {
+            transform: rotate(360deg) scale(1.1);
+        }
 
+        /* Navbar link hover with bounce effect */
         .nav-link {
-            color: black !important; /* Changed nav-link text color to black */
+            color: black !important;
             transition: color 0.3s ease, transform 0.3s ease;
         }
 
-            .nav-link:hover {
-                color: #007bff !important; /* Highlight color for hover effect */
-                transform: translateY(-3px);
-            }
-
-        .nav-item.active .nav-link {
-            border-bottom: 2px solid #007bff; /* Active link indicator */
+        .nav-link:hover {
+            color: #007bff !important;
+            transform: translateY(-5px) scale(1.05);
         }
 
+        .nav-item.active .nav-link {
+            border-bottom: 2px solid #007bff;
+        }
+
+        /* Dropdown menu with sliding effect */
         .dropdown-menu {
             background-color: white;
             border: none;
-            transition: opacity 0.3s ease; /* Smooth fade-in effect */
+            transition: transform 0.3s ease, opacity 0.3s ease;
             opacity: 0;
             transform: translateY(10px);
             display: block;
-            pointer-events: none; /* Disable interaction while not visible */
+            pointer-events: none;
         }
 
         .dropdown:hover .dropdown-menu {
-            opacity: 1; /* Show menu */
-            transform: translateY(0); /* Move up to its original position */
-            pointer-events: auto; /* Enable interaction */
+            opacity: 1;
+            transform: translateY(0);
+            pointer-events: auto;
         }
 
         .dropdown-item {
-            color: black !important; /* Black text for dropdown items */
+            color: black !important;
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-            .dropdown-item:hover {
-                background-color: #f8f9fa; /* Light gray hover color for dropdown items */
-                color: #007bff !important; /* Highlight text color */
-            }
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+            color: #007bff !important;
+        }
 
-        /* Profile circle hover effect */
+        /* Profile circle advanced hover effects */
         .nav-link.dropdown-toggle .rounded-circle {
-            transition: background-color 0.3s ease, transform 0.3s ease;
+            transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
         }
 
         .nav-link.dropdown-toggle:hover .rounded-circle {
-            background-color: #007bff; /* Changed to primary color on hover */
-            transform: scale(1.1);
+            background-color: #007bff;
+            transform: scale(1.2) rotate(360deg);
+            box-shadow: 0 0 15px rgba(0, 123, 255, 0.5);
         }
 
-        /* Footer styling */
+        /* Footer styling with underline animation */
         footer {
             background-color: white;
             color: black;
             padding: 20px 0;
         }
 
-            footer a {
-                color: #007bff;
-                transition: color 0.3s ease;
-            }
+        footer a {
+            color: #007bff;
+            transition: color 0.3s ease;
+            text-decoration: none;
+            position: relative;
+        }
 
-                footer a:hover {
-                    color: black;
-                }
+        footer a:after {
+            content: "";
+            position: absolute;
+            width: 0;
+            height: 2px;
+            display: block;
+            background: #007bff;
+            transition: width 0.3s;
+            bottom: 0;
+            left: 0;
+        }
+
+        footer a:hover {
+            color: black;
+        }
+
+        footer a:hover:after {
+            width: 100%;
+        }
+
+        /* Button hover effect with glow */
+        .btn-hover-glow {
+            background-color: #007bff;
+            color: white;
+            transition: box-shadow 0.3s ease, transform 0.3s ease;
+        }
+
+        .btn-hover-glow:hover {
+            box-shadow: 0 0 15px rgba(0, 123, 255, 0.75);
+            transform: scale(1.1);
+        }
     </style>
 </head>
 
@@ -182,15 +217,7 @@
     </footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+    @RenderSection("Scripts", required: false)
 </body>
-</html>
 
-<script>
-    function ConfirmLogout() {
-        if (confirm("Are you sure you want to logout?")) {
-            window.location.href = '@Url.Action("Logout", "Account")';
-        }
-    }
-</script>
+</html>
