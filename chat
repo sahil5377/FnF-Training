@@ -1,5 +1,11 @@
-public async Task<IActionResult> BlacklistedCustomers()
+public async Task<List<PolicyHolderDto>> GetBlacklistedPolicyHoldersAsync()
 {
-    var blacklistedPolicyHolders = await _policyHolderService.GetBlacklistedPolicyHoldersAsync();
-    return View(blacklistedPolicyHolders);
+    string endpoint = "PolicyHolder/blacklisted";
+    var response = await _httpClient.GetAsync(endpoint);
+    response.EnsureSuccessStatusCode();
+
+    var jsonResponse = await response.Content.ReadAsStringAsync();
+    var blacklistedCustomers = JsonSerializer.Deserialize<List<PolicyHolderDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+    return blacklistedCustomers;
 }
