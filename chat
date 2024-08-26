@@ -6,63 +6,89 @@
     <title>@ViewData["Title"] - WebApplication1</title>
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/WebApplication1.styles.css" asp-append-version="true" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css" rel="stylesheet"> <!-- Font Awesome -->
     <style>
-        /* Enhanced navbar styling */
+        /* Custom Navbar Styling */
         .navbar {
-            background-color: #343a40; /* Dark theme */
-            transition: background-color 0.3s ease;
+            background-color: #4a90e2;
+            transition: background-color 0.5s;
         }
-        .navbar-brand img {
-            transition: transform 0.3s ease;
+
+        .navbar:hover {
+            background-color: #357ABD;
         }
-        .navbar-brand img:hover {
-            transform: scale(1.1);
+
+        .navbar-nav .nav-link {
+            color: #fff !important;
+            font-size: 16px;
+            font-weight: 500;
+            position: relative;
+            overflow: hidden;
         }
-        .nav-link {
-            color: #ffffff !important;
-            transition: color 0.3s ease, transform 0.3s ease;
+
+        .navbar-nav .nav-link:after {
+            content: '';
+            display: block;
+            width: 0;
+            height: 3px;
+            background: #fff;
+            transition: width .3s;
+            position: absolute;
+            bottom: 0;
+            left: 0;
         }
-        .nav-link:hover {
-            color: #ffcc00 !important; /* Highlight color */
-            transform: translateY(-3px);
+
+        .navbar-nav .nav-link:hover:after {
+            width: 100%;
         }
-        .nav-item.active .nav-link {
-            border-bottom: 2px solid #ffcc00; /* Active link indicator */
+
+        .navbar-nav .nav-item:hover .nav-link {
+            color: #ffea00 !important;
         }
+
+        /* Animation for dropdowns */
         .dropdown-menu {
-            background-color: #343a40;
-            border: none;
+            animation: fadeIn 0.5s;
+            border-radius: 10px;
+            background-color: #357ABD;
         }
-        .dropdown-item {
-            color: #ffffff !important;
-            transition: background-color 0.3s ease;
+
+        @keyframes fadeIn {
+            0% { opacity: 0; transform: translateY(-10px); }
+            100% { opacity: 1; transform: translateY(0); }
         }
-        .dropdown-item:hover {
-            background-color: #495057; /* Subtle hover color */
+
+        /* Custom Profile Initials */
+        .profile-initials {
+            width: 35px;
+            height: 35px;
+            background-color: #f39c12;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            color: white;
+            transition: transform 0.3s;
         }
-        /* Profile circle hover effect */
-        .nav-link.dropdown-toggle .rounded-circle {
-            transition: background-color 0.3s ease, transform 0.3s ease;
+
+        .profile-initials:hover {
+            transform: rotate(360deg);
         }
-        .nav-link.dropdown-toggle:hover .rounded-circle {
-            background-color: #ffcc00;
-            transform: scale(1.1);
-        }
+
         /* Footer styling */
-        footer {
-            background-color: #343a40;
-            color: #ffffff;
-            padding: 20px 0;
+        .footer {
+            background-color: #4a90e2;
+            color: white;
+            padding: 15px 0;
+            text-align: center;
         }
-        footer a {
-            color: #ffcc00;
-            transition: color 0.3s ease;
-        }
-        footer a:hover {
-            color: #ffffff;
+
+        /* Button Styling */
+        .navbar-toggler-icon {
+            background-image: url('data:image/svg+xml;charset=utf8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 30 30\'%3E%3Cpath stroke=\'rgba%28255, 255, 255, 1%29\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-miterlimit=\'10\' d=\'M4 7h22M4 15h22M4 23h22\'/%3E%3C/svg%3E');
         }
     </style>
 </head>
@@ -71,7 +97,7 @@
     @if (User.Identity.IsAuthenticated)
     {
         <header>
-            <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-dark bg-dark border-bottom box-shadow mb-3">
+            <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light border-bottom box-shadow mb-3">
                 <div class="container-fluid">
                     <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">
                         <img src="~/images/CompanyLogo.png" alt="Company Logo" style="height: 40px;" />
@@ -99,7 +125,7 @@
 
                             <!-- Customers -->
                             <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle text-black" href="#" id="manageCustomersDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <a class="nav-link dropdown-toggle text-white" href="#" id="manageCustomersDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="fa fa-users" aria-hidden="true"></i> Customers
                                 </a>
                                 <ul class="dropdown-menu" aria-labelledby="manageCustomersDropdown">
@@ -124,7 +150,7 @@
 
                             <!-- Dropdown for Hospitals -->
                             <li class="nav-item dropdown mx-2">
-                                <a class="nav-link dropdown-toggle text-dark" href="#" id="hospitalDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <a class="nav-link dropdown-toggle text-white" href="#" id="hospitalDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                                     <i class="fa fa-hospital-o" aria-hidden="true"></i> Hospitals
                                 </a>
                                 <ul class="dropdown-menu" aria-labelledby="hospitalDropdown">
@@ -134,9 +160,9 @@
 
                             <!-- Profile Section -->
                             <li class="nav-item dropdown mx-2">
-                                <a class="nav-link dropdown-toggle text-dark d-flex align-items-center" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                                    <div class="rounded-circle bg-primary text-white d-flex justify-content-center align-items-center" style="width: 35px; height: 35px;">
-                                        <h5>@User.Identity.Name[0]</h5>
+                                <a class="nav-link dropdown-toggle text-white d-flex align-items-center" href="#" id="profileDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <div class="profile-initials">
+                                        <span>@User.Identity.Name[0]</span>
                                     </div>
                                 </a>
                                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="profileDropdown">
@@ -156,22 +182,15 @@
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
+    <footer class="footer text-muted">
         <div class="container">
             &copy; 2024 - WebApplication1 - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         </div>
     </footer>
+
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
-
-<script>
-    function ConfirmLogout() {
-        if (confirm("Are you sure you want to logout?")) {
-            window.location.href = '@Url.Action("Logout", "Account")';
-        }
-    }
-</script>
