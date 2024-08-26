@@ -64,7 +64,8 @@
             animation: backgroundAnimate 15s infinite alternate;
         }
 
-        @keyframes backgroundAnimate {
+        /* Note the extra @ symbol to escape the Razor parser */
+        @@keyframes backgroundAnimate {
             0% { opacity: 0.1; transform: translateX(0); }
             100% { opacity: 0.3; transform: translateX(-50px); }
         }
