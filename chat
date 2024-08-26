@@ -1,38 +1,61 @@
-using InsuranceApi.DTOs;
-using System.Net.Http;
-using System.Net.Http.Json;
-using System.Text.Json;
-using System.Threading.Tasks;
+@model List<InsuranceApi.DTOs.PolicyHolderDto>
 
-namespace YourNamespace.Services
-{
-    public class PolicyHolderService
-    {
-        private readonly HttpClient _httpClient;
+@{
+    ViewData["Title"] = "Blacklist Customers";
+}
 
-        public PolicyHolderService(HttpClient httpClient)
+<h2>Blacklist Customers</h2>
+
+<table class="table table-striped">
+    <thead>
+        <tr>
+            <th>Policy Holder ID</th>
+            <th>Name</th>
+            <th>Address</th>
+            <th>Phone</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var policyHolder in Model)
         {
-            _httpClient = httpClient;
-        }
-
-        public async Task<List<PolicyHolderDto>> GetPolicyHoldersAsync()
-        {
-            var response = await _httpClient.GetAsync("api/policyholders");
-
-            if (response.IsSuccessStatusCode)
+            if (policyHolder.Status == 0) // Assuming status '0' indicates a blacklisted customer
             {
-                var policyHolders = await response.Content.ReadFromJsonAsync<List<PolicyHolderDto>>();
-                return policyHolders ?? new List<PolicyHolderDto>();
+                <tr>
+                    <td>@policyHolder.PolicyHolderId</td>
+                    <td>@policyHolder.Name</td>
+                    <td>@policyHolder.Address</td>
+                    <td>@policyHolder.Phone</td>
+                    <td>@policyHolder.Email</td>
+                    <td>
+                        <span>Blacklisted</span>
+                    </td>
+                    <td>
+                        <button class="btn btn-danger" onclick="unblockCustomer(@policyHolder.PolicyHolderId)">
+                            Unblock
+                        </button>
+                    </td>
+                </tr>
             }
-
-            return new List<PolicyHolderDto>();
         }
+    </tbody>
+</table>
 
-        public async Task<bool> UpdateStatusAsync(int policyHolderId, int status)
-        {
-            var response = await _httpClient.PutAsJsonAsync($"api/policyholders/{policyHolderId}/status", status);
+<script>
+    async function unblockCustomer(id) {
+        const response = await fetch(`/Customer/UnblockCustomer/${id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
 
-            return response.IsSuccessStatusCode;
+        if (response.ok) {
+            location.reload(); // Reload the page to reflect changes
+        } else {
+            alert('Failed to unblock customer');
         }
     }
-}
+</script>
