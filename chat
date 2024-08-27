@@ -1,9 +1,11 @@
+// Add this method in the existing HospitalController class
+
 [HttpGet("count")]
 public async Task<IActionResult> GetHospitalCount()
 {
     try
     {
-        var count = await service.GetHospitalCount();
+        int count = await context.Hospitals.CountAsync();
         return Ok(count);
     }
     catch (Exception ex)
