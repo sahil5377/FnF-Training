@@ -1,29 +1,208 @@
-public async Task<int> GetTotalPoliciesCountAsync()
+using InsuranceApi.Data;
+using InsuranceApi.DTOs;
+using Microsoft.EntityFrameworkCore;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace InsuranceApi.Services
 {
-    return await context.InsuredPolicies.CountAsync();
+    public interface IInsuredPolicyService
+    {
+        Task Add(InsuredPolicyDto insuredPolicyDto);
+        Task Delete(int id);
+        Task<List<InsuredPolicyDto>> GetAll();
+        Task<InsuredPolicyDto> GetById(int id);
+        Task Update(InsuredPolicyDto insuredPolicyDto);
+        Task UpdateApprovalStatus(int id, string approvalStatus);
+        Task<int> GetTotalPoliciesCountAsync();
+        Task<Dictionary<string, int>> GetDailyPolicyDataAsync();
+    }
+
+    public class InsuredPolicyService : IInsuredPolicyService
+    {
+        private readonly FnfProjectContext context;
+
+        public InsuredPolicyService(FnfProjectContext context)
+        {
+            this.context = context;
+        }
+
+        public async Task<List<InsuredPolicyDto>> GetAll()
+        {
+            var insuredPolicies = await context.InsuredPolicies.ToListAsync();
+            return insuredPolicies.Select(ConvertToDto).ToList();
+        }
+
+        public async Task Delete(int id)
+        {
+            var found = await context.InsuredPolicies.FindAsync(id);
+            if (found != null)
+            {
+                context.InsuredPolicies.Remove(found);
+                await context.SaveChangesAsync();
+                return;
+            }
+            throw new NullReferenceException();
+        }
+
+        public async Task Add(InsuredPolicyDto insuredPolicyDto)
+        {
+            var insuredPolicyTable = ConvertToTable(insuredPolicyDto);
+            context.InsuredPolicies.Add(insuredPolicyTable);
+            await context.SaveChangesAsync();
+        }
+
+        public async Task Update(InsuredPolicyDto insuredPolicyDto)
+        {
+            var found = await context.InsuredPolicies.FindAsync(insuredPolicyDto.InsuredPolicyId);
+            if (found != null)
+            {
+                ConvertToTable(insuredPolicyDto, found);
+                await context.SaveChangesAsync();
+                return;
+            }
+            throw new NullReferenceException();
+        }
+
+        public async Task<InsuredPolicyDto> GetById(int id)
+        {
+            var found = await context.InsuredPolicies.FindAsync(id);
+            return found != null ? ConvertToDto(found) : throw new NullReferenceException();
+        }
+
+        public async Task UpdateApprovalStatus(int id, string approvalStatus)
+        {
+            var found = await context.InsuredPolicies.FindAsync(id);
+            if (found != null)
+            {
+                found.ApprovalStatus = approvalStatus;
+                context.InsuredPolicies.Update(found);
+                await context.SaveChangesAsync();
+                return;
+            }
+            throw new NullReferenceException();
+        }
+
+        public async Task<int> GetTotalPoliciesCountAsync()
+        {
+            return await context.InsuredPolicies.CountAsync();
+        }
+
+        public async Task<Dictionary<string, int>> GetDailyPolicyDataAsync()
+        {
+            var dailyData = await context.InsuredPolicies
+                .GroupBy(ip => EF.Functions.DateDiffDay(new DateTime(1970, 1, 1), ip.ApprovalDate))
+                .Select(g => new { Date = g.Key, Count = g.Count() })
+                .ToListAsync();
+
+            return dailyData.ToDictionary(x => x.Date.ToString(), x => x.Count);
+        }
+
+        private InsuredPolicyDto ConvertToDto(InsuredPolicy insuredPolicyTable)
+        {
+            return new InsuredPolicyDto
+            {
+                InsuredPolicyId = insuredPolicyTable.InsuredPolicyId,
+                PolicyId = insuredPolicyTable.PolicyId,
+                InsuredId = insuredPolicyTable.InsuredId,
+                ApprovalStatus = insuredPolicyTable.ApprovalStatus,
+                RenewalStatus = insuredPolicyTable.RenewalStatus,
+                AdminId = insuredPolicyTable.AdminId,
+                ApprovalDate = insuredPolicyTable.ApprovalDate
+            };
+        }
+
+        private InsuredPolicy ConvertToTable(InsuredPolicyDto insuredPolicyDto)
+        {
+            return new InsuredPolicy
+            {
+                InsuredPolicyId = insuredPolicyDto.InsuredPolicyId,
+                PolicyId = insuredPolicyDto.PolicyId,
+                InsuredId = insuredPolicyDto.InsuredId,
+                ApprovalStatus = insuredPolicyDto.ApprovalStatus,
+                RenewalStatus = insuredPolicyDto.RenewalStatus,
+                AdminId = insuredPolicyDto.AdminId,
+                ApprovalDate = insuredPolicyDto.ApprovalDate
+            };
+        }
+    }
 }
 
-[HttpGet("count")]
-public async Task<IActionResult> GetTotalPoliciesCount()
-{
-    var count = await service.GetTotalPoliciesCountAsync();
-    return Ok(count);
-}
 
-public async Task<Dictionary<string, int>> GetDailyPolicyDataAsync()
-{
-    var dailyData = await context.InsuredPolicies
-        .GroupBy(ip => EF.Functions.DateDiffDay(new DateTime(1970, 1, 1), ip.ApprovalDate))
-        .Select(g => new { Date = g.Key, Count = g.Count() })
-        .ToListAsync();
+using InsuranceApi.DTOs;
+using InsuranceApi.Services;
+using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
-    return dailyData.ToDictionary(x => x.Date.ToString(), x => x.Count);
-}
-
-[HttpGet("dailyData")]
-public async Task<IActionResult> GetDailyPolicyData()
+namespace InsuranceApi.Controllers
 {
-    var dailyData = await service.GetDailyPolicyDataAsync();
-    return Ok(dailyData);
+    public class InsuredPolicyController : Controller
+    {
+        private readonly IInsuredPolicyService service;
+
+        public InsuredPolicyController(IInsuredPolicyService service)
+        {
+            this.service = service;
+        }
+
+        public async Task<IActionResult> Index()
+        {
+            var insuredPolicies = await service.GetAll();
+            return View(insuredPolicies);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> TotalPoliciesCount()
+        {
+            var count = await service.GetTotalPoliciesCountAsync();
+            return Json(new { count });
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> DailyPolicyData()
+        {
+            var dailyData = await service.GetDailyPolicyDataAsync();
+            return Json(dailyData);
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Details(int id)
+        {
+            var insuredPolicy = await service.GetById(id);
+            return View(insuredPolicy);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Create(InsuredPolicyDto insuredPolicyDto)
+        {
+            await service.Add(insuredPolicyDto);
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Edit(InsuredPolicyDto insuredPolicyDto)
+        {
+            await service.Update(insuredPolicyDto);
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Delete(int id)
+        {
+            await service.Delete(id);
+            return RedirectToAction(nameof(Index));
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateApprovalStatus(int id, string approvalStatus)
+        {
+            await service.UpdateApprovalStatus(id, approvalStatus);
+            return RedirectToAction(nameof(Index));
+        }
+    }
 }
 
