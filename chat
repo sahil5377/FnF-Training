@@ -1,6 +1,7 @@
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "Dashboard";
+    var hospitalCount = ViewData["HospitalCount"] ?? 0;
 }
 
 <div class="container-fluid">
@@ -39,7 +40,7 @@
                 <div class="stat-icon">
                     <i class="fas fa-hospital"></i>
                 </div>
-                <div class="stat-number" id="hospitalCount">@ViewData["HospitalCount"]</div>
+                <div class="stat-number" id="hospitalCount">@hospitalCount</div>
                 <div class="stat-label">Active Hospitals</div>
             </div>
         </div>
