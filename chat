@@ -96,33 +96,44 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Debugging output
+        console.log('Hospital count:', document.getElementById('hospitalCount').textContent.trim());
+
         // Ensure the correct number is displayed
         const hospitalCountElement = document.getElementById('hospitalCount');
         if (hospitalCountElement) {
             const number = parseInt(hospitalCountElement.textContent.trim(), 10);
-            let counter = 0;
-            const interval = setInterval(function () {
-                if (counter >= number) {
-                    clearInterval(interval);
-                } else {
-                    counter += Math.ceil(number / 100);
-                    hospitalCountElement.textContent = counter > number ? number : counter;
-                }
-            }, 10);
+            if (!isNaN(number)) {
+                let counter = 0;
+                const interval = setInterval(function () {
+                    if (counter >= number) {
+                        clearInterval(interval);
+                    } else {
+                        counter += Math.ceil(number / 100);
+                        hospitalCountElement.textContent = counter > number ? number : counter;
+                    }
+                }, 10);
+            } else {
+                console.error('Hospital count is not a valid number.');
+            }
         }
 
         // Update number counter animation for other stat-number elements
         document.querySelectorAll('.stat-number').forEach(function (el) {
             const number = parseInt(el.textContent, 10);
-            let counter = 0;
-            const interval = setInterval(function () {
-                if (counter >= number) {
-                    clearInterval(interval);
-                } else {
-                    counter += Math.ceil(number / 100);
-                    el.textContent = counter > number ? number : counter;
-                }
-            }, 10);
+            if (!isNaN(number)) {
+                let counter = 0;
+                const interval = setInterval(function () {
+                    if (counter >= number) {
+                        clearInterval(interval);
+                    } else {
+                        counter += Math.ceil(number / 100);
+                        el.textContent = counter > number ? number : counter;
+                    }
+                }, 10);
+            } else {
+                console.error('Stat number is not a valid number.');
+            }
         });
     });
 
