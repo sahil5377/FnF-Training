@@ -1,62 +1,79 @@
-@model WebApplication1.Controllers.ReviewPolicyRequestViewModel
+@model List<WebApplication1.Controllers.PolicyRequestViewModel>
 
-<div>
-    <h4>Review Policy Request</h4>
-    <hr />
-    <div class="form-group">
-        <label>Policy Holder Name:</label>
-        <p>@Model.PolicyHolderName</p>
-    </div>
-    <div class="form-group">
-        <label>Contact Number:</label>
-        <p>@Model.ContactNo</p>
-    </div>
-    <div class="form-group">
-        <label>Insured ID:</label>
-        <p>@Model.InsuredId</p>
-    </div>
-    <div class="form-group">
-        <label>Insured Policy ID:</label>
-        <p>@Model.InsuredPolicyId</p>
-    </div>
-    <div class="form-group">
-        <label>Policy ID:</label>
-        <p>@Model.PolicyId</p>
-    </div>
-    <div class="form-group">
-        <label>Admin ID:</label>
-        <p>@Model.AdminId</p>
-    </div>
-    <div class="form-group">
-        <label>Premium Amount:</label>
-        <p>@Model.PremiumAmount.ToString("C")</p>
-    </div>
-    <div class="form-group">
-        <label>Payment ID:</label>
-        <p>@Model.PaymentId</p>
-    </div>
-    <div class="form-group">
-        <label>Payment Amount:</label>
-        <p>@Model.PaymentAmount.ToString("C")</p>
-    </div>
-    <div class="form-group">
-        <label>Payment Date:</label>
-        <p>@Model.PaymentDate?.ToString("yyyy-MM-dd")</p>
-    </div>
+@{
+    ViewData["Title"] = "Policy Requests";
+}
 
-    <hr />
+<h2 class="page-title">Policy Requests</h2>
 
-    <div class="form-group">
-        <button class="btn btn-success" onclick="updateApprovalStatus(@Model.InsuredPolicyId, 'Approved')">Accept</button>
-        <button class="btn btn-danger" onclick="updateApprovalStatus(@Model.InsuredPolicyId, 'Rejected')">Reject</button>
-        <button class="btn btn-secondary" data-dismiss="modal">Close</button>
+<div class="table-responsive">
+    <table class="table table-bordered table-hover shadow-sm">
+        <thead class="thead-dark">
+            <tr>
+                <th>Insured Policy ID</th>
+                <th>Insured ID</th>
+                <th>Policy ID</th>
+                <th>Policy Holder ID</th>
+                <th>Name</th>
+                <th>Contact No</th>
+                <th>Approval Status</th>
+                <th>Approval Date</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var item in Model)
+            {
+                <tr>
+                    <td>@item.InsuredPolicyId</td>
+                    <td>@item.InsuredId</td>
+                    <td>@item.PolicyId</td>
+                    <td>@item.PolicyHolderId</td>
+                    <td>@item.Name</td>
+                    <td>@item.ContactNo</td>
+                    <td>@item.ApprovalStatus</td>
+                    <td>@item.ApprovalDate?.ToString("yyyy-MM-dd HH:mm:ss")</td>
+                    <td>
+                        <button class="btn btn-primary btn-sm" onclick="reviewPolicy(@item.InsuredPolicyId)">Review</button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+<!-- Modal -->
+<div class="modal fade" id="reviewModal" tabindex="-1" role="dialog" aria-labelledby="reviewModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="reviewModalLabel">Review Policy Request</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body" id="reviewModalBody">
+                <!-- Review details will be loaded here -->
+            </div>
+        </div>
     </div>
 </div>
 
-@Html.AntiForgeryToken() <!-- Add the anti-forgery token here -->
 @section Scripts {
     <script>
+        function reviewPolicy(insuredPolicyId) {
+            $.ajax({
+                url: '@Url.Action("Review", "PolicyRequest")',
+                data: { insuredPolicyId: insuredPolicyId },
+                success: function (response) {
+                    $('#reviewModalBody').html(response);
+                    $('#reviewModal').modal('show');
+                }
+            });
+        }
+
         function updateApprovalStatus(insuredPolicyId, approvalStatus) {
+            // Include anti-forgery token
             var token = $('input[name="__RequestVerificationToken"]').val();
             $.ajax({
                 url: '@Url.Action("UpdateApprovalStatus", "PolicyRequest")',
@@ -67,14 +84,74 @@
                     approvalStatus: approvalStatus
                 },
                 success: function (result) {
-                    $('#reviewModal').modal('hide');
                     window.location.reload();
                 },
                 error: function (xhr, status, error) {
-                    console.error('Error:', xhr.responseText); // Log the error for debugging
                     alert('Error: ' + xhr.responseText);
                 }
             });
         }
     </script>
 }
+
+<style>
+    .page-title {
+        font-size: 1.8rem;
+        font-weight: bold;
+        margin-bottom: 20px;
+        color: #333;
+        text-align: center;
+    }
+
+    .table-responsive {
+        margin: 20px 0;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #f1f1f1;
+        transition: background-color 0.3s ease;
+    }
+
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+        transition: background-color 0.3s, transform 0.3s;
+    }
+
+    .btn-primary:hover {
+        background-color: #0056b3;
+        transform: translateY(-2px);
+    }
+
+    .modal-content {
+        border-radius: 10px;
+    }
+
+    .modal-header {
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .modal-header.bg-primary {
+        background-color: #007bff;
+    }
+
+    .modal.fade .modal-dialog {
+        transition: transform 0.3s ease-out;
+        transform: translateY(-50px);
+    }
+
+    .modal.show .modal-dialog {
+        transform: translateY(0);
+    }
+
+    .close {
+        color: #fff;
+        opacity: 1;
+    }
+
+    .close:hover {
+        color: #ccc;
+    }
+</style>
