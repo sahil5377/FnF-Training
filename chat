@@ -1,20 +1,13 @@
-[Route("api/[controller]")]
-[ApiController]
-public class HospitalController : ControllerBase, IHospitalController
+[HttpGet("count")]
+public async Task<IActionResult> GetHospitalCount()
 {
-    private readonly FnfProjectContext _context;
-
-    public HospitalController(FnfProjectContext context)
+    try
     {
-        _context = context;
-    }
-
-    [HttpGet("count")]
-    public async Task<IActionResult> GetHospitalCount()
-    {
-        var count = await _context.Hospitals.CountAsync();
+        var count = await service.GetHospitalCount();
         return Ok(count);
     }
-
-    // Other actions (Add, Delete, GetAll, GetById, Update) as before
+    catch (Exception ex)
+    {
+        return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+    }
 }
