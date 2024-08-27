@@ -1,54 +1,13 @@
 [HttpGet("count")]
 public async Task<IActionResult> GetHospitalCount()
 {
-    int count = await service.GetHospitalCount();
-    return Ok(count);
+    try
+    {
+        int count = await service.GetHospitalCount();
+        return Ok(count);
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+    }
 }
-
-public async Task<int> GetHospitalCount()
-{
-    return await context.Hospitals.CountAsync();
-}
-
-<div class="container-fluid">
-    <h1 class="text-center mt-4 mb-4">Admin Dashboard</h1>
-    <hr />
-    <div class="row mb-4">
-        <div class="col-lg-3 col-md-6">
-            <div class="stat-counter bg-primary text-white mb-3">
-                <div class="stat-icon">
-                    <i class="fas fa-hospital"></i>
-                </div>
-                <div class="stat-number" id="hospitalCount" data-number="200">200</div>
-                <div class="stat-label">Active Hospitals</div>
-            </div>
-        </div>
-        <!-- other cards -->
-    </div>
-    <!-- charts -->
-</div>
-
-<script>
-    document.addEventListener('DOMContentLoaded', async function () {
-        // Fetch the hospital count
-        const response = await fetch('/api/Hospital/count');
-        const count = await response.json();
-
-        // Update the dashboard count
-        document.getElementById('hospitalCount').textContent = count;
-
-        // Existing counter animation code
-        document.querySelectorAll('.stat-number').forEach(function (el) {
-            const number = parseInt(el.getAttribute('data-number'), 10);
-            let counter = 0;
-            const interval = setInterval(function () {
-                if (counter >= number) {
-                    clearInterval(interval);
-                } else {
-                    counter += Math.ceil(number / 100);
-                    el.textContent = counter > number ? number : counter;
-                }
-            }, 10);
-        });
-    });
-</script>
