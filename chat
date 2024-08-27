@@ -7,7 +7,7 @@
 <h2 class="page-title">Manage Customers</h2>
 
 <div class="table-responsive">
-    <table class="table table-striped table-hover">
+    <table class="table table-custom">
         <thead class="thead-custom">
             <tr>
                 <th>Policy Holder ID</th>
@@ -22,7 +22,7 @@
         <tbody>
             @foreach (var policyHolder in Model)
             {
-                <tr>
+                <tr class="table-row">
                     <td>@policyHolder.PolicyHolderId</td>
                     <td>@policyHolder.Name</td>
                     <td>@policyHolder.Address</td>
@@ -52,36 +52,56 @@
 <style>
     body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: #fff;
     }
 
     .page-title {
-        font-size: 2rem;
-        margin-bottom: 20px;
-        color: #333;
+        font-size: 2.5rem;
+        margin-bottom: 30px;
         text-align: center;
+        font-weight: 600;
+        animation: fadeInDown 1s ease-in-out;
     }
 
     .table-responsive {
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        background-color: #f9f9f9;
+        margin: 0 auto;
+        max-width: 95%;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
+        background-color: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+        animation: fadeInUp 1s ease-in-out;
+    }
+
+    .table-custom {
+        width: 100%;
+        margin-bottom: 1rem;
+        color: #212529;
     }
 
     .thead-custom {
-        background-color: #007bff;
+        background-color: rgba(0, 0, 0, 0.2);
         color: white;
     }
 
-    .table-hover tbody tr:hover {
-        background-color: #f1f1f1;
+    .table-row {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .table-row:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
     }
 
     .status-label {
-        padding: 5px 10px;
-        border-radius: 15px;
+        display: inline-block;
+        padding: 5px 15px;
+        border-radius: 20px;
         color: white;
         font-weight: bold;
+        transition: background-color 0.3s ease, transform 0.3s ease;
     }
 
     .status-active {
@@ -94,38 +114,40 @@
 
     .toggle-button {
         position: relative;
-        width: 60px;
-        height: 34px;
+        width: 70px;
+        height: 36px;
         border: none;
-        border-radius: 34px;
+        border-radius: 18px;
         cursor: pointer;
         outline: none;
+        background-color: #ddd;
         transition: background-color 0.3s ease, transform 0.3s ease;
-        background-color: grey; /* Default background */
+        overflow: hidden;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
     }
 
     .btn-primary {
-        background-color: blue;
+        background-color: #007bff;
     }
 
     .btn-secondary {
-        background-color: grey;
+        background-color: #6c757d;
     }
 
     .toggle-slider {
         position: absolute;
-        top: 2px;
-        left: 2px;
+        top: 3px;
+        left: 3px;
         width: 30px;
         height: 30px;
         border-radius: 50%;
         background-color: white;
         transition: transform 0.3s ease, background-color 0.3s ease;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
 
     .toggle-button.btn-primary .toggle-slider {
-        transform: translateX(26px);
+        transform: translateX(34px);
         background-color: lightgreen;
     }
 
@@ -137,11 +159,33 @@
     .toggle-button:hover .toggle-slider {
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     }
+
+    @keyframes fadeInDown {
+        0% {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes fadeInUp {
+        0% {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        100% {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
 </style>
 
 <script>
     async function toggleStatus(id, currentStatus) {
-        let newStatus = currentStatus === 1 ? 0 : 1; // Assuming status is binary (active/inactive)
+        let newStatus = currentStatus === 1 ? 0 : 1;
 
         const response = await fetch(`/PolicyHolder/${id}/status`, {
             method: 'PUT',
@@ -152,7 +196,7 @@
         });
 
         if (response.ok) {
-            location.reload(); // Reload the page to reflect changes
+            location.reload();
         } else {
             alert('Failed to update status');
         }
