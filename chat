@@ -1,34 +1,15 @@
-document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.stat-number').forEach(function (el) {
-        const number = parseInt(el.getAttribute('data-number'), 10);
-        let counter = 0;
-        const interval = setInterval(function () {
-            if (counter >= number) {
-                clearInterval(interval);
-            } else {
-                counter += Math.ceil(number / 100);
-                el.textContent = counter > number ? number : counter;
-            }
-        }, 10);
-    });
+// Controller Method
+[HttpGet("InsuredPolicy/Count")]
+public async Task<IActionResult> GetInsuredPoliciesCount()
+{
+    var count = await _policyRequestService.GetTotalPoliciesCountAsync();
+    return Ok(count);
+}
 
-    var ctx = document.getElementById('policiesChart').getContext('2d');
-    var policiesChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['Today', 'Yesterday', 'Day Before Yesterday'],
-            datasets: [{
-                label: 'Number of Policies',
-                data: [/* fetch daily data from your API */],
-                backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            animation: {
-                duration: 1500
-            }
-        }
-    });
-});
+// Service Method
+public async Task<int> GetTotalPoliciesCountAsync()
+{
+    var response = await _httpClient.GetAsync("InsuredPolicy/Count");
+    response.EnsureSuccessStatusCode();
+    return await response.Content.ReadFromJsonAsync<int>();
+}
