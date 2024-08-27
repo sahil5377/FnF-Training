@@ -1,4 +1,6 @@
-public async Task<int> GetHospitalCount()
+public async Task<int> GetHospitalCountAsync()
 {
-    return await context.Hospitals.CountAsync();
+    var response = await _httpClient.GetAsync("Hospital/count");
+    response.EnsureSuccessStatusCode();
+    return await response.Content.ReadFromJsonAsync<int>();
 }
