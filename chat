@@ -1,208 +1,696 @@
 using InsuranceApi.Data;
 using InsuranceApi.DTOs;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace InsuranceApi.Services
-{
-    public interface IInsuredPolicyService
-    {
-        Task Add(InsuredPolicyDto insuredPolicyDto);
-        Task Delete(int id);
-        Task<List<InsuredPolicyDto>> GetAll();
-        Task<InsuredPolicyDto> GetById(int id);
-        Task Update(InsuredPolicyDto insuredPolicyDto);
-        Task UpdateApprovalStatus(int id, string approvalStatus);
-        Task<int> GetTotalPoliciesCountAsync();
-        Task<Dictionary<string, int>> GetDailyPolicyDataAsync();
-    }
-
-    public class InsuredPolicyService : IInsuredPolicyService
-    {
-        private readonly FnfProjectContext context;
-
-        public InsuredPolicyService(FnfProjectContext context)
-        {
-            this.context = context;
-        }
-
-        public async Task<List<InsuredPolicyDto>> GetAll()
-        {
-            var insuredPolicies = await context.InsuredPolicies.ToListAsync();
-            return insuredPolicies.Select(ConvertToDto).ToList();
-        }
-
-        public async Task Delete(int id)
-        {
-            var found = await context.InsuredPolicies.FindAsync(id);
-            if (found != null)
-            {
-                context.InsuredPolicies.Remove(found);
-                await context.SaveChangesAsync();
-                return;
-            }
-            throw new NullReferenceException();
-        }
-
-        public async Task Add(InsuredPolicyDto insuredPolicyDto)
-        {
-            var insuredPolicyTable = ConvertToTable(insuredPolicyDto);
-            context.InsuredPolicies.Add(insuredPolicyTable);
-            await context.SaveChangesAsync();
-        }
-
-        public async Task Update(InsuredPolicyDto insuredPolicyDto)
-        {
-            var found = await context.InsuredPolicies.FindAsync(insuredPolicyDto.InsuredPolicyId);
-            if (found != null)
-            {
-                ConvertToTable(insuredPolicyDto, found);
-                await context.SaveChangesAsync();
-                return;
-            }
-            throw new NullReferenceException();
-        }
-
-        public async Task<InsuredPolicyDto> GetById(int id)
-        {
-            var found = await context.InsuredPolicies.FindAsync(id);
-            return found != null ? ConvertToDto(found) : throw new NullReferenceException();
-        }
-
-        public async Task UpdateApprovalStatus(int id, string approvalStatus)
-        {
-            var found = await context.InsuredPolicies.FindAsync(id);
-            if (found != null)
-            {
-                found.ApprovalStatus = approvalStatus;
-                context.InsuredPolicies.Update(found);
-                await context.SaveChangesAsync();
-                return;
-            }
-            throw new NullReferenceException();
-        }
-
-        public async Task<int> GetTotalPoliciesCountAsync()
-        {
-            return await context.InsuredPolicies.CountAsync();
-        }
-
-        public async Task<Dictionary<string, int>> GetDailyPolicyDataAsync()
-        {
-            var dailyData = await context.InsuredPolicies
-                .GroupBy(ip => EF.Functions.DateDiffDay(new DateTime(1970, 1, 1), ip.ApprovalDate))
-                .Select(g => new { Date = g.Key, Count = g.Count() })
-                .ToListAsync();
-
-            return dailyData.ToDictionary(x => x.Date.ToString(), x => x.Count);
-        }
-
-        private InsuredPolicyDto ConvertToDto(InsuredPolicy insuredPolicyTable)
-        {
-            return new InsuredPolicyDto
-            {
-                InsuredPolicyId = insuredPolicyTable.InsuredPolicyId,
-                PolicyId = insuredPolicyTable.PolicyId,
-                InsuredId = insuredPolicyTable.InsuredId,
-                ApprovalStatus = insuredPolicyTable.ApprovalStatus,
-                RenewalStatus = insuredPolicyTable.RenewalStatus,
-                AdminId = insuredPolicyTable.AdminId,
-                ApprovalDate = insuredPolicyTable.ApprovalDate
-            };
-        }
-
-        private InsuredPolicy ConvertToTable(InsuredPolicyDto insuredPolicyDto)
-        {
-            return new InsuredPolicy
-            {
-                InsuredPolicyId = insuredPolicyDto.InsuredPolicyId,
-                PolicyId = insuredPolicyDto.PolicyId,
-                InsuredId = insuredPolicyDto.InsuredId,
-                ApprovalStatus = insuredPolicyDto.ApprovalStatus,
-                RenewalStatus = insuredPolicyDto.RenewalStatus,
-                AdminId = insuredPolicyDto.AdminId,
-                ApprovalDate = insuredPolicyDto.ApprovalDate
-            };
-        }
-    }
-}
-
-
-using InsuranceApi.DTOs;
 using InsuranceApi.Services;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace InsuranceApi.Controllers
 {
-    public class InsuredPolicyController : Controller
+    public interface IHospitalController
     {
-        private readonly IInsuredPolicyService service;
+        Task<IActionResult> Add(HospitalDto hospital);
+        Task<IActionResult> Delete(int id);
+        Task<IActionResult> GetAll();
+        Task<IActionResult> GetById(int id);
+        Task<IActionResult> Update(HospitalDto hospital);
+    }
 
-        public InsuredPolicyController(IInsuredPolicyService service)
+    [Route("api/[controller]")]
+    [ApiController]
+    public class HospitalController : ControllerBase, IHospitalController
+    {
+        private readonly IHospitalService service;
+        public HospitalController(IHospitalService service)
         {
             this.service = service;
         }
 
-        public async Task<IActionResult> Index()
-        {
-            var insuredPolicies = await service.GetAll();
-            return View(insuredPolicies);
-        }
-
         [HttpGet]
-        public async Task<IActionResult> TotalPoliciesCount()
+        public async Task<IActionResult> GetAll()
         {
-            var count = await service.GetTotalPoliciesCountAsync();
-            return Json(new { count });
+            List<HospitalDto> hospitals = await service.GetAll();
+            return Ok(hospitals);
         }
 
-        [HttpGet]
-        public async Task<IActionResult> DailyPolicyData()
-        {
-            var dailyData = await service.GetDailyPolicyDataAsync();
-            return Json(dailyData);
-        }
-
-        [HttpGet]
-        public async Task<IActionResult> Details(int id)
-        {
-            var insuredPolicy = await service.GetById(id);
-            return View(insuredPolicy);
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Create(InsuredPolicyDto insuredPolicyDto)
-        {
-            await service.Add(insuredPolicyDto);
-            return RedirectToAction(nameof(Index));
-        }
-
-        [HttpPost]
-        public async Task<IActionResult> Edit(InsuredPolicyDto insuredPolicyDto)
-        {
-            await service.Update(insuredPolicyDto);
-            return RedirectToAction(nameof(Index));
-        }
-
-        [HttpPost]
+        [HttpDelete]
+        [Route("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
-            await service.Delete(id);
-            return RedirectToAction(nameof(Index));
+            try
+            {
+                await service.Delete(id);
+                return Ok();
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
         }
 
         [HttpPost]
-        public async Task<IActionResult> UpdateApprovalStatus(int id, string approvalStatus)
+        public async Task<IActionResult> Add(HospitalDto hospital)
         {
-            await service.UpdateApprovalStatus(id, approvalStatus);
-            return RedirectToAction(nameof(Index));
+            await service.Add(hospital);
+            return Ok();
+        }
+
+        [HttpPut]
+        public async Task<IActionResult> Update(HospitalDto hospital)
+        {
+            try
+            {
+                await service.Update(hospital);
+                return Ok();
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
+        }
+
+        [HttpGet]
+        [Route("{id}")]
+        public async Task<IActionResult> GetById(int id)
+        {
+            try
+            {
+                var found = await service.GetById(id);
+                return Ok(found);
+            }
+            catch (NullReferenceException)
+            {
+                return NotFound();
+            }
         }
     }
 }
 
+API Controller
+using InsuranceApi.Data;
+using InsuranceApi.DTOs;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+
+namespace InsuranceApi.Services
+{
+    public interface IHospitalService
+    {
+        Task Add(HospitalDto hospitalDto);
+        Task Delete(int id);
+        Task<List<HospitalDto>> GetAll();
+        Task<HospitalDto> GetById(int id);
+        Task Update(HospitalDto hospitalDto);
+    }
+
+    public class HospitalService : IHospitalService
+    {
+        private readonly FnfProjectContext context;
+        public HospitalService(FnfProjectContext context)
+        {
+            this.context = context;
+        }
+
+        public async Task<List<HospitalDto>> GetAll()
+        {
+            List<HospitalDto> hospitalDtos = new List<HospitalDto>();
+            await foreach (var hospitalTable in context.Hospitals)
+            {
+                HospitalDto hospitalDto = ConvertToDto(hospitalTable);
+                hospitalDtos.Add(hospitalDto);
+            }
+            return hospitalDtos;
+        }
+
+        public async Task Delete(int id)
+        {
+            var found = await context.Hospitals.FirstOrDefaultAsync((hospitalTable) => hospitalTable.HospitalId == id);
+            if (found != null)
+            {
+                context.Hospitals.Remove(found);
+                await context.SaveChangesAsync();
+                return;
+            }
+            throw new NullReferenceException();
+        }
+
+        public async Task Add(HospitalDto hospitalDto)
+        {
+            Hospital hospitalTable = new Hospital();
+            ConvertToTable(hospitalDto, hospitalTable);
+            context.Hospitals.Add(hospitalTable);
+            await context.SaveChangesAsync();
+            return;
+        }
+
+        public async Task Update(HospitalDto hospitalDto)
+        {
+            var found = await context.Hospitals.FirstOrDefaultAsync((hospitalTable) =>
+                hospitalTable.HospitalId == hospitalDto.HospitalId);
+            if (found != null)
+            {
+                ConvertToTable(hospitalDto, found);
+                await context.SaveChangesAsync();
+                return;
+            }
+            throw new NullReferenceException();
+        }
+
+        public async Task<HospitalDto> GetById(int id)
+        {
+            var found = await context.Hospitals.FirstOrDefaultAsync((hospitalTable) => hospitalTable.HospitalId == id);
+            if (found != null)
+            {
+                var hospitalDto = ConvertToDto(found);
+                return hospitalDto;
+            }
+            throw new NullReferenceException();
+        }
+
+        private HospitalDto ConvertToDto(Hospital hospitalTable)
+        {
+            HospitalDto hospitalDto = new()
+            {
+                HospitalId = hospitalTable.HospitalId,
+                Name = hospitalTable.Name,
+                Address = hospitalTable.Address,
+                Phone = hospitalTable.Phone,
+            };
+            return hospitalDto;
+        }
+
+        private void ConvertToTable(HospitalDto hospitalDto, Hospital hospitalTable)
+        {
+            hospitalTable.HospitalId = hospitalDto.HospitalId;
+            hospitalTable.Name = hospitalDto.Name;
+            hospitalTable.Address = hospitalDto.Address;
+            hospitalTable.Phone = hospitalDto.Phone;
+            return;
+        }
+    }
+}
+
+Api Service
+namespace InsuranceApi.DTOs
+{
+    public class HospitalDto
+    {
+        public int HospitalId { get; set; }
+        public string Name { get; set; } = null!;
+        public string Address { get; set; } = null!;
+        public string Phone { get; set; } = null!;
+    }
+}
+
+DLL
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using WebApplication1.Models;
+using WebApplication1.Services;
+
+namespace WebApplication1.Controllers
+{
+    [Authorize]
+    public class HospitalController : Controller
+    {
+        private readonly IHospitalService _hospitalService;
+
+        public HospitalController(IHospitalService hospitalService)
+        {
+            _hospitalService = hospitalService;
+        }
+
+        public async Task<IActionResult> ManageHospitals()
+        {
+            var hospitals = await _hospitalService.GetAllHospitalsAsync();
+            return View(hospitals);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddHospital(Hospital hospital)
+        {
+            if (ModelState.IsValid)
+            {
+                await _hospitalService.AddHospitalAsync(hospital);
+                return RedirectToAction("ManageHospitals");
+            }
+            return View("ManageHospitals", await _hospitalService.GetAllHospitalsAsync());
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateHospital(Hospital hospital)
+        {
+            if (ModelState.IsValid)
+            {
+                await _hospitalService.UpdateHospitalAsync(hospital);
+                return RedirectToAction("ManageHospitals");
+            }
+            return View("ManageHospitals", await _hospitalService.GetAllHospitalsAsync());
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteHospital(int hospitalId)
+        {
+            await _hospitalService.DeleteHospitalAsync(hospitalId);
+            return RedirectToAction("ManageHospitals");
+        }
+    }
+}
+Hospital MVC Controller
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text.Json;
+using WebApplication1.Models;
+
+namespace WebApplication1.Services
+{
+    public class HospitalService : IHospitalService
+    {
+        private readonly HttpClient _httpClient;
+
+        public HospitalService(HttpClient httpClient)
+        {
+            _httpClient = httpClient;
+        }
+
+        public async Task<List<Hospital>> GetAllHospitalsAsync()
+        {
+            var response = await _httpClient.GetAsync("Hospital");
+            response.EnsureSuccessStatusCode();
+
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            var hospitals = JsonSerializer.Deserialize<List<Hospital>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            return hospitals;
+        }
+
+        public async Task<List<Hospital>>AddHospitalAsync(Hospital hospital)
+        {
+            var response = await _httpClient.PostAsJsonAsync("Hospital", hospital);
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<List<Hospital>>();
+        }
+
+        public async Task UpdateHospitalAsync(Hospital hospital)
+        {
+            var response = await _httpClient.PutAsJsonAsync($"Hospital/{hospital.HospitalId}", hospital);
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task DeleteHospitalAsync(int hospitalId)
+        {
+            var response = await _httpClient.DeleteAsync($"Hospital/{hospitalId}");
+            response.EnsureSuccessStatusCode();
+        }
+    }
+
+    public interface IHospitalService
+    {
+        Task<List<Hospital>> GetAllHospitalsAsync();
+        Task<List<Hospital>> AddHospitalAsync(Hospital hospital);
+        Task UpdateHospitalAsync(Hospital hospital);
+        Task DeleteHospitalAsync(int hospitalId);
+    }
+}
+
+@model List<WebApplication1.Models.Hospital>
+
+@{
+    ViewData["Title"] = "Manage Hospitals";
+}
+
+<div class="container mt-4 position-relative">
+    <h2 class="page-title">Manage Hospitals</h2>
+
+    <!-- Add Hospital Button -->
+    <button class="btn btn-success position-absolute top-0 end-0 mt-3 me-3" onclick="showAddHospitalModal()">
+        <i class="fas fa-plus me-2"></i> Add New Hospital
+    </button>
+
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="thead-custom">
+                <tr>
+                    <th scope="col">Hospital ID</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Address</th>
+                    <th scope="col">Phone No</th>
+                    <th scope="col">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var hospital in Model)
+                {
+                    <tr>
+                        <td>@hospital.HospitalId</td>
+                        <td>@hospital.Name</td>
+                        <td>@hospital.Address</td>
+                        <td>@hospital.Phone</td>
+                        <td>
+                            <form method="post" asp-action="DeleteHospital" asp-controller="Hospital" style="display:inline;">
+                                <input type="hidden" name="hospitalId" value="@hospital.HospitalId" />
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this hospital?');">Delete</button>
+                            </form>
+                            <button class="btn btn-primary btn-sm" onclick="editHospital(@hospital.HospitalId)">Edit</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Hospital Modal -->
+<div id="addHospitalModal" class="modal fade" tabindex="-1" aria-labelledby="addHospitalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="addHospitalModalLabel">Add New Hospital</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" asp-action="AddHospital" asp-controller="Hospital">
+                    <div class="mb-3">
+                        <label for="hospitalName" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="hospitalName" name="Name" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="hospitalAddress" class="form-label">Address</label>
+                        <input type="text" class="form-control" id="hospitalAddress" name="Address" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="hospitalPhone" class="form-label">Phone</label>
+                        <input type="text" class="form-control" id="hospitalPhone" name="Phone" required />
+                    </div>
+                    <button type="submit" class="btn btn-primary">Add Hospital</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Hospital Modal -->
+<div id="editHospitalModal" class="modal fade" tabindex="-1" aria-labelledby="editHospitalModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="editHospitalModalLabel">Edit Hospital</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="post" asp-action="UpdateHospital" asp-controller="Hospital">
+                    <input type="hidden" id="editHospitalId" name="HospitalId" />
+                    <div class="mb-3">
+                        <label for="editHospitalName" class="form-label">Name</label>
+                        <input type="text" class="form-control" id="editHospitalName" name="Name" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editHospitalAddress" class="form-label">Address</label>
+                        <input type="text" class="form-control" id="editHospitalAddress" name="Address" required />
+                    </div>
+                    <div class="mb-3">
+                        <label for="editHospitalPhone" class="form-label">Phone</label>
+                        <input type="text" class="form-control" id="editHospitalPhone" name="Phone" required />
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update Hospital</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showAddHospitalModal() {
+        var addModal = new bootstrap.Modal(document.getElementById('addHospitalModal'));
+        addModal.show();
+    }
+
+    function editHospital(hospitalId) {
+        // Ensure the modal can find the hospital data
+        var hospitals = @Html.Raw(Json.Serialize(Model));
+        var selectedHospital = hospitals.find(h => h.HospitalId === hospitalId);
+
+        // Populate modal fields with hospital data
+        if (selectedHospital) {
+            document.getElementById('editHospitalId').value = selectedHospital.HospitalId;
+            document.getElementById('editHospitalName').value = selectedHospital.Name;
+            document.getElementById('editHospitalAddress').value = selectedHospital.Address;
+            document.getElementById('editHospitalPhone').value = selectedHospital.Phone;
+
+            // Show the modal
+            var editModal = new bootstrap.Modal(document.getElementById('editHospitalModal'));
+            editModal.show();
+        } else {
+            console.error("Hospital not found!");
+        }
+    }
+</script>
+
+<style>
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .page-title {
+        font-size: 2rem;
+        margin-bottom: 20px;
+        color: #333;
+        text-align: center;
+    }
+
+    .table-responsive {
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        background-color: #f9f9f9;
+        margin-bottom: 20px;
+    }
+
+    .thead-custom {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .table-hover tbody tr:hover {
+        background-color: #f1f1f1;
+    }
+
+    .btn-primary {
+        background-color: blue;
+        border-color: blue;
+    }
+
+    .btn-secondary {
+        background-color: grey;
+        border-color: grey;
+    }
+
+    .btn-success {
+        background-color: #28a745;
+        border-color: #28a745;
+    }
+
+    .btn-danger {
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+
+    .btn-sm {
+        padding: 5px 10px;
+        font-size: 0.875rem;
+        border-radius: 5px;
+    }
+
+    .modal-content {
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        transition: transform 0.3s ease;
+    }
+
+    .modal-header {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .modal.fade .modal-dialog {
+        transition: transform 0.3s ease-out;
+        transform: translateY(-100px);
+    }
+
+    .modal.show .modal-dialog {
+        transform: translateY(0);
+    }
+</style>
+
+ManageHospital.cshtml
+
+@* Dashboard.cshtml *@
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="container-fluid">
+    <h1 class="text-center mt-4 mb-4">Admin Dashboard</h1>
+    <hr />
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-counter bg-primary text-white mb-3">
+                <div class="stat-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="stat-number" data-number="1500">1500</div>
+                <div class="stat-label">Total Policies</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-counter bg-success text-white mb-3">
+                <div class="stat-icon">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+                <div class="stat-number" data-number="200">200</div>
+                <div class="stat-label">Active Claims</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-counter bg-warning text-white mb-3">
+                <div class="stat-icon">
+                    <i class="fas fa-ban"></i>
+                </div>
+                <div class="stat-number" data-number="50">50</div>
+                <div class="stat-label">Rejected Claims</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-counter bg-danger text-white mb-3">
+                <div class="stat-icon">
+                    <i class="fas fa-hospital"></i>
+                </div>
+                <div class="stat-number" data-number="200">200</div>
+                <div class="stat-label">Active Hospitals</div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">Policies Overview</div>
+                <div class="card-body chart-container">
+                    <canvas id="policiesChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">Claims Overview</div>
+                <div class="card-body chart-container">
+                    <canvas id="claimsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .stat-counter {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 30px;
+        border-radius: 15px;
+        color: #fff;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .stat-icon {
+        font-size: 2rem;
+        margin-bottom: 10px;
+    }
+
+    .stat-number {
+        font-size: 3rem;
+        font-weight: bold;
+    }
+
+    .stat-label {
+        font-size: 1.25rem;
+    }
+
+    .stat-counter:hover {
+        transform: scale(1.05);
+        box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .chart-container {
+        position: relative;
+        height: 400px;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.stat-number').forEach(function (el) {
+            const number = parseInt(el.getAttribute('data-number'), 10);
+            let counter = 0;
+            const interval = setInterval(function () {
+                if (counter >= number) {
+                    clearInterval(interval);
+                } else {
+                    counter += Math.ceil(number / 100);
+                    el.textContent = counter > number ? number : counter;
+                }
+            }, 10);
+        });
+    });
+    var ctx = document.getElementById('policiesChart').getContext('2d');
+    var policiesChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['January', 'February', 'March', 'April', 'May', 'June'],
+            datasets: [{
+                label: 'Number of Policies',
+                data: [12, 19, 3, 5, 2, 3],
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            animation: {
+                duration: 1500
+            }
+        }
+    });
+
+    var ctx2 = document.getElementById('claimsChart').getContext('2d');
+    var claimsChart = new Chart(ctx2, {
+        type: 'line',
+        data: {
+            labels: ['January', 'February', 'March', 'April', 'May', 'June'],
+            datasets: [{
+                label: 'Number of Claims',
+                data: [3, 2, 5, 7, 6, 4],
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            animation: {
+                duration: 1500
+            }
+        }
+    });
+</script>
+
+
+Now the Major task is 
+
+Now i should able to get the count of hospitals on dashboard card. 
+from the database of the hospital running on the swagger.
+
+Any increment and decrement of the hospital should reflect on the dashboard active hospital count.
+
+Do not chaange my existing funtionality. Refer my code and give me that fucntionality of the task
