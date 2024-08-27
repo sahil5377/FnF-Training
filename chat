@@ -1,34 +1,27 @@
-public async Task<IActionResult> Index()
-{
-    var insuredPolicies = await _policyRequestService.GetInsuredPoliciesAsync();
-    var policyRequests = new List<PolicyRequestViewModel>();
-    
-    foreach (var policy in insuredPolicies)
-    {
-        var policyHolder = await _policyRequestService.GetPolicyHolderAsync(policy.InsuredId);
-        if (policyHolder != null)
-        {
-            policyRequests.Add(new PolicyRequestViewModel
-            {
-                InsuredPolicyId = policy.InsuredPolicyId,
-                InsuredId = policy.InsuredId,
-                PolicyId = policy.PolicyId,
-                PolicyHolderId = policyHolder.PolicyHolderId,
-                Name = policyHolder.Name,
-                ContactNo = policyHolder.Phone,
-                ApprovalStatus = policy.ApprovalStatus,
-                ApprovalDate = policy.ApprovalDate
-            });
-        }
-        else
-        {
-            _logger.LogWarning($"PolicyHolder not found for InsuredId: {policy.InsuredId}");
-        }
-    }
-
-    var totalPoliciesCount = await _policyRequestService.GetTotalPoliciesCountAsync();
-
-    ViewData["TotalPoliciesCount"] = totalPoliciesCount;
-
-    return View(policyRequests);
-}
+<div class="container-fluid">
+    <h1 class="text-center mt-4 mb-4">Admin Dashboard</h1>
+    <hr />
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-counter bg-primary text-white mb-3">
+                <div class="stat-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="stat-number" data-number="@ViewData["TotalPoliciesCount"]">0</div>
+                <div class="stat-label">Total Policies</div>
+            </div>
+        </div>
+        <!-- Other stat-counter elements -->
+    </div>
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">Policies Overview</div>
+                <div class="card-body chart-container">
+                    <canvas id="policiesChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <!-- Other cards -->
+    </div>
+</div>
