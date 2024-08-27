@@ -4,41 +4,45 @@
     ViewData["Title"] = "Manage Hospitals";
 }
 
-<h2 class="page-title">Manage Hospitals</h2>
+<div class="container mt-4">
+    <h2 class="page-title">Manage Hospitals</h2>
 
-<div class="table-responsive">
-    <table class="table table-striped table-hover">
-        <thead class="thead-custom">
-            <tr>
-                <th scope="col">Hospital ID</th>
-                <th scope="col">Name</th>
-                <th scope="col">Address</th>
-                <th scope="col">Phone No</th>
-                <th scope="col">Actions</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var hospital in Model)
-            {
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="thead-custom">
                 <tr>
-                    <td>@hospital.HospitalId</td>
-                    <td>@hospital.Name</td>
-                    <td>@hospital.Address</td>
-                    <td>@hospital.Phone</td>
-                    <td>
-                        <form method="post" asp-action="DeleteHospital" asp-controller="Hospital" style="display:inline;">
-                            <input type="hidden" name="hospitalId" value="@hospital.HospitalId" />
-                            <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this hospital?');">Delete</button>
-                        </form>
-                        <button class="btn btn-primary btn-sm" onclick="editHospital(@hospital.HospitalId)">Edit</button>
-                    </td>
+                    <th scope="col">Hospital ID</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Address</th>
+                    <th scope="col">Phone No</th>
+                    <th scope="col">Actions</th>
                 </tr>
-            }
-        </tbody>
-    </table>
-</div>
+            </thead>
+            <tbody>
+                @foreach (var hospital in Model)
+                {
+                    <tr>
+                        <td>@hospital.HospitalId</td>
+                        <td>@hospital.Name</td>
+                        <td>@hospital.Address</td>
+                        <td>@hospital.Phone</td>
+                        <td>
+                            <form method="post" asp-action="DeleteHospital" asp-controller="Hospital" style="display:inline;">
+                                <input type="hidden" name="hospitalId" value="@hospital.HospitalId" />
+                                <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this hospital?');">Delete</button>
+                            </form>
+                            <button class="btn btn-primary btn-sm" onclick="editHospital(@hospital.HospitalId)">Edit</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
 
-<button class="btn btn-success mt-4" onclick="showAddHospitalModal()">Add Hospital</button>
+    <div class="text-center mt-4">
+        <button class="btn btn-success" onclick="showAddHospitalModal()">Add Hospital</button>
+    </div>
+</div>
 
 <!-- Add Hospital Modal -->
 <div id="addHospitalModal" class="modal fade" tabindex="-1" aria-labelledby="addHospitalModalLabel" aria-hidden="true">
@@ -143,6 +147,7 @@
         border-radius: 8px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         background-color: #f9f9f9;
+        margin-bottom: 20px; /* Added margin to ensure spacing from footer */
     }
 
     .thead-custom {
