@@ -3,47 +3,39 @@
     <hr/>
     <div class="row mb-4">
         <div class="col-lg-3 col-md-6">
-            <div class="info-box bg-primary text-white mb-3">
-                <div class="info-icon">
+            <div class="stat-counter bg-primary text-white mb-3">
+                <div class="stat-icon">
                     <i class="fas fa-file-alt"></i>
                 </div>
-                <div class="info-content">
-                    <div class="info-title">Total Policies</div>
-                    <div class="info-text">1500</div>
-                </div>
+                <div class="stat-number" data-number="1500">1500</div>
+                <div class="stat-label">Total Policies</div>
             </div>
         </div>
         <div class="col-lg-3 col-md-6">
-            <div class="info-box bg-success text-white mb-3">
-                <div class="info-icon">
+            <div class="stat-counter bg-success text-white mb-3">
+                <div class="stat-icon">
                     <i class="fas fa-clipboard-check"></i>
                 </div>
-                <div class="info-content">
-                    <div class="info-title">Active Claims</div>
-                    <div class="info-text">---</div>
-                </div>
+                <div class="stat-number" data-number="---">---</div>
+                <div class="stat-label">Active Claims</div>
             </div>
         </div>
         <div class="col-lg-3 col-md-6">
-            <div class="info-box bg-warning text-white mb-3">
-                <div class="info-icon">
+            <div class="stat-counter bg-warning text-white mb-3">
+                <div class="stat-icon">
                     <i class="fas fa-ban"></i>
                 </div>
-                <div class="info-content">
-                    <div class="info-title">Rejected Claims</div>
-                    <div class="info-text">50</div>
-                </div>
+                <div class="stat-number" data-number="50">50</div>
+                <div class="stat-label">Rejected Claims</div>
             </div>
         </div>
         <div class="col-lg-3 col-md-6">
-            <div class="info-box bg-danger text-white mb-3">
-                <div class="info-icon">
+            <div class="stat-counter bg-danger text-white mb-3">
+                <div class="stat-icon">
                     <i class="fas fa-hospital"></i>
                 </div>
-                <div class="info-content">
-                    <div class="info-title">Active Hospitals</div>
-                    <div class="info-text">200</div>
-                </div>
+                <div class="stat-number" data-number="200">200</div>
+                <div class="stat-label">Active Hospitals</div>
             </div>
         </div>
     </div>
@@ -68,30 +60,27 @@
 </div>
 
 <style>
-    .info-box {
+    .stat-counter {
         display: flex;
+        flex-direction: column;
         align-items: center;
-        padding: 20px;
-        border-radius: 10px;
+        padding: 30px;
+        border-radius: 15px;
         color: #fff;
         transition: transform 0.3s ease, box-shadow 0.3s ease;
-        position: relative;
     }
-    .info-icon {
+    .stat-icon {
         font-size: 2rem;
-        margin-right: 20px;
+        margin-bottom: 10px;
     }
-    .info-content {
-        flex: 1;
-    }
-    .info-title {
-        font-size: 1.25rem;
+    .stat-number {
+        font-size: 3rem;
         font-weight: bold;
     }
-    .info-text {
-        font-size: 2rem;
+    .stat-label {
+        font-size: 1.25rem;
     }
-    .info-box:hover {
+    .stat-counter:hover {
         transform: scale(1.05);
         box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.2);
     }
@@ -100,3 +89,19 @@
         height: 400px;
     }
 </style>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('.stat-number').forEach(function (el) {
+            const number = parseInt(el.getAttribute('data-number'), 10);
+            let counter = 0;
+            const interval = setInterval(function () {
+                if (counter >= number) {
+                    clearInterval(interval);
+                } else {
+                    counter += Math.ceil(number / 100);
+                    el.textContent = counter > number ? number : counter;
+                }
+            }, 10);
+        });
+    });
+</script>
