@@ -1,6 +1,8 @@
-public async Task<int> GetHospitalCountAsync()
+public async Task<IActionResult> ManageHospitals()
 {
-    var response = await _httpClient.GetAsync("Hospital/count");
-    response.EnsureSuccessStatusCode();
-    return await response.Content.ReadFromJsonAsync<int>();
+    var hospitals = await _hospitalService.GetAllHospitalsAsync();
+    var hospitalCount = await _hospitalService.GetHospitalCountAsync();
+    
+    ViewBag.HospitalCount = hospitalCount;  // Pass the count to the view
+    return View(hospitals);
 }
