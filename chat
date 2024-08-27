@@ -9,45 +9,57 @@
     <hr />
     <div class="row mb-4">
         <div class="col-lg-3 col-md-6">
-            <div class="stat-counter bg-primary text-white mb-3">
+            <div class="stat-counter card-gradient-primary mb-3">
                 <div class="stat-icon">
                     <i class="fas fa-file-alt"></i>
                 </div>
                 <div class="stat-number" data-number="1500">1500</div>
                 <div class="stat-label">Total Policies</div>
+                <div class="stat-design">
+                    <img src="path/to/your/insurance-icon1.svg" alt="Insurance Icon">
+                </div>
             </div>
         </div>
         <div class="col-lg-3 col-md-6">
-            <div class="stat-counter bg-success text-white mb-3">
+            <div class="stat-counter card-gradient-success mb-3">
                 <div class="stat-icon">
                     <i class="fas fa-clipboard-check"></i>
                 </div>
                 <div class="stat-number" data-number="200">200</div>
                 <div class="stat-label">Active Claims</div>
+                <div class="stat-design">
+                    <img src="path/to/your/insurance-icon2.svg" alt="Claims Icon">
+                </div>
             </div>
         </div>
         <div class="col-lg-3 col-md-6">
-            <div class="stat-counter bg-warning text-white mb-3">
+            <div class="stat-counter card-gradient-warning mb-3">
                 <div class="stat-icon">
                     <i class="fas fa-ban"></i>
                 </div>
                 <div class="stat-number" data-number="50">50</div>
                 <div class="stat-label">Rejected Claims</div>
+                <div class="stat-design">
+                    <img src="path/to/your/insurance-icon3.svg" alt="Rejected Claims Icon">
+                </div>
             </div>
         </div>
         <div class="col-lg-3 col-md-6">
-            <div class="stat-counter bg-danger text-white mb-3">
+            <div class="stat-counter card-gradient-danger mb-3">
                 <div class="stat-icon">
                     <i class="fas fa-hospital"></i>
                 </div>
                 <div class="stat-number" data-number="@ViewData["HospitalCount"]">@ViewData["HospitalCount"]</div>
                 <div class="stat-label">Active Hospitals</div>
+                <div class="stat-design">
+                    <img src="path/to/your/hospital-icon.svg" alt="Hospital Icon">
+                </div>
             </div>
         </div>
     </div>
     <div class="row">
         <div class="col-lg-6">
-            <div class="card shadow-sm border-0 rounded-3">
+            <div class="card glassmorphism shadow-sm border-0 rounded-3">
                 <div class="card-header bg-primary text-white">Policies Overview</div>
                 <div class="card-body chart-container">
                     <canvas id="policiesChart"></canvas>
@@ -55,7 +67,7 @@
             </div>
         </div>
         <div class="col-lg-6">
-            <div class="card shadow-sm border-0 rounded-3">
+            <div class="card glassmorphism shadow-sm border-0 rounded-3">
                 <div class="card-header bg-success text-white">Claims Overview</div>
                 <div class="card-body chart-container">
                     <canvas id="claimsChart"></canvas>
@@ -66,15 +78,42 @@
 </div>
 
 <style>
-    .stat-counter {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 30px;
+    .card-gradient-primary {
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .card-gradient-success {
+        background: linear-gradient(135deg, #1d976c, #93f9b9);
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .card-gradient-warning {
+        background: linear-gradient(135deg, #f5af19, #f12711);
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .card-gradient-danger {
+        background: linear-gradient(135deg, #8e2de2, #4a00e0);
+        color: white;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .glassmorphism {
+        background: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(10px);
         border-radius: 15px;
-        background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.1) 100%);
+        padding: 20px;
         color: #fff;
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        position: relative;
+        overflow: hidden;
     }
 
     .stat-icon {
@@ -91,9 +130,11 @@
         font-size: 1.25rem;
     }
 
-    .stat-counter:hover {
-        transform: scale(1.05);
-        box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.2);
+    .stat-design {
+        position: absolute;
+        bottom: -15px;
+        right: -15px;
+        opacity: 0.1;
     }
 
     .chart-container {
@@ -109,11 +150,16 @@
     .card {
         margin-bottom: 30px;
         border-radius: 20px;
-        background-color: #f8f9fa;
     }
 
     .card-body {
         padding: 20px;
+    }
+
+    .card img {
+        width: 100px;
+        height: 100px;
+        object-fit: cover;
     }
 </style>
 
@@ -133,7 +179,7 @@
             }, 10);
         });
     });
-    
+
     var ctx = document.getElementById('policiesChart').getContext('2d');
     var policiesChart = new Chart(ctx, {
         type: 'bar',
