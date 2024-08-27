@@ -40,14 +40,11 @@
                 <div class="stat-icon">
                     <i class="fas fa-hospital"></i>
                 </div>
-                <div class="stat-number" id="hospitalCount" data-number="@hospitalCount">
-                    @hospitalCount
-                </div>
+                <div class="stat-number" data-number="@hospitalCount">@hospitalCount</div>
                 <div class="stat-label">Active Hospitals</div>
             </div>
         </div>
     </div>
-
     <div class="row">
         <div class="col-lg-6">
             <div class="card shadow-sm border-0 rounded-3 mb-3">
@@ -138,25 +135,16 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Ensure correct value is displayed
-        const hospitalCountElement = document.getElementById('hospitalCount');
+        // Directly display the hospital count
+        const hospitalCountElement = document.querySelector('[data-number="@hospitalCount"]');
         if (hospitalCountElement) {
             const number = parseInt(hospitalCountElement.getAttribute('data-number'), 10);
             if (!isNaN(number)) {
-                let counter = 0;
-                const interval = setInterval(function () {
-                    if (counter >= number) {
-                        clearInterval(interval);
-                        hospitalCountElement.textContent = number; // Ensure final value is set
-                    } else {
-                        counter += Math.ceil(number / 100);
-                        hospitalCountElement.textContent = counter > number ? number : counter;
-                    }
-                }, 10);
+                hospitalCountElement.textContent = number;
             }
         }
 
-        // Update number counter animation for other stat-number elements
+        // Number counter animation for other stat-number elements
         document.querySelectorAll('.stat-number').forEach(function (el) {
             const number = parseInt(el.getAttribute('data-number'), 10);
             if (!isNaN(number)) {
