@@ -1,8 +1,13 @@
-Now the Major task is 
-
-Now i should able to get the count of hospitals on dashboard card. 
-from the database of the hospital running on the swagger.
-
-Any increment and decrement of the hospital should reflect on the dashboard active hospital count.
-
-Do not chaange my existing funtionality. Refer my Code
+[HttpGet("count")]
+public async Task<IActionResult> GetHospitalCount()
+{
+    try
+    {
+        var count = await service.GetHospitalCount();
+        return Ok(count);
+    }
+    catch (Exception ex)
+    {
+        return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+    }
+}
