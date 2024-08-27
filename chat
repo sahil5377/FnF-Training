@@ -1,150 +1,16 @@
-@using System.Globalization
-@{
-    Layout = "~/Views/Shared/_Layout.cshtml";
-    ViewData["Title"] = "Dashboard";
-}
-
-<div class="container-fluid">
-    <h1 class="text-center mt-4 mb-4">Admin Dashboard</h1>
-    <hr />
-    <div class="row mb-4">
-        <div class="col-lg-3 col-md-6">
-            <div class="stat-counter card-gradient-primary mb-3 shadow-sm">
-                <div class="stat-icon">
-                    <i class="fas fa-file-alt"></i>
-                </div>
-                <div class="stat-number" id="totalPolicies">1500</div>
-                <div class="stat-label">Total Policies</div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6">
-            <div class="stat-counter card-gradient-success mb-3 shadow-sm">
-                <div class="stat-icon">
-                    <i class="fas fa-clipboard-check"></i>
-                </div>
-                <div class="stat-number" id="activeClaims">200</div>
-                <div class="stat-label">Active Claims</div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6">
-            <div class="stat-counter card-gradient-warning mb-3 shadow-sm">
-                <div class="stat-icon">
-                    <i class="fas fa-ban"></i>
-                </div>
-                <div class="stat-number" id="rejectedClaims">50</div>
-                <div class="stat-label">Rejected Claims</div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6">
-            <div class="stat-counter card-gradient-danger mb-3 shadow-sm">
-                <div class="stat-icon">
-                    <i class="fas fa-hospital"></i>
-                </div>
-                <div class="stat-number" id="hospitalCount">0</div>
-                <div class="stat-label">Active Hospitals</div>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-6">
-            <div class="card shadow-sm border-0 rounded-3 mb-3">
-                <div class="card-header bg-primary text-white">Policies Overview</div>
-                <div class="card-body chart-container">
-                    <canvas id="policiesChart"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-6">
-            <div class="card shadow-sm border-0 rounded-3 mb-3">
-                <div class="card-header bg-success text-white">Claims Overview</div>
-                <div class="card-body chart-container">
-                    <canvas id="claimsChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<style>
-    /* Your existing styles */
-</style>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        document.querySelectorAll('.stat-number').forEach(function (el) {
-            const number = parseInt(el.textContent, 10);
-            let counter = 0;
-            const interval = setInterval(function () {
-                if (counter >= number) {
-                    clearInterval(interval);
-                } else {
-                    counter += Math.ceil(number / 100);
-                    el.textContent = counter > number ? number : counter;
-                }
-            }, 10);
-        });
-
-        // Fetch hospital count via AJAX
+        // Simple fetch example
         fetch('/api/hospitalapi/hospitalCount')
             .then(response => response.json())
-            .then(data => {
-                document.getElementById('hospitalCount').textContent = data;
+            .then(count => {
+                // Check if count is valid
+                if (!isNaN(count)) {
+                    document.getElementById('hospitalCount').textContent = count;
+                } else {
+                    console.error('Invalid count:', count);
+                }
             })
-            .catch(error => {
-                console.error('Error fetching hospital count:', error);
-            });
-    });
-
-    // Chart.js configuration
-    var ctx = document.getElementById('policiesChart').getContext('2d');
-    new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['January', 'February', 'March', 'April', 'May', 'June'],
-            datasets: [{
-                label: 'Number of Policies',
-                data: [12, 19, 3, 5, 2, 3],
-                backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            animation: {
-                duration: 1500
-            },
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
-    });
-
-    var ctx2 = document.getElementById('claimsChart').getContext('2d');
-    new Chart(ctx2, {
-        type: 'line',
-        data: {
-            labels: ['January', 'February', 'March', 'April', 'May', 'June'],
-            datasets: [{
-                label: 'Number of Claims',
-                data: [3, 2, 5, 7, 6, 4],
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                borderColor: 'rgba(255, 99, 132, 1)',
-                borderWidth: 1,
-                tension: 0.4
-            }]
-        },
-        options: {
-            animation: {
-                duration: 1500
-            },
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            }
-        }
+            .catch(error => console.error('Error fetching hospital count:', error));
     });
 </script>
