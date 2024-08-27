@@ -1,54 +1,3 @@
-@model List<InsuranceApi.DTOs.PolicyHolderDto>
-
-@{
-    ViewData["Title"] = "Manage Customers";
-}
-
-<h2 class="page-title">Manage Customers</h2>
-
-<div class="table-responsive">
-    <table class="table table-custom">
-        <thead class="thead-custom">
-            <tr>
-                <th>Policy Holder ID</th>
-                <th>Name</th>
-                <th>Address</th>
-                <th>Phone</th>
-                <th>Email</th>
-                <th>Status</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var policyHolder in Model)
-            {
-                <tr class="table-row">
-                    <td>@policyHolder.PolicyHolderId</td>
-                    <td>@policyHolder.Name</td>
-                    <td>@policyHolder.Address</td>
-                    <td>@policyHolder.Phone</td>
-                    <td>@policyHolder.Email</td>
-                    <td>
-                        @if (policyHolder.Status == 1)
-                        {
-                            <span class="status-label status-active">Active</span>
-                        }
-                        else
-                        {
-                            <span class="status-label status-blocked">Blocked</span>
-                        }
-                    </td>
-                    <td>
-                        <button class="btn toggle-button @(policyHolder.Status == 1 ? "btn-primary" : "btn-secondary")" onclick="toggleStatus(@policyHolder.PolicyHolderId, @policyHolder.Status)">
-                            <span class="toggle-slider @(policyHolder.Status == 1 ? "active" : "inactive")"></span>
-                        </button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-</div>
-
 <style>
     body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -160,7 +109,7 @@
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     }
 
-    @keyframes fadeInDown {
+    @@keyframes fadeInDown {
         0% {
             opacity: 0;
             transform: translateY(-20px);
@@ -171,7 +120,7 @@
         }
     }
 
-    @keyframes fadeInUp {
+    @@keyframes fadeInUp {
         0% {
             opacity: 0;
             transform: translateY(20px);
@@ -182,23 +131,3 @@
         }
     }
 </style>
-
-<script>
-    async function toggleStatus(id, currentStatus) {
-        let newStatus = currentStatus === 1 ? 0 : 1;
-
-        const response = await fetch(`/PolicyHolder/${id}/status`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(newStatus)
-        });
-
-        if (response.ok) {
-            location.reload();
-        } else {
-            alert('Failed to update status');
-        }
-    }
-</script>
