@@ -8,61 +8,22 @@
     <h1 class="text-center mt-4 mb-4">Admin Dashboard</h1>
     <hr />
     <div class="row mb-4">
-        <div class="col-lg-3 col-md-6">
-            <div class="stat-counter card-gradient-primary mb-3 shadow-sm">
-                <div class="stat-icon">
-                    <i class="fas fa-file-alt"></i>
-                </div>
-                <div class="stat-number" data-number="1500">1500</div>
-                <div class="stat-label">Total Policies</div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6">
-            <div class="stat-counter card-gradient-success mb-3 shadow-sm">
-                <div class="stat-icon">
-                    <i class="fas fa-clipboard-check"></i>
-                </div>
-                <div class="stat-number" data-number="200">200</div>
-                <div class="stat-label">Active Claims</div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6">
-            <div class="stat-counter card-gradient-warning mb-3 shadow-sm">
-                <div class="stat-icon">
-                    <i class="fas fa-ban"></i>
-                </div>
-                <div class="stat-number" data-number="50">50</div>
-                <div class="stat-label">Rejected Claims</div>
-            </div>
-        </div>
+        <!-- Other cards -->
+
         <div class="col-lg-3 col-md-6">
             <div class="stat-counter card-gradient-danger mb-3 shadow-sm">
                 <div class="stat-icon">
                     <i class="fas fa-hospital"></i>
                 </div>
-                <div class="stat-number" data-number="@hospitalCount">@hospitalCount</div>
+                <div class="stat-number" id="hospitalCount">
+                    @hospitalCount
+                </div>
                 <div class="stat-label">Active Hospitals</div>
             </div>
         </div>
     </div>
-    <div class="row">
-        <div class="col-lg-6">
-            <div class="card shadow-sm border-0 rounded-3 mb-3">
-                <div class="card-header bg-primary text-white">Policies Overview</div>
-                <div class="card-body chart-container">
-                    <canvas id="policiesChart"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-6">
-            <div class="card shadow-sm border-0 rounded-3 mb-3">
-                <div class="card-header bg-success text-white">Claims Overview</div>
-                <div class="card-body chart-container">
-                    <canvas id="claimsChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
+
+    <!-- Charts and other content -->
 </div>
 
 <style>
@@ -135,8 +96,24 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
+        // Ensure the correct number is displayed
+        const hospitalCountElement = document.getElementById('hospitalCount');
+        if (hospitalCountElement) {
+            const number = parseInt(hospitalCountElement.textContent.trim(), 10);
+            let counter = 0;
+            const interval = setInterval(function () {
+                if (counter >= number) {
+                    clearInterval(interval);
+                } else {
+                    counter += Math.ceil(number / 100);
+                    hospitalCountElement.textContent = counter > number ? number : counter;
+                }
+            }, 10);
+        }
+
+        // Update number counter animation for other stat-number elements
         document.querySelectorAll('.stat-number').forEach(function (el) {
-            const number = parseInt(el.getAttribute('data-number'), 10);
+            const number = parseInt(el.textContent, 10);
             let counter = 0;
             const interval = setInterval(function () {
                 if (counter >= number) {
