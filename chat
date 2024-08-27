@@ -1,7 +1,6 @@
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "Dashboard";
-    var hospitalCount = ViewData["HospitalCount"] ?? "0";
 }
 
 <div class="container-fluid">
@@ -13,7 +12,7 @@
                 <div class="stat-icon">
                     <i class="fas fa-file-alt"></i>
                 </div>
-                <div class="stat-number" data-number="1500">1500</div>
+                <div class="stat-number" id="totalPolicies">1500</div>
                 <div class="stat-label">Total Policies</div>
             </div>
         </div>
@@ -22,7 +21,7 @@
                 <div class="stat-icon">
                     <i class="fas fa-clipboard-check"></i>
                 </div>
-                <div class="stat-number" data-number="200">200</div>
+                <div class="stat-number" id="activeClaims">200</div>
                 <div class="stat-label">Active Claims</div>
             </div>
         </div>
@@ -31,7 +30,7 @@
                 <div class="stat-icon">
                     <i class="fas fa-ban"></i>
                 </div>
-                <div class="stat-number" data-number="50">50</div>
+                <div class="stat-number" id="rejectedClaims">50</div>
                 <div class="stat-label">Rejected Claims</div>
             </div>
         </div>
@@ -40,7 +39,7 @@
                 <div class="stat-icon">
                     <i class="fas fa-hospital"></i>
                 </div>
-                <div class="stat-number" data-number="@hospitalCount">@hospitalCount</div>
+                <div class="stat-number" id="hospitalCount">@ViewData["HospitalCount"]</div>
                 <div class="stat-label">Active Hospitals</div>
             </div>
         </div>
@@ -135,30 +134,18 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Directly display the hospital count
-        const hospitalCountElement = document.querySelector('[data-number="@hospitalCount"]');
-        if (hospitalCountElement) {
-            const number = parseInt(hospitalCountElement.getAttribute('data-number'), 10);
-            if (!isNaN(number)) {
-                hospitalCountElement.textContent = number;
-            }
-        }
-
-        // Number counter animation for other stat-number elements
+        // Number counters
         document.querySelectorAll('.stat-number').forEach(function (el) {
-            const number = parseInt(el.getAttribute('data-number'), 10);
-            if (!isNaN(number)) {
-                let counter = 0;
-                const interval = setInterval(function () {
-                    if (counter >= number) {
-                        clearInterval(interval);
-                        el.textContent = number; // Ensure final value is set
-                    } else {
-                        counter += Math.ceil(number / 100);
-                        el.textContent = counter > number ? number : counter;
-                    }
-                }, 10);
-            }
+            const number = parseInt(el.textContent, 10); // Changed from data-number to textContent
+            let counter = 0;
+            const interval = setInterval(function () {
+                if (counter >= number) {
+                    clearInterval(interval);
+                } else {
+                    counter += Math.ceil(number / 100);
+                    el.textContent = counter > number ? number : counter;
+                }
+            }, 10);
         });
     });
 
