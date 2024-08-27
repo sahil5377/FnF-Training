@@ -1,7 +1,10 @@
+@using System.Globalization
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "Dashboard";
-    var hospitalCount = ViewData["HospitalCount"] != null ? ViewData["HospitalCount"].ToString() : "0";
+    var hospitalCount = ViewData["HospitalCount"] != null 
+        ? ViewData["HospitalCount"].ToString() 
+        : "0"; // Default to "0" if null
 }
 
 <div class="container-fluid">
@@ -66,14 +69,87 @@
 </div>
 
 <style>
-    /* Your existing CSS */
+    .stat-counter {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        border-radius: 15px;
+        color: #fff;
+        background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card-gradient-primary {
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+    }
+
+    .card-gradient-success {
+        background: linear-gradient(135deg, #1d976c, #93f9b9);
+    }
+
+    .card-gradient-warning {
+        background: linear-gradient(135deg, #f5af19, #f12711);
+    }
+
+    .card-gradient-danger {
+        background: linear-gradient(135deg, #8e2de2, #4a00e0);
+    }
+
+    .stat-icon {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+
+    .stat-label {
+        font-size: 1.25rem;
+    }
+
+    .stat-counter:hover {
+        transform: scale(1.05);
+        box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .chart-container {
+        position: relative;
+        height: 400px;
+    }
+
+    .card {
+        margin-bottom: 30px;
+        border-radius: 20px;
+    }
+
+    .card-header {
+        font-size: 1.5rem;
+        padding: 15px;
+    }
+
+    .card-body {
+        padding: 20px;
+    }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Ensure the number counters are properly displayed
-        // No need for additional JS if hospitalCount is correctly injected
+        document.querySelectorAll('.stat-number').forEach(function (el) {
+            const number = parseInt(el.textContent, 10);
+            let counter = 0;
+            const interval = setInterval(function () {
+                if (counter >= number) {
+                    clearInterval(interval);
+                } else {
+                    counter += Math.ceil(number / 100);
+                    el.textContent = counter > number ? number : counter;
+                }
+            }, 10);
+        });
     });
 
     // Chart.js configuration
