@@ -1,6 +1,34 @@
-public async Task<int> GetTotalPoliciesCountAsync()
+public async Task<IActionResult> Index()
 {
-    var response = await _httpClient.GetAsync("InsuredPolicy/Count");
-    response.EnsureSuccessStatusCode();
-    return await response.Content.ReadFromJsonAsync<int>();
+    var insuredPolicies = await _policyRequestService.GetInsuredPoliciesAsync();
+    var policyRequests = new List<PolicyRequestViewModel>();
+    
+    foreach (var policy in insuredPolicies)
+    {
+        var policyHolder = await _policyRequestService.GetPolicyHolderAsync(policy.InsuredId);
+        if (policyHolder != null)
+        {
+            policyRequests.Add(new PolicyRequestViewModel
+            {
+                InsuredPolicyId = policy.InsuredPolicyId,
+                InsuredId = policy.InsuredId,
+                PolicyId = policy.PolicyId,
+                PolicyHolderId = policyHolder.PolicyHolderId,
+                Name = policyHolder.Name,
+                ContactNo = policyHolder.Phone,
+                ApprovalStatus = policy.ApprovalStatus,
+                ApprovalDate = policy.ApprovalDate
+            });
+        }
+        else
+        {
+            _logger.LogWarning($"PolicyHolder not found for InsuredId: {policy.InsuredId}");
+        }
+    }
+
+    var totalPoliciesCount = await _policyRequestService.GetTotalPoliciesCountAsync();
+
+    ViewData["TotalPoliciesCount"] = totalPoliciesCount;
+
+    return View(policyRequests);
 }
