@@ -4,14 +4,72 @@
     ViewData["Title"] = "Profile";
 }
 
-<h2>@ViewData["Title"]</h2>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"]</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/5.3.0/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f0f2f5;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        .card-profile {
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .card-header {
+            background-color: #007bff;
+            color: #fff;
+            border-bottom: 0;
+            border-radius: 15px 15px 0 0;
+        }
+        .card-body {
+            padding: 2rem;
+        }
+        .card-title {
+            font-size: 1.5rem;
+            font-weight: 600;
+        }
+        .card-text {
+            font-size: 1.2rem;
+            color: #555;
+        }
+        .profile-pic {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid #007bff;
+            object-fit: cover;
+            margin-bottom: 1rem;
+        }
+        .container {
+            max-width: 800px;
+            margin-top: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2 class="text-center mb-4">@ViewData["Title"]</h2>
 
-<div class="card mt-4">
-    <div class="card-header">
-        Admin Profile
+        <div class="card card-profile mx-auto">
+            <div class="card-header text-center">
+                Admin Profile
+            </div>
+            <div class="card-body text-center">
+                <!-- Profile Picture -->
+                <img src="https://via.placeholder.com/120" alt="Admin Picture" class="profile-pic mb-3" />
+
+                <!-- Admin Details -->
+                <h5 class="card-title">Name: @Model.Name</h5>
+                <p class="card-text">Admin ID: @Model.AdminId</p>
+            </div>
+        </div>
     </div>
-    <div class="card-body">
-        <h5 class="card-title">Name: @Model.Name</h5>
-        <p class="card-text">Admin ID: @Model.AdminId</p>
-    </div>
-</div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
