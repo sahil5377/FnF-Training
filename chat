@@ -1,15 +1,20 @@
-// Add this method in the existing HospitalController class
-
-[HttpGet("count")]
-public async Task<IActionResult> GetHospitalCount()
+[Route("api/[controller]")]
+[ApiController]
+public class HospitalController : ControllerBase, IHospitalController
 {
-    try
+    private readonly FnfProjectContext _context;
+
+    public HospitalController(FnfProjectContext context)
     {
-        int count = await context.Hospitals.CountAsync();
+        _context = context;
+    }
+
+    [HttpGet("count")]
+    public async Task<IActionResult> GetHospitalCount()
+    {
+        var count = await _context.Hospitals.CountAsync();
         return Ok(count);
     }
-    catch (Exception ex)
-    {
-        return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-    }
+
+    // Other actions (Add, Delete, GetAll, GetById, Update) as before
 }
