@@ -1,27 +1,34 @@
-<div class="container-fluid">
-    <h1 class="text-center mt-4 mb-4">Admin Dashboard</h1>
-    <hr />
-    <div class="row mb-4">
-        <div class="col-lg-3 col-md-6">
-            <div class="stat-counter bg-primary text-white mb-3">
-                <div class="stat-icon">
-                    <i class="fas fa-file-alt"></i>
-                </div>
-                <div class="stat-number" data-number="@ViewData["TotalPoliciesCount"]">0</div>
-                <div class="stat-label">Total Policies</div>
-            </div>
-        </div>
-        <!-- Other stat-counter elements -->
-    </div>
-    <div class="row">
-        <div class="col-lg-6">
-            <div class="card">
-                <div class="card-header">Policies Overview</div>
-                <div class="card-body chart-container">
-                    <canvas id="policiesChart"></canvas>
-                </div>
-            </div>
-        </div>
-        <!-- Other cards -->
-    </div>
-</div>
+document.addEventListener('DOMContentLoaded', function () {
+    document.querySelectorAll('.stat-number').forEach(function (el) {
+        const number = parseInt(el.getAttribute('data-number'), 10);
+        let counter = 0;
+        const interval = setInterval(function () {
+            if (counter >= number) {
+                clearInterval(interval);
+            } else {
+                counter += Math.ceil(number / 100);
+                el.textContent = counter > number ? number : counter;
+            }
+        }, 10);
+    });
+
+    var ctx = document.getElementById('policiesChart').getContext('2d');
+    var policiesChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Today', 'Yesterday', 'Day Before Yesterday'],
+            datasets: [{
+                label: 'Number of Policies',
+                data: [/* fetch daily data from your API */],
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            animation: {
+                duration: 1500
+            }
+        }
+    });
+});
