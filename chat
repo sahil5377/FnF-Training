@@ -1,8 +1,9 @@
-public async Task<IActionResult> ManageHospitals()
-{
-    var hospitals = await _hospitalService.GetAllHospitalsAsync();
-    var hospitalCount = await _hospitalService.GetHospitalCountAsync();
-    
-    ViewBag.HospitalCount = hospitalCount;  // Pass the count to the view
-    return View(hospitals);
-}
+<div class="col-lg-3 col-md-6">
+    <div class="stat-counter bg-danger text-white mb-3">
+        <div class="stat-icon">
+            <i class="fas fa-hospital"></i>
+        </div>
+        <div class="stat-number" data-number="@ViewBag.HospitalCount">@ViewBag.HospitalCount</div>
+        <div class="stat-label">Active Hospitals</div>
+    </div>
+</div>
