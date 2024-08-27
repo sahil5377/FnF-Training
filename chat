@@ -1,20 +1,18 @@
-[Route("api/[controller]")]
-[ApiController]
-public class HospitalController : ControllerBase, IHospitalController
+public class HospitalService : IHospitalService
 {
-    private readonly FnfProjectContext _context;
+    private readonly HttpClient _httpClient;
 
-    public HospitalController(FnfProjectContext context)
+    public HospitalService(HttpClient httpClient)
     {
-        _context = context;
+        _httpClient = httpClient;
     }
 
-    [HttpGet("count")]
-    public async Task<IActionResult> GetHospitalCount()
+    public async Task<int> GetHospitalCountAsync()
     {
-        var count = await _context.Hospitals.CountAsync();
-        return Ok(count);
+        var response = await _httpClient.GetAsync("Hospital/count");
+        response.EnsureSuccessStatusCode();
+        return await response.Content.ReadFromJsonAsync<int>();
     }
 
-    // Other actions (Add, Delete, GetAll, GetById, Update) as before
+    // Other methods (GetAllHospitalsAsync, AddHospitalAsync, UpdateHospitalAsync, DeleteHospitalAsync) as before
 }
