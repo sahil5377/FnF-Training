@@ -1,11 +1,11 @@
-﻿@* Dashboard.cshtml *@
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "Dashboard";
+    var hospitalCount = ViewData["HospitalCount"] != null ? (int)ViewData["HospitalCount"] : 0;
 }
 
 <div class="container-fluid">
-    <h1 style="text-align : center;" class="mt-4">Admin Dashboard</h1>
+    <h1 style="text-align: center;" class="mt-4">Admin Dashboard</h1>
     <hr/>
     <div class="row">
         <div class="col-lg-3 col-md-6">
@@ -36,7 +36,9 @@
             <div class="card text-white bg-danger mb-3">
                 <div class="card-body">
                     <div class="card-title">Active Hospitals</div>
-                    <div class="card-text">200</div>
+                    <div class="card-text" id="hospitalCount">
+                        @hospitalCount
+                    </div>
                 </div>
             </div>
         </div>
@@ -63,6 +65,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // Initialize chart for policies
     var ctx = document.getElementById('policiesChart').getContext('2d');
     var policiesChart = new Chart(ctx, {
         type: 'bar',
@@ -78,6 +81,7 @@
         }
     });
 
+    // Initialize chart for claims
     var ctx2 = document.getElementById('claimsChart').getContext('2d');
     var claimsChart = new Chart(ctx2, {
         type: 'line',
