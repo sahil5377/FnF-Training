@@ -154,3 +154,6 @@
     });
     
 </script>
+
+I want to two Bar Graphs or pie charts or hinstograms for (total policies and total claim request). downside the cards. the graphs will track the count and change 
+accordingly. the graph should increase or decrease with the count
