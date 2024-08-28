@@ -1,65 +1,61 @@
-@model List<InsuranceApi.DTOs.HospitalDto>
+@model List<InsuranceApi.DTOs.PolicyHolderDto>
 
 @{
-    ViewData["Title"] = "Manage Hospitals";
-    var searchTerm = ViewData["SearchTerm"] as string ?? "";
+    ViewData["Title"] = "Manage Customers";
+    var searchTerm = ViewData["SearchTerm"] as string; // Get the search term from ViewData
 }
 
-<h2 class="page-title">Manage Hospitals</h2>
+<h2 class="page-title">Manage Customers</h2>
 
-<!-- Search Form -->
-<form method="get" asp-action="ManageHospitals" class="mb-4">
-    <div class="input-group">
-        <input type="text" name="searchTerm" class="form-control" placeholder="Search by hospital name or ID" value="@searchTerm" />
-        <button type="submit" class="btn btn-primary">Search</button>
+<form method="get" asp-action="ManageCustomers">
+    <div class="form-group">
+        <input type="text" name="searchTerm" class="form-control" placeholder="Search by Name or Policy Holder ID" value="@searchTerm" />
     </div>
+    <button type="submit" class="btn btn-primary">Search</button>
 </form>
 
-<!-- Hospital Table -->
 <div class="table-responsive">
     <table class="table table-striped table-hover">
         <thead class="thead-custom">
             <tr>
-                <th>Hospital ID</th>
+                <th>Policy Holder ID</th>
                 <th>Name</th>
                 <th>Address</th>
                 <th>Phone</th>
                 <th>Email</th>
+                <th>Status</th>
                 <th>Action</th>
             </tr>
         </thead>
         <tbody>
-            @if (Model != null && Model.Any())
-            {
-                @foreach (var hospital in Model)
-                {
-                    <tr>
-                        <td>@hospital.HospitalId</td>
-                        <td>@hospital.Name</td>
-                        <td>@hospital.Address</td>
-                        <td>@hospital.Phone</td>
-                        <td>@hospital.Email</td>
-                        <td>
-                            <!-- Actions for each hospital -->
-                            <a href="@Url.Action("UpdateHospital", new { id = hospital.HospitalId })" class="btn btn-warning">Edit</a>
-                            <form method="post" asp-action="DeleteHospital" style="display:inline;">
-                                <input type="hidden" name="hospitalId" value="@hospital.HospitalId" />
-                                <button type="submit" class="btn btn-danger">Delete</button>
-                            </form>
-                        </td>
-                    </tr>
-                }
-            }
-            else
+            @foreach (var policyHolder in Model)
             {
                 <tr>
-                    <td colspan="6" class="text-center">No hospitals found.</td>
+                    <td>@policyHolder.PolicyHolderId</td>
+                    <td>@policyHolder.Name</td>
+                    <td>@policyHolder.Address</td>
+                    <td>@policyHolder.Phone</td>
+                    <td>@policyHolder.Email</td>
+                    <td>
+                        @if (policyHolder.Status == 1)
+                        {
+                            <span class="status-label status-active">Active</span>
+                        }
+                        else
+                        {
+                            <span class="status-label status-blocked">Blocked</span>
+                        }
+                    </td>
+                    <td>
+                        <button class="btn toggle-button @(policyHolder.Status == 1 ? "btn-primary" : "btn-secondary")" onclick="toggleStatus(@policyHolder.PolicyHolderId, @policyHolder.Status)">
+                            <span class="toggle-slider @(policyHolder.Status == 1 ? "active" : "inactive")"></span>
+                        </button>
+                    </td>
                 </tr>
             }
         </tbody>
     </table>
 </div>
-
 <style>
     body {
         font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -88,23 +84,84 @@
         background-color: #f1f1f1;
     }
 
-    .input-group {
-        max-width: 600px;
-        margin: auto;
+    .status-label {
+        padding: 5px 10px;
+        border-radius: 15px;
+        color: white;
+        font-weight: bold;
+    }
+
+    .status-active {
+        background-color: #28a745;
+    }
+
+    .status-blocked {
+        background-color: #dc3545;
+    }
+
+    .toggle-button {
+        position: relative;
+        width: 60px;
+        height: 34px;
+        border: none;
+        border-radius: 34px;
+        cursor: pointer;
+        outline: none;
+        transition: background-color 0.3s ease, transform 0.3s ease;
+        background-color: grey; /* Default background */
     }
 
     .btn-primary {
-        background-color: #007bff;
-        border: none;
+        background-color: blue;
     }
 
-    .btn-danger {
-        background-color: #dc3545;
-        border: none;
+    .btn-secondary {
+        background-color: grey;
     }
 
-    .btn-warning {
-        background-color: #ffc107;
-        border: none;
+    .toggle-slider {
+        position: absolute;
+        top: 2px;
+        left: 2px;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background-color: white;
+        transition: transform 0.3s ease, background-color 0.3s ease;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    }
+
+    .toggle-button.btn-primary .toggle-slider {
+        transform: translateX(26px);
+        background-color: lightgreen;
+    }
+
+    .toggle-button.btn-secondary .toggle-slider {
+        transform: translateX(0);
+        background-color: lightcoral;
+    }
+
+    .toggle-button:hover .toggle-slider {
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
     }
 </style>
+
+<script>
+    async function toggleStatus(id, currentStatus) {
+        let newStatus = currentStatus === 1 ? 0 : 1; // Assuming status is binary (active/inactive)
+
+        const response = await fetch(`/PolicyHolder/${id}/status`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(newStatus)
+        });
+
+        if (response.ok) {
+            location.reload(); // Reload the page to reflect changes
+        } else {
+            alert('Failed to update status');
+        }
+    }
+</script>
