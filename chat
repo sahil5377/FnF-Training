@@ -1,92 +1,235 @@
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "Dashboard";
+
     var policyRequestCount = TempData.Peek("PolicyRequestCount") ?? "0";
     var claimCount = TempData.Peek("ClaimCount") ?? "0"; 
     var customerCount = TempData.Peek("CustomerCount") ?? "0";
     var hospitalCount = TempData.Peek("HospitalCount") ?? "0";
-    
-    // Example data for dates; in practice, these could be dynamically fetched based on real data
-    var dates = new[] { "2024-08-22", "2024-08-23", "2024-08-24", "2024-08-25", "2024-08-26", "2024-08-27" };
-    var policyCounts = new[] { policyRequestCount, policyRequestCount - 2, policyRequestCount + 3, policyRequestCount - 1, policyRequestCount + 1, policyRequestCount };
-    var claimCounts = new[] { claimCount - 1, claimCount, claimCount + 2, claimCount - 3, claimCount + 4, claimCount };
+
+    // Assuming the date-based data for the chart is coming from TempData
+    var policyData = new Dictionary<string, int> {
+        {"2024-08-01", 15},
+        {"2024-08-02", 20},
+        {"2024-08-03", 18},
+        {"2024-08-04", 22},
+        {"2024-08-05", 25}
+    };
+
+    var claimData = new Dictionary<string, int> {
+        {"2024-08-01", 5},
+        {"2024-08-02", 8},
+        {"2024-08-03", 6},
+        {"2024-08-04", 10},
+        {"2024-08-05", 12}
+    };
 }
 
 <div class="container-fluid">
-    <!-- (Same HTML as before) -->
+    <h1 class="text-center mt-4 mb-4">Admin Dashboard</h1>
+    <hr />
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-counter card-gradient-primary mb-3 shadow-sm">
+                <div class="stat-icon">
+                    <i class="fas fa-file-alt"></i>
+                </div>
+                <div class="stat-number" id="policyRequestCount">@policyRequestCount</div>
+                <div class="stat-label">Total Policies</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-counter card-gradient-success mb-3 shadow-sm">
+                <div class="stat-icon">
+                    <i class="fas fa-clipboard-check"></i>
+                </div>
+                <div class="stat-number" id="claimCount">@claimCount</div>
+                <div class="stat-label">Total Claim Requests</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-counter card-gradient-warning mb-3 shadow-sm">
+                <div class="stat-icon">
+                    <i class="fa fa-users"></i>
+                </div>
+                <div class="stat-number" id="customerCount">@customerCount</div>
+                <div class="stat-label">Total Customers</div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-counter card-gradient-danger mb-3 shadow-sm">
+                <div class="stat-icon">
+                    <i class="fas fa-hospital"></i>
+                </div>
+                <div class="stat-number" id="hospitalCount">@hospitalCount</div>
+                <div class="stat-label">Active Hospitals</div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 rounded-3 mb-3">
+                <div class="card-header bg-primary text-white">Policies Overview</div>
+                <div class="card-body chart-container">
+                    <canvas id="policiesChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 rounded-3 mb-3">
+                <div class="card-header bg-success text-white">Claims Overview</div>
+                <div class="card-body chart-container">
+                    <canvas id="claimsChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- Using a different CDN for Chart.js -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<style>
+    /* Same styling as before */
+    .stat-counter {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 20px;
+        border-radius: 15px;
+        color: #fff;
+        background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .card-gradient-primary {
+        background: linear-gradient(135deg, #1e3c72, #2a5298);
+    }
+
+    .card-gradient-success {
+        background: linear-gradient(135deg, #1d976c, #93f9b9);
+    }
+
+    .card-gradient-warning {
+        background: linear-gradient(135deg, #f5af19, #f12711);
+    }
+
+    .card-gradient-danger {
+        background: linear-gradient(135deg, #8e2de2, #4a00e0);
+    }
+
+    .stat-icon {
+        font-size: 2.5rem;
+        margin-bottom: 10px;
+    }
+
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: bold;
+    }
+
+    .stat-label {
+        font-size: 1.25rem;
+    }
+
+    .stat-counter:hover {
+        transform: scale(1.05);
+        box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.2);
+    }
+
+    .chart-container {
+        position: relative;
+        height: 400px;
+    }
+
+    .card {
+        margin-bottom: 30px;
+        border-radius: 20px;
+    }
+
+    .card-header {
+        font-size: 1.5rem;
+        padding: 15px;
+    }
+
+    .card-body {
+        padding: 20px;
+    }
+</style>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Preparing the data from TempData
-        const dates = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(dates));
-        const policyCounts = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(policyCounts));
-        const claimCounts = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(claimCounts));
+        // Assuming the data for policies and claims over time is passed via TempData
+        const policyData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(policyData));
+        const claimData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(claimData));
 
-        // Initialize a line chart for Policies with date on Y-axis
+        const policyDates = Object.keys(policyData);
+        const policyCounts = Object.values(policyData);
+
+        const claimDates = Object.keys(claimData);
+        const claimCounts = Object.values(claimData);
+
+        // Policies Line Chart
         var ctx = document.getElementById('policiesChart').getContext('2d');
         var policiesChart = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: dates,  // Y-axis: Dates
+                labels: policyDates,
                 datasets: [{
-                    label: 'Policies',
-                    data: policyCounts,  // X-axis: Counts
-                    fill: true,
-                    borderColor: 'rgba(54, 162, 235, 1)',
+                    label: 'Number of Policies',
+                    data: policyCounts,
                     backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 2,
+                    fill: true,
                     tension: 0.4
                 }]
             },
             options: {
+                animation: {
+                    duration: 1500
+                },
                 scales: {
                     y: {
-                        title: {
-                            display: true,
-                            text: 'Date'
-                        }
+                        beginAtZero: true
                     },
                     x: {
-                        title: {
-                            display: true,
-                            text: 'Number of Policies'
-                        },
-                        beginAtZero: true
+                        type: 'time',
+                        time: {
+                            unit: 'day',
+                            tooltipFormat: 'MMM DD'
+                        }
                     }
                 }
             }
         });
 
-        // Initialize a bar chart for Claims with date on Y-axis
+        // Claims Bar Chart
         var ctx2 = document.getElementById('claimsChart').getContext('2d');
         var claimsChart = new Chart(ctx2, {
             type: 'bar',
             data: {
-                labels: dates,  // Y-axis: Dates
+                labels: claimDates,
                 datasets: [{
-                    label: 'Claims',
-                    data: claimCounts,  // X-axis: Counts
-                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    label: 'Number of Claims',
+                    data: claimCounts,
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
                     borderColor: 'rgba(255, 99, 132, 1)',
-                    borderWidth: 1
+                    borderWidth: 2
                 }]
             },
             options: {
+                animation: {
+                    duration: 1500
+                },
                 scales: {
                     y: {
-                        title: {
-                            display: true,
-                            text: 'Date'
-                        }
+                        beginAtZero: true
                     },
                     x: {
-                        title: {
-                            display: true,
-                            text: 'Number of Claims'
-                        },
-                        beginAtZero: true
+                        type: 'time',
+                        time: {
+                            unit: 'day',
+                            tooltipFormat: 'MMM DD'
+                        }
                     }
                 }
             }
