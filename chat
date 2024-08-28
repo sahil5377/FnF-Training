@@ -1,170 +1,89 @@
-@model List<InsuranceApi.DTOs.PolicyHolderDto>
+@model WebApplication1.Models.LoginViewModel
 
-@{
-    ViewData["Title"] = "Manage Customers";
-    var searchTerm = ViewData["SearchTerm"] as string ?? "";
-}
-
-<h2 class="page-title">Manage Customers</h2>
-
-<!-- Search Form -->
-<form method="get" asp-action="ManageCustomers" class="mb-4">
-    <div class="form-group">
-        <input type="text" name="searchTerm" class="form-control" placeholder="Search by Name or Policy Holder ID" value="@searchTerm" />
-    </div>
-    <button type="submit" class="btn btn-primary">Search</button>
-</form>
-
-<!-- Customers Table -->
-<div class="table-responsive">
-    <table class="table table-striped table-hover">
-        <thead class="thead-custom">
-            <tr>
-                <th>Policy Holder ID</th>
-                <th>Name</th>
-                <th>Address</th>
-                <th>Phone</th>
-                <th>Email</th>
-                <th>Status</th>
-                <th>Action</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var policyHolder in Model)
-            {
-                <tr>
-                    <td>@policyHolder.PolicyHolderId</td>
-                    <td>@policyHolder.Name</td>
-                    <td>@policyHolder.Address</td>
-                    <td>@policyHolder.Phone</td>
-                    <td>@policyHolder.Email</td>
-                    <td>
-                        @if (policyHolder.Status == 1)
-                        {
-                            <span class="status-label status-active">Active</span>
-                        }
-                        else
-                        {
-                            <span class="status-label status-blocked">Blocked</span>
-                        }
-                    </td>
-                    <td>
-                        <button class="btn toggle-button @(policyHolder.Status == 1 ? "btn-primary" : "btn-secondary")" onclick="toggleStatus(@policyHolder.PolicyHolderId, @policyHolder.Status)">
-                            <span class="toggle-slider @(policyHolder.Status == 1 ? "active" : "inactive")"></span>
-                        </button>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
-</div>
-
-<style>
-    body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-
-    .page-title {
-        font-size: 2rem;
-        margin-bottom: 20px;
-        color: #333;
-        text-align: center;
-    }
-
-    .table-responsive {
-        padding: 20px;
-        border-radius: 8px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-        background-color: #f9f9f9;
-    }
-
-    .thead-custom {
-        background-color: #007bff;
-        color: white;
-    }
-
-    .table-hover tbody tr:hover {
-        background-color: #f1f1f1;
-    }
-
-    .status-label {
-        padding: 5px 10px;
-        border-radius: 15px;
-        color: white;
-        font-weight: bold;
-    }
-
-    .status-active {
-        background-color: #28a745;
-    }
-
-    .status-blocked {
-        background-color: #dc3545;
-    }
-
-    .toggle-button {
-        position: relative;
-        width: 60px;
-        height: 34px;
-        border: none;
-        border-radius: 34px;
-        cursor: pointer;
-        outline: none;
-        transition: background-color 0.3s ease, transform 0.3s ease;
-        background-color: grey; /* Default background */
-    }
-
-    .btn-primary {
-        background-color: blue;
-    }
-
-    .btn-secondary {
-        background-color: grey;
-    }
-
-    .toggle-slider {
-        position: absolute;
-        top: 2px;
-        left: 2px;
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        background-color: white;
-        transition: transform 0.3s ease, background-color 0.3s ease;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    }
-
-    .toggle-button.btn-primary .toggle-slider {
-        transform: translateX(26px);
-        background-color: lightgreen;
-    }
-
-    .toggle-button.btn-secondary .toggle-slider {
-        transform: translateX(0);
-        background-color: lightcoral;
-    }
-
-    .toggle-button:hover .toggle-slider {
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    }
-</style>
-
-<script>
-    async function toggleStatus(id, currentStatus) {
-        let newStatus = currentStatus === 1 ? 0 : 1; // Assuming status is binary (active/inactive)
-
-        const response = await fetch(`/PolicyHolder/${id}/status`, {
-            method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(newStatus)
-        });
-
-        if (response.ok) {
-            location.reload(); // Reload the page to reflect changes
-        } else {
-            alert('Failed to update status');
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login - WebApplication1</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f8f9fa;
         }
-    }
-</script>
+
+        .login-container {
+            width: 100%;
+            max-width: 400px;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+            .login-container img {
+                max-width: 350px;
+                margin-bottom: 20px;
+            }
+
+            .login-container h2 {
+                margin-bottom: 20px;
+                font-size: 24px;
+                color: #343a40;
+            }
+
+        .form-group label {
+            display: block;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .form-group input {
+            width: 100%;
+            height: 40px;
+            border-radius: 4px;
+            border: 1px solid #ced4da;
+            padding: 8px 12px;
+            margin-bottom: 15px;
+        }
+
+        .btn-primary {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+            .btn-primary:hover {
+                background-color: #0056b3;
+                border-color: #0056b3;
+            }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <img src="~/images/CompanyLogo.png" alt="Company Logo" />
+        <h2>Admin Login</h2>
+        <form asp-action="Login" method="post">
+            <div class="form-group">
+                <label asp-for="Username"></label>
+                <input asp-for="Username" placeholder="Enter Username" class="form-control" />
+            </div>
+            <div class="form-group">
+                <label asp-for="Password"></label>
+                <input asp-for="Password" placeholder="Enter Password" type="password" class="form-control" />
+            </div>
+            <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+    </div>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
