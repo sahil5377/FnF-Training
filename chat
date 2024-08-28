@@ -1,9 +1,23 @@
-public async Task<IActionResult> ManageHospitals()
+[HttpGet]
+public async Task<IActionResult> ManageHospitals(string searchTerm = "")
 {
-    var hospitals = await _hospitalService.GetAllHospitalsAsync();
-    var hospitalCount = await _hospitalService.GetHospitalCountAsync();
+    List<HospitalDto> hospitals;
 
-    TempData["HospitalCount"] = hospitalCount;  // Pass the count to the view
+    if (string.IsNullOrWhiteSpace(searchTerm))
+    {
+        // Fetch all hospitals if no search term is provided
+        hospitals = await _hospitalService.GetAllHospitalsAsync();
+    }
+    else
+    {
+        // Fetch hospitals matching the search term
+        hospitals = await _hospitalService.SearchHospitalsAsync(searchTerm);
+    }
+
+    var hospitalCount = await _hospitalService.GetHospitalCountAsync();
+    TempData["HospitalCount"] = hospitalCount;
     TempData.Keep("HospitalCount");
+
+    ViewData["SearchTerm"] = searchTerm; // Pass search term to the view
     return View(hospitals);
 }
