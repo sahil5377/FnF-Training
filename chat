@@ -1,39 +1,16 @@
-.chat-icon {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    border-radius: 50%;
-    padding: 10px;
-    font-size: 24px;
-}
+@inherits LayoutComponentBase
+<div class="page">
+    <div class="sidebar">
+        <NavMenu />
+    </div>
 
-.chat-window {
-    position: fixed;
-    bottom: 80px;
-    right: 20px;
-    width: 300px;
-    background-color: white;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    padding: 10px;
-    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
-}
+    <main>
+        <div class="top-row px-4">
+            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
+        </div>
 
-.question-btn {
-    width: 100%;
-    background-color: #007bff;
-    color: white;
-    border: none;
-    text-align: left;
-    padding: 10px;
-    margin-top: 5px;
-    cursor: pointer;
-    border-radius: 5px;
-}
-
-.question-btn:hover {
-    background-color: #0056b3;
-}
+        <article class="content px-4">
+            @Body
+        </article>
+    </main>
+</div>
