@@ -5,219 +5,91 @@
     var claimCount = TempData.Peek("ClaimCount") ?? "0"; 
     var customerCount = TempData.Peek("CustomerCount") ?? "0";
     var hospitalCount = TempData.Peek("HospitalCount") ?? "0";
+    
+    // Example data for dates; in practice, these could be dynamically fetched based on real data
+    var dates = new[] { "2024-08-22", "2024-08-23", "2024-08-24", "2024-08-25", "2024-08-26", "2024-08-27" };
+    var policyCounts = new[] { policyRequestCount, policyRequestCount - 2, policyRequestCount + 3, policyRequestCount - 1, policyRequestCount + 1, policyRequestCount };
+    var claimCounts = new[] { claimCount - 1, claimCount, claimCount + 2, claimCount - 3, claimCount + 4, claimCount };
 }
 
-
 <div class="container-fluid">
-    <h1 class="text-center mt-4 mb-4">Admin Dashboard</h1>
-    <hr />
-    <div class="row mb-4">
-        <div class="col-lg-3 col-md-6">
-            <div class="stat-counter card-gradient-primary mb-3 shadow-sm">
-                <div class="stat-icon">
-                    <i class="fas fa-file-alt"></i>
-                </div>
-                <div class="stat-number" id="policyRequestCount">@policyRequestCount</div>
-                <div class="stat-label">Total Policies</div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6">
-            <div class="stat-counter card-gradient-success mb-3 shadow-sm">
-                <div class="stat-icon">
-                    <i class="fas fa-clipboard-check"></i>
-                </div>
-                <div class="stat-number" id="claimCount">@claimCount</div>
-                <div class="stat-label">Total Claim Requests</div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6">
-            <div class="stat-counter card-gradient-warning mb-3 shadow-sm">
-                <div class="stat-icon">
-                    <i class="fa fa-users"></i>
-                </div>
-                <div class="stat-number" id="customerCount">@customerCount</div>
-                <div class="stat-label">Total Customers</div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6">
-            <div class="stat-counter card-gradient-danger mb-3 shadow-sm">
-                <div class="stat-icon">
-                    <i class="fas fa-hospital"></i>
-                </div>
-                <div class="stat-number" id="hospitalCount">@hospitalCount</div>
-                <div class="stat-label">Active Hospitals</div>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-6">
-            <div class="card shadow-sm border-0 rounded-3 mb-3">
-                <div class="card-header bg-primary text-white">Policies Overview</div>
-                <div class="card-body chart-container">
-                    <canvas id="policiesChart"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-6">
-            <div class="card shadow-sm border-0 rounded-3 mb-3">
-                <div class="card-header bg-success text-white">Claims Overview</div>
-                <div class="card-body chart-container">
-                    <canvas id="claimsChart"></canvas>
-                </div>
-            </div>
-        </div>
-    </div>
+    <!-- (Same HTML as before) -->
 </div>
 
-<style>
-    .stat-counter {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        padding: 20px;
-        border-radius: 15px;
-        color: #fff;
-        background: linear-gradient(135deg, rgba(255,255,255,0.1), rgba(255,255,255,0));
-        transition: transform 0.3s ease, box-shadow 0.3s ease;
-    }
-
-    .card-gradient-primary {
-        background: linear-gradient(135deg, #1e3c72, #2a5298);
-    }
-
-    .card-gradient-success {
-        background: linear-gradient(135deg, #1d976c, #93f9b9);
-    }
-
-    .card-gradient-warning {
-        background: linear-gradient(135deg, #f5af19, #f12711);
-    }
-
-    .card-gradient-danger {
-        background: linear-gradient(135deg, #8e2de2, #4a00e0);
-    }
-
-    .stat-icon {
-        font-size: 2.5rem;
-        margin-bottom: 10px;
-    }
-
-    .stat-number {
-        font-size: 2.5rem;
-        font-weight: bold;
-    }
-
-    .stat-label {
-        font-size: 1.25rem;
-    }
-
-    .stat-counter:hover {
-        transform: scale(1.05);
-        box-shadow: 0px 4px 20px rgba(0, 0, 0, 0.2);
-    }
-
-    .chart-container {
-        position: relative;
-        height: 400px;
-    }
-
-    .card {
-        margin-bottom: 30px;
-        border-radius: 20px;
-    }
-
-    .card-header {
-        font-size: 1.5rem;
-        padding: 15px;
-    }
-
-    .card-body {
-        padding: 20px;
-    }
-</style>
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- Using a different CDN for Chart.js -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 <script>
-    // document.addEventListener('DOMContentLoaded', function () {
-    //     // Number counters
-    //     document.querySelectorAll('.stat-number').forEach(function (el) {
-    //         const number = parseInt(el.textContent, 10); // Directly read textContent
-    //         let counter = 0;
-    //         const interval = setInterval(function () {
-    //             if (counter >= number) {
-    //                 clearInterval(interval);
-    //             } else {
-    //                 counter += Math.ceil(number / 100);
-    //                 el.textContent = counter > number ? number : counter;
-    //             }
-    //         }, 10);
-    //     });
-    // });
+    document.addEventListener('DOMContentLoaded', function () {
+        // Preparing the data from TempData
+        const dates = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(dates));
+        const policyCounts = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(policyCounts));
+        const claimCounts = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(claimCounts));
 
-    document.addEventListener('DOMContentLoaded', function () {
-        const policyCountEl = document.getElementById('policyRequestCount');
-        console.log(policyCountEl.textContent);  // Debug to see if the correct value is present
-    });
-    document.addEventListener('DOMContentLoaded', function () {
-        const claimCountEl = document.getElementById('claimCount');
-        console.log(claimCountEl.textContent);  // Debug to see if the correct value is present
-    });
-    document.addEventListener('DOMContentLoaded', function () {
-        const customerCountEl = document.getElementById('customerCount');
-        console.log(customerCountEl.textContent);  // Debug to see if the correct value is present
-    });
-    document.addEventListener('DOMContentLoaded', function () {
-        const hospitalCountEl = document.getElementById('hospitalCount');
-        console.log(hospitalCountEl.textContent);  // Debug to see if the correct value is present
-    });
-    var ctx = document.getElementById('policiesChart').getContext('2d');
-    var policiesChart = new Chart(ctx, {
-        type: 'bar',
-        data: {
-            labels: ['January', 'February', 'March', 'April', 'May', 'June'],
-            datasets: [{
-                label: 'Number of Policies',
-                data: [12, 19, 3, 5, 2, 3],
-                backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                borderColor: 'rgba(54, 162, 235, 1)',
-                borderWidth: 1
-            }]
-        },
-        options: {
-            animation: {
-                duration: 1500
+        // Initialize a line chart for Policies with date on Y-axis
+        var ctx = document.getElementById('policiesChart').getContext('2d');
+        var policiesChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: dates,  // Y-axis: Dates
+                datasets: [{
+                    label: 'Policies',
+                    data: policyCounts,  // X-axis: Counts
+                    fill: true,
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                    tension: 0.4
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true
+            options: {
+                scales: {
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Number of Policies'
+                        },
+                        beginAtZero: true
+                    }
                 }
             }
-        }
-    });
+        });
 
-    var ctx2 = document.getElementById('claimsChart').getContext('2d');
-    var claimsChart = new Chart(ctx2, {
-        type: 'line',
-        data: {
-            labels: ['January', 'February', 'March', 'April', 'May', 'June'],
-            datasets: [{
-                label: 'Number of Claims',
-                data: [3, 2, 5, 7, 6, 4],
-                backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                borderColor: 'rgba(255, 99, 132, 1)',
-                borderWidth: 1,
-                tension: 0.4
-            }]
-        },
-        options: {
-            animation: {
-                duration: 1500
+        // Initialize a bar chart for Claims with date on Y-axis
+        var ctx2 = document.getElementById('claimsChart').getContext('2d');
+        var claimsChart = new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: dates,  // Y-axis: Dates
+                datasets: [{
+                    label: 'Claims',
+                    data: claimCounts,  // X-axis: Counts
+                    backgroundColor: 'rgba(255, 99, 132, 0.5)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 1
+                }]
             },
-            scales: {
-                y: {
-                    beginAtZero: true
+            options: {
+                scales: {
+                    y: {
+                        title: {
+                            display: true,
+                            text: 'Date'
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Number of Claims'
+                        },
+                        beginAtZero: true
+                    }
                 }
             }
-        }
+        });
     });
 </script>
