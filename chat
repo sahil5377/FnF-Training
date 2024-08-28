@@ -1,4 +1,5 @@
 @inherits LayoutComponentBase
+
 <div class="page">
     <div class="sidebar">
         <NavMenu />
@@ -14,3 +15,18 @@
         </article>
     </main>
 </div>
+
+<!-- Chat Icon Component -->
+<ChatIcon ToggleChatWindow="ToggleChatWindow" />
+
+<!-- Chat Window Component -->
+<ChatWindow IsChatOpen="isChatOpen" />
+
+@code {
+    private bool isChatOpen = false;
+
+    private void ToggleChatWindow()
+    {
+        isChatOpen = !isChatOpen;
+    }
+}
