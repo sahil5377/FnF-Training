@@ -7,7 +7,6 @@
     var hospitalCount = TempData.Peek("HospitalCount") ?? "0";
 }
 
-
 <div class="container-fluid">
     <h1 class="text-center mt-4 mb-4">Admin Dashboard</h1>
     <hr />
@@ -20,6 +19,10 @@
                 <div class="stat-number" id="policyRequestCount">@policyRequestCount</div>
                 <div class="stat-label">Total Policies</div>
             </div>
+            <!-- Chart for Total Policies -->
+            <div class="chart-container">
+                <canvas id="policyChart"></canvas>
+            </div>
         </div>
         <div class="col-lg-3 col-md-6">
             <div class="stat-counter card-gradient-success mb-3 shadow-sm">
@@ -28,6 +31,10 @@
                 </div>
                 <div class="stat-number" id="claimCount">@claimCount</div>
                 <div class="stat-label">Total Claim Requests</div>
+            </div>
+            <!-- Chart for Total Claim Requests -->
+            <div class="chart-container">
+                <canvas id="claimChart"></canvas>
             </div>
         </div>
         <div class="col-lg-3 col-md-6">
@@ -100,7 +107,8 @@
 
     .chart-container {
         position: relative;
-        height: 400px;
+        height: 200px;
+        margin-top: 20px;
     }
 
     .card {
@@ -120,40 +128,56 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-    // document.addEventListener('DOMContentLoaded', function () {
-    //     // Number counters
-    //     document.querySelectorAll('.stat-number').forEach(function (el) {
-    //         const number = parseInt(el.textContent, 10); // Directly read textContent
-    //         let counter = 0;
-    //         const interval = setInterval(function () {
-    //             if (counter >= number) {
-    //                 clearInterval(interval);
-    //             } else {
-    //                 counter += Math.ceil(number / 100);
-    //                 el.textContent = counter > number ? number : counter;
-    //             }
-    //         }, 10);
-    //     });
-    // });
+    document.addEventListener('DOMContentLoaded', function () {
+        const policyCount = parseInt(document.getElementById('policyRequestCount').textContent, 10);
+        const claimCount = parseInt(document.getElementById('claimCount').textContent, 10);
 
-    document.addEventListener('DOMContentLoaded', function () {
-        const policyCountEl = document.getElementById('policyRequestCount');
-        console.log(policyCountEl.textContent);  // Debug to see if the correct value is present
+        // Bar Chart for Total Policies
+        const policyChartCtx = document.getElementById('policyChart').getContext('2d');
+        new Chart(policyChartCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Total Policies'],
+                datasets: [{
+                    label: 'Policies',
+                    data: [policyCount],
+                    backgroundColor: 'rgba(30, 60, 114, 0.7)',
+                    borderColor: 'rgba(30, 60, 114, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Bar Chart for Total Claim Requests
+        const claimChartCtx = document.getElementById('claimChart').getContext('2d');
+        new Chart(claimChartCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Total Claims'],
+                datasets: [{
+                    label: 'Claims',
+                    data: [claimCount],
+                    backgroundColor: 'rgba(29, 151, 108, 0.7)',
+                    borderColor: 'rgba(29, 151, 108, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
     });
-    document.addEventListener('DOMContentLoaded', function () {
-        const claimCountEl = document.getElementById('claimCount');
-        console.log(claimCountEl.textContent);  // Debug to see if the correct value is present
-    });
-    document.addEventListener('DOMContentLoaded', function () {
-        const customerCountEl = document.getElementById('customerCount');
-        console.log(customerCountEl.textContent);  // Debug to see if the correct value is present
-    });
-    document.addEventListener('DOMContentLoaded', function () {
-        const hospitalCountEl = document.getElementById('hospitalCount');
-        console.log(hospitalCountEl.textContent);  // Debug to see if the correct value is present
-    });
-    
 </script>
-
-I want to two Bar Graphs or pie charts or hinstograms for (total policies and total claim request). downside the cards. the graphs will track the count and change 
-accordingly. the graph should increase or decrease with the count
