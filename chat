@@ -1,26 +1,18 @@
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "Dashboard";
-    var policyRequestCount = TempData.Peek("PolicyRequestCount") ?? "0";
-    var claimCount = TempData.Peek("ClaimCount") ?? "0"; 
-    var customerCount = TempData.Peek("CustomerCount") ?? "0";
-    var hospitalCount = TempData.Peek("HospitalCount") ?? "0";
-    
-    // Example historical data for demonstration (replace with real historical data)
-    var policyHistoricalData = "[10, 20, 30, 40]"; // Historical data for policies
-    var claimHistoricalData = "[5, 15, 25, 35]"; // Historical data for claims
 }
 
 <div class="container-fluid">
     <h1 class="text-center mt-4 mb-4">Admin Dashboard</h1>
     <hr />
     <div class="row mb-4">
-        <div class="col-lg-3 col-md-6">
+        <div class="col-lg-6 col-md-6">
             <div class="stat-counter card-gradient-primary mb-3 shadow-sm">
                 <div class="stat-icon">
                     <i class="fas fa-file-alt"></i>
                 </div>
-                <div class="stat-number" id="policyRequestCount">@policyRequestCount</div>
+                <div class="stat-number" id="policyRequestCount">0</div>
                 <div class="stat-label">Total Policies</div>
             </div>
             <!-- Line Chart for Total Policies -->
@@ -28,35 +20,17 @@
                 <canvas id="policyChart"></canvas>
             </div>
         </div>
-        <div class="col-lg-3 col-md-6">
+        <div class="col-lg-6 col-md-6">
             <div class="stat-counter card-gradient-success mb-3 shadow-sm">
                 <div class="stat-icon">
                     <i class="fas fa-clipboard-check"></i>
                 </div>
-                <div class="stat-number" id="claimCount">@claimCount</div>
+                <div class="stat-number" id="claimCount">0</div>
                 <div class="stat-label">Total Claim Requests</div>
             </div>
             <!-- Line Chart for Total Claim Requests -->
             <div class="chart-container">
                 <canvas id="claimChart"></canvas>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6">
-            <div class="stat-counter card-gradient-warning mb-3 shadow-sm">
-                <div class="stat-icon">
-                    <i class="fa fa-users"></i>
-                </div>
-                <div class="stat-number" id="customerCount">@customerCount</div>
-                <div class="stat-label">Total Customers</div>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6">
-            <div class="stat-counter card-gradient-danger mb-3 shadow-sm">
-                <div class="stat-icon">
-                    <i class="fas fa-hospital"></i>
-                </div>
-                <div class="stat-number" id="hospitalCount">@hospitalCount</div>
-                <div class="stat-label">Active Hospitals</div>
             </div>
         </div>
     </div>
@@ -82,14 +56,6 @@
         background: linear-gradient(135deg, #1d976c, #93f9b9);
     }
 
-    .card-gradient-warning {
-        background: linear-gradient(135deg, #f5af19, #f12711);
-    }
-
-    .card-gradient-danger {
-        background: linear-gradient(135deg, #8e2de2, #4a00e0);
-    }
-
     .stat-icon {
         font-size: 2.5rem;
         margin-bottom: 10px;
@@ -111,89 +77,97 @@
 
     .chart-container {
         position: relative;
-        height: 200px;
+        height: 400px;
         margin-top: 20px;
-    }
-
-    .card {
-        margin-bottom: 30px;
-        border-radius: 20px;
-    }
-
-    .card-header {
-        font-size: 1.5rem;
-        padding: 15px;
-    }
-
-    .card-body {
-        padding: 20px;
     }
 </style>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const policyCount = parseInt(document.getElementById('policyRequestCount').textContent, 10);
-        const claimCount = parseInt(document.getElementById('claimCount').textContent, 10);
-        
-        // Historical data (replace with dynamic data in real scenario)
-        const policyHistoricalData = JSON.parse('@Html.Raw(policyHistoricalData)');
-        const claimHistoricalData = JSON.parse('@Html.Raw(claimHistoricalData)');
-        
-        // Line Chart for Total Policies
-        const policyChartCtx = document.getElementById('policyChart').getContext('2d');
-        const policyChart = new Chart(policyChartCtx, {
-            type: 'line',
-            data: {
-                labels: ['January', 'February', 'March', 'April'], // Example labels (replace with dynamic labels)
-                datasets: [{
-                    label: 'Policies',
-                    data: [...policyHistoricalData, policyCount], // Append current count to historical data
-                    backgroundColor: 'rgba(30, 60, 114, 0.2)',
-                    borderColor: 'rgba(30, 60, 114, 1)',
-                    borderWidth: 2,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    x: {
-                        beginAtZero: true
-                    },
-                    y: {
-                        beginAtZero: true
-                    }
-                }
-            }
-        });
+        // Fetch data from InsuredPolicy API
+        fetch('/api/insuredpolicy')
+            .then(response => response.json())
+            .then(data => {
+                const policyHistoricalData = data.map(item => item.Count); // Adjust based on your API response structure
+                const policyCount = policyHistoricalData[policyHistoricalData.length - 1] || 0;
 
-        // Line Chart for Total Claim Requests
-        const claimChartCtx = document.getElementById('claimChart').getContext('2d');
-        const claimChart = new Chart(claimChartCtx, {
-            type: 'line',
-            data: {
-                labels: ['January', 'February', 'March', 'April'], // Example labels (replace with dynamic labels)
-                datasets: [{
-                    label: 'Claims',
-                    data: [...claimHistoricalData, claimCount], // Append current count to historical data
-                    backgroundColor: 'rgba(29, 151, 108, 0.2)',
-                    borderColor: 'rgba(29, 151, 108, 1)',
-                    borderWidth: 2,
-                    fill: true
-                }]
-            },
-            options: {
-                responsive: true,
-                scales: {
-                    x: {
-                        beginAtZero: true
+                // Update statistics
+                document.getElementById('policyRequestCount').textContent = policyCount;
+
+                // Line Chart for Total Policies
+                const policyChartCtx = document.getElementById('policyChart').getContext('2d');
+                const policyChart = new Chart(policyChartCtx, {
+                    type: 'line',
+                    data: {
+                        labels: generateLabels(policyHistoricalData.length),
+                        datasets: [{
+                            label: 'Policies',
+                            data: policyHistoricalData,
+                            backgroundColor: 'rgba(30, 60, 114, 0.2)',
+                            borderColor: 'rgba(30, 60, 114, 1)',
+                            borderWidth: 2,
+                            fill: true
+                        }]
                     },
-                    y: {
-                        beginAtZero: true
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: {
+                                beginAtZero: true
+                            },
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
                     }
-                }
-            }
-        });
+                });
+            })
+            .catch(error => console.error('Error fetching policy data:', error));
+
+        // Fetch data from Claim API
+        fetch('/api/claim')
+            .then(response => response.json())
+            .then(data => {
+                const claimHistoricalData = data.map(item => item.Count); // Adjust based on your API response structure
+                const claimCount = claimHistoricalData[claimHistoricalData.length - 1] || 0;
+
+                // Update statistics
+                document.getElementById('claimCount').textContent = claimCount;
+
+                // Line Chart for Total Claim Requests
+                const claimChartCtx = document.getElementById('claimChart').getContext('2d');
+                const claimChart = new Chart(claimChartCtx, {
+                    type: 'line',
+                    data: {
+                        labels: generateLabels(claimHistoricalData.length),
+                        datasets: [{
+                            label: 'Claims',
+                            data: claimHistoricalData,
+                            backgroundColor: 'rgba(29, 151, 108, 0.2)',
+                            borderColor: 'rgba(29, 151, 108, 1)',
+                            borderWidth: 2,
+                            fill: true
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            x: {
+                                beginAtZero: true
+                            },
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error('Error fetching claim data:', error));
     });
+
+    // Function to generate labels for the x-axis
+    function generateLabels(count) {
+        return Array.from({ length: count }, (_, i) => `Period ${i + 1}`);
+    }
 </script>
