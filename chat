@@ -1,3 +1,5 @@
+@using System.Text.Json
+
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "Dashboard";
@@ -11,6 +13,10 @@
     // Assuming TempData contains date-based data for the charts
     var policyData = TempData["PolicyData"] as Dictionary<string, int> ?? new Dictionary<string, int>();
     var claimData = TempData["ClaimData"] as Dictionary<string, int> ?? new Dictionary<string, int>();
+
+    // Serialize data to JSON
+    var policyDataJson = JsonSerializer.Serialize(policyData);
+    var claimDataJson = JsonSerializer.Serialize(claimData);
 }
 
 <div class="container-fluid">
@@ -146,8 +152,8 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         // Policy and Claim data retrieved from TempData and passed as JSON
-        const policyData = @Html.Raw(Json.Encode(policyData));
-        const claimData = @Html.Raw(Json.Encode(claimData));
+        const policyData = @Html.Raw(@policyDataJson);
+        const claimData = @Html.Raw(@claimDataJson);
 
         const policyDates = Object.keys(policyData);
         const policyCounts = Object.values(policyData);
