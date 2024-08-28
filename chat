@@ -6,41 +6,6 @@
     var customerCount = TempData.Peek("CustomerCount") ?? "0";
     var hospitalCount = TempData.Peek("HospitalCount") ?? "0";
     
-    // Example historical data for demonstration
-    var policyHistoricalData = "[10, 20, 30, 40]"; // Replace with real historical data
-    var claimHistoricalData = "[5, 15, 25, 35]"; // Replace with real historical data
-}
-
-<div class="container-fluid">
-    <h1 class="text-center mt-4 mb-4">Admin Dashboard</h1>
-    <hr />
-    <div class="row mb-4">
-        <div class="col-lg-3 col-md-6">
-            <div class="stat-counter card-gradient-primary mb-3 shadow-sm">
-                <div class="stat-icon">
-                    <i class="fas fa-file-alt"></i>
-                </div>
-                <div class="stat-number" id="policyRequestCount">@policyRequestCount</div>
-                <div class="stat-label">Total Policies</div>
-            </div>
-            <!-- Line Chart for Total Policies -->
-            <div class="chart-container">
-                <canvas id="policyChart"></canvas>
-            </div>
-        </div>
-        <div class="col-lg-3 col-md-6">
-            <div class="stat-counter card-gradient-success mb-3 shadow-sm">
-                <div class="stat-icon">
-                    <i class="fas fa-clipboard-check"></i>
-                </div>
-@{
-    Layout = "~/Views/Shared/_Layout.cshtml";
-    ViewData["Title"] = "Dashboard";
-    var policyRequestCount = TempData.Peek("PolicyRequestCount") ?? "0";
-    var claimCount = TempData.Peek("ClaimCount") ?? "0"; 
-    var customerCount = TempData.Peek("CustomerCount") ?? "0";
-    var hospitalCount = TempData.Peek("HospitalCount") ?? "0";
-    
     // Example historical data for demonstration (replace with real historical data)
     var policyHistoricalData = "[10, 20, 30, 40]"; // Historical data for policies
     var claimHistoricalData = "[5, 15, 25, 35]"; // Historical data for claims
