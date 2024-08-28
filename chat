@@ -1,38 +1,11 @@
-@if (IsChatOpen)
-{
-    <div class="chat-window">
-        <h3>Frequently Asked Questions</h3>
-        @foreach (var question in questions)
-        {
-            <div>
-                <button class="question-btn" @onclick="() => ShowAnswer(question.Key)">
-                    @question.Key
-                </button>
-                @if (question.Key == selectedQuestion)
-                {
-                    <p>@question.Value</p>
-                }
-            </div>
-        }
-    </div>
-}
+<ChatIcon ToggleChatWindow="ToggleChatWindow" />
+<ChatWindow IsChatOpen="isChatOpen" />
 
 @code {
-    [Parameter]
-    public bool IsChatOpen { get; set; }
+    private bool isChatOpen = false;
 
-    private string selectedQuestion;
-    private Dictionary<string, string> questions = new Dictionary<string, string>
+    private void ToggleChatWindow()
     {
-        { "How many policies can a user buy?", "There is no limit to the number of policies a user can purchase..." },
-        { "How can a user claim a policy?", "To claim a policy, the user needs to submit the necessary documentation..." },
-        { "How can users renew their existing policies?", "Renewing a policy is simple and can be done through the user’s account..." },
-        { "After purchasing, within how many days can a user withdraw from a policy?", "Users have a withdrawal of 45 days from the date of purchase..." },
-        { "Can users check insurance premiums before logging in?", "Yes, users can view and check the premium rates for various insurance plans..." }
-    };
-
-    private void ShowAnswer(string question)
-    {
-        selectedQuestion = question;
+        isChatOpen = !isChatOpen;
     }
 }
