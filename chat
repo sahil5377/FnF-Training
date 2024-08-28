@@ -1,1 +1,8 @@
-Users can withdraw from their insurance policy within 45 days of the first premium payment, with a simple and straightforward process.
+<button class="chat-icon" @onclick="ToggleChatWindow">
+    <i class="fas fa-comments"></i> <!-- Font Awesome icon -->
+</button>
+
+@code {
+    [Parameter]
+    public EventCallback ToggleChatWindow { get; set; }
+}
