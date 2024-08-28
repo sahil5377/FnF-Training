@@ -1,23 +1,58 @@
-[HttpGet]
-public async Task<IActionResult> ManageCustomers(string searchTerm = "")
-{
-    List<PolicyHolderDto> policyHolders;
+@model List<InsuranceApi.DTOs.PolicyHolderDto>
 
-    if (string.IsNullOrWhiteSpace(searchTerm))
-    {
-        // Fetch all policy holders if no search term is provided
-        policyHolders = await _policyHolderService.GetPolicyHoldersAsync();
-    }
-    else
-    {
-        // Fetch policy holders matching the search term
-        policyHolders = await _policyHolderService.SearchPolicyHoldersAsync(searchTerm);
-    }
-
-    var customerCount = await _policyHolderService.GetCustomerCountAsync();
-    TempData["CustomerCount"] = customerCount;
-    TempData.Keep("CustomerCount");
-
-    ViewData["SearchTerm"] = searchTerm; // Pass search term to the view
-    return View(policyHolders);
+@{
+    ViewData["Title"] = "Manage Customers";
+    var searchTerm = ViewData["SearchTerm"] as string; // Get the search term from ViewData
 }
+
+<h2 class="page-title">Manage Customers</h2>
+
+<form method="get" asp-action="ManageCustomers">
+    <div class="form-group">
+        <input type="text" name="searchTerm" class="form-control" placeholder="Search by Name or Policy Holder ID" value="@searchTerm" />
+    </div>
+    <button type="submit" class="btn btn-primary">Search</button>
+</form>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover">
+        <thead class="thead-custom">
+            <tr>
+                <th>Policy Holder ID</th>
+                <th>Name</th>
+                <th>Address</th>
+                <th>Phone</th>
+                <th>Email</th>
+                <th>Status</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var policyHolder in Model)
+            {
+                <tr>
+                    <td>@policyHolder.PolicyHolderId</td>
+                    <td>@policyHolder.Name</td>
+                    <td>@policyHolder.Address</td>
+                    <td>@policyHolder.Phone</td>
+                    <td>@policyHolder.Email</td>
+                    <td>
+                        @if (policyHolder.Status == 1)
+                        {
+                            <span class="status-label status-active">Active</span>
+                        }
+                        else
+                        {
+                            <span class="status-label status-blocked">Blocked</span>
+                        }
+                    </td>
+                    <td>
+                        <button class="btn toggle-button @(policyHolder.Status == 1 ? "btn-primary" : "btn-secondary")" onclick="toggleStatus(@policyHolder.PolicyHolderId, @policyHolder.Status)">
+                            <span class="toggle-slider @(policyHolder.Status == 1 ? "active" : "inactive")"></span>
+                        </button>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
