@@ -1,22 +1,12 @@
-@using System.Text.Json
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "Dashboard";
-
-    // Retrieve counts from TempData
     var policyRequestCount = TempData.Peek("PolicyRequestCount") ?? "0";
     var claimCount = TempData.Peek("ClaimCount") ?? "0"; 
     var customerCount = TempData.Peek("CustomerCount") ?? "0";
     var hospitalCount = TempData.Peek("HospitalCount") ?? "0";
-
-    // Retrieve chart data from TempData
-    var policyData = TempData["PolicyData"] as Dictionary<string, int> ?? new Dictionary<string, int>();
-    var claimData = TempData["ClaimData"] as Dictionary<string, int> ?? new Dictionary<string, int>();
-
-    // Serialize data to JSON
-    var policyDataJson = JsonSerializer.Serialize(policyData);
-    var claimDataJson = JsonSerializer.Serialize(claimData);
 }
+
 
 <div class="container-fluid">
     <h1 class="text-center mt-4 mb-4">Admin Dashboard</h1>
@@ -56,24 +46,6 @@
                 </div>
                 <div class="stat-number" id="hospitalCount">@hospitalCount</div>
                 <div class="stat-label">Active Hospitals</div>
-            </div>
-        </div>
-    </div>
-    <div class="row">
-        <div class="col-lg-6">
-            <div class="card shadow-sm border-0 rounded-3 mb-3">
-                <div class="card-header bg-primary text-white">Policies Overview</div>
-                <div class="card-body chart-container">
-                    <canvas id="policiesChart"></canvas>
-                </div>
-            </div>
-        </div>
-        <div class="col-lg-6">
-            <div class="card shadow-sm border-0 rounded-3 mb-3">
-                <div class="card-header bg-success text-white">Claims Overview</div>
-                <div class="card-body chart-container">
-                    <canvas id="claimsChart"></canvas>
-                </div>
             </div>
         </div>
     </div>
@@ -148,84 +120,37 @@
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+    // document.addEventListener('DOMContentLoaded', function () {
+    //     // Number counters
+    //     document.querySelectorAll('.stat-number').forEach(function (el) {
+    //         const number = parseInt(el.textContent, 10); // Directly read textContent
+    //         let counter = 0;
+    //         const interval = setInterval(function () {
+    //             if (counter >= number) {
+    //                 clearInterval(interval);
+    //             } else {
+    //                 counter += Math.ceil(number / 100);
+    //                 el.textContent = counter > number ? number : counter;
+    //             }
+    //         }, 10);
+    //     });
+    // });
+
     document.addEventListener('DOMContentLoaded', function () {
-        // Policy and Claim data retrieved from TempData and passed as JSON
-        const policyData = @Html.Raw(JsonSerializer.Serialize(policyData));
-        const claimData = @Html.Raw(JsonSerializer.Serialize(claimData));
-
-        // Convert object data to arrays for Chart.js
-        const policyDates = Object.keys(policyData);
-        const policyCounts = Object.values(policyData);
-
-        const claimDates = Object.keys(claimData);
-        const claimCounts = Object.values(claimData);
-
-        // Policies Line Chart
-        var ctx = document.getElementById('policiesChart').getContext('2d');
-        var policiesChart = new Chart(ctx, {
-            type: 'line',
-            data: {
-                labels: policyDates,
-                datasets: [{
-                    label: 'Number of Policies',
-                    data: policyCounts,
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    borderColor: 'rgba(54, 162, 235, 1)',
-                    borderWidth: 2,
-                    fill: true,
-                    tension: 0.4
-                }]
-            },
-            options: {
-                animation: {
-                    duration: 1500
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    },
-                    x: {
-                        type: 'time',
-                        time: {
-                            unit: 'day',
-                            tooltipFormat: 'MMM DD'
-                        }
-                    }
-                }
-            }
-        });
-
-        // Claims Bar Chart
-        var ctx2 = document.getElementById('claimsChart').getContext('2d');
-        var claimsChart = new Chart(ctx2, {
-            type: 'bar',
-            data: {
-                labels: claimDates,
-                datasets: [{
-                    label: 'Number of Claims',
-                    data: claimCounts,
-                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
-                    borderColor: 'rgba(255, 99, 132, 1)',
-                    borderWidth: 2
-                }]
-            },
-            options: {
-                animation: {
-                    duration: 1500
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true
-                    },
-                    x: {
-                        type: 'time',
-                        time: {
-                            unit: 'day',
-                            tooltipFormat: 'MMM DD'
-                        }
-                    }
-                }
-            }
-        });
+        const policyCountEl = document.getElementById('policyRequestCount');
+        console.log(policyCountEl.textContent);  // Debug to see if the correct value is present
     });
+    document.addEventListener('DOMContentLoaded', function () {
+        const claimCountEl = document.getElementById('claimCount');
+        console.log(claimCountEl.textContent);  // Debug to see if the correct value is present
+    });
+    document.addEventListener('DOMContentLoaded', function () {
+        const customerCountEl = document.getElementById('customerCount');
+        console.log(customerCountEl.textContent);  // Debug to see if the correct value is present
+    });
+    document.addEventListener('DOMContentLoaded', function () {
+        const hospitalCountEl = document.getElementById('hospitalCount');
+        console.log(hospitalCountEl.textContent);  // Debug to see if the correct value is present
+    });
+    
 </script>
