@@ -1,10 +1,21 @@
+@using System.Text.Json
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "Dashboard";
+
+    // Retrieve counts from TempData
     var policyRequestCount = TempData.Peek("PolicyRequestCount") ?? "0";
     var claimCount = TempData.Peek("ClaimCount") ?? "0"; 
     var customerCount = TempData.Peek("CustomerCount") ?? "0";
     var hospitalCount = TempData.Peek("HospitalCount") ?? "0";
+
+    // Retrieve chart data from TempData
+    var policyData = TempData["PolicyData"] as Dictionary<string, int> ?? new Dictionary<string, int>();
+    var claimData = TempData["ClaimData"] as Dictionary<string, int> ?? new Dictionary<string, int>();
+
+    // Serialize data to JSON
+    var policyDataJson = JsonSerializer.Serialize(policyData);
+    var claimDataJson = JsonSerializer.Serialize(claimData);
 }
 
 <div class="container-fluid">
@@ -19,10 +30,6 @@
                 <div class="stat-number" id="policyRequestCount">@policyRequestCount</div>
                 <div class="stat-label">Total Policies</div>
             </div>
-            <!-- Chart for Total Policies -->
-            <div class="chart-container">
-                <canvas id="policyChart"></canvas>
-            </div>
         </div>
         <div class="col-lg-3 col-md-6">
             <div class="stat-counter card-gradient-success mb-3 shadow-sm">
@@ -31,10 +38,6 @@
                 </div>
                 <div class="stat-number" id="claimCount">@claimCount</div>
                 <div class="stat-label">Total Claim Requests</div>
-            </div>
-            <!-- Chart for Total Claim Requests -->
-            <div class="chart-container">
-                <canvas id="claimChart"></canvas>
             </div>
         </div>
         <div class="col-lg-3 col-md-6">
@@ -53,6 +56,24 @@
                 </div>
                 <div class="stat-number" id="hospitalCount">@hospitalCount</div>
                 <div class="stat-label">Active Hospitals</div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 rounded-3 mb-3">
+                <div class="card-header bg-primary text-white">Policies Overview</div>
+                <div class="card-body chart-container">
+                    <canvas id="policiesChart"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="card shadow-sm border-0 rounded-3 mb-3">
+                <div class="card-header bg-success text-white">Claims Overview</div>
+                <div class="card-body chart-container">
+                    <canvas id="claimsChart"></canvas>
+                </div>
             </div>
         </div>
     </div>
@@ -107,8 +128,7 @@
 
     .chart-container {
         position: relative;
-        height: 200px;
-        margin-top: 20px;
+        height: 400px;
     }
 
     .card {
@@ -129,52 +149,80 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        const policyCount = parseInt(document.getElementById('policyRequestCount').textContent, 10);
-        const claimCount = parseInt(document.getElementById('claimCount').textContent, 10);
+        // Policy and Claim data retrieved from TempData and passed as JSON
+        const policyData = @Html.Raw(JsonSerializer.Serialize(policyData));
+        const claimData = @Html.Raw(JsonSerializer.Serialize(claimData));
 
-        // Bar Chart for Total Policies
-        const policyChartCtx = document.getElementById('policyChart').getContext('2d');
-        new Chart(policyChartCtx, {
-            type: 'bar',
+        // Convert object data to arrays for Chart.js
+        const policyDates = Object.keys(policyData);
+        const policyCounts = Object.values(policyData);
+
+        const claimDates = Object.keys(claimData);
+        const claimCounts = Object.values(claimData);
+
+        // Policies Line Chart with Filled Area
+        var ctx = document.getElementById('policiesChart').getContext('2d');
+        var policiesChart = new Chart(ctx, {
+            type: 'line',
             data: {
-                labels: ['Total Policies'],
+                labels: policyDates,
                 datasets: [{
-                    label: 'Policies',
-                    data: [policyCount],
-                    backgroundColor: 'rgba(30, 60, 114, 0.7)',
-                    borderColor: 'rgba(30, 60, 114, 1)',
-                    borderWidth: 1
+                    label: 'Number of Policies',
+                    data: policyCounts,
+                    backgroundColor: 'rgba(54, 162, 235, 0.2)', // Fill color
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 2,
+                    fill: true, // Enable filling under the line
+                    tension: 0.4
                 }]
             },
             options: {
-                responsive: true,
+                animation: {
+                    duration: 1500
+                },
                 scales: {
                     y: {
                         beginAtZero: true
+                    },
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'day',
+                            tooltipFormat: 'MMM DD'
+                        }
                     }
                 }
             }
         });
 
-        // Bar Chart for Total Claim Requests
-        const claimChartCtx = document.getElementById('claimChart').getContext('2d');
-        new Chart(claimChartCtx, {
+        // Claims Bar Chart
+        var ctx2 = document.getElementById('claimsChart').getContext('2d');
+        var claimsChart = new Chart(ctx2, {
             type: 'bar',
             data: {
-                labels: ['Total Claims'],
+                labels: claimDates,
                 datasets: [{
-                    label: 'Claims',
-                    data: [claimCount],
-                    backgroundColor: 'rgba(29, 151, 108, 0.7)',
-                    borderColor: 'rgba(29, 151, 108, 1)',
-                    borderWidth: 1
+                    label: 'Number of Claims',
+                    data: claimCounts,
+                    backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    borderWidth: 2
                 }]
             },
             options: {
-                responsive: true,
+                animation: {
+                    duration: 1500
+                },
                 scales: {
                     y: {
                         beginAtZero: true
+                    },
+                    x: {
+                        type: 'time',
+                        time: {
+                            unit: 'day',
+                            tooltipFormat: 'MMM DD'
+                        }
                     }
                 }
             }
