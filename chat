@@ -1,32 +1,18 @@
 @inherits LayoutComponentBase
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
+<div style="border: 1px solid red; padding: 20px;">
+    <h1>Hello, world!</h1>
+    <p>This is the MainLayout.razor file.</p>
 
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
+    <!-- Test Content -->
+    <button>Test Button</button>
+    <ChatIcon ToggleChatWindow="ToggleChatWindow" />
+    <ChatWindow IsChatOpen="true" />
 </div>
 
-<!-- Chat Icon Component -->
-<ChatIcon ToggleChatWindow="ToggleChatWindow" />
-
-<!-- Chat Window Component -->
-<ChatWindow IsChatOpen="isChatOpen" />
-
 @code {
-    private bool isChatOpen = false;
-
     private void ToggleChatWindow()
     {
-        isChatOpen = !isChatOpen;
+        // Testing method
     }
 }
