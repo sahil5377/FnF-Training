@@ -2,27 +2,15 @@
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "Dashboard";
 
+    // Retrieving counts from TempData
     var policyRequestCount = TempData.Peek("PolicyRequestCount") ?? "0";
     var claimCount = TempData.Peek("ClaimCount") ?? "0"; 
     var customerCount = TempData.Peek("CustomerCount") ?? "0";
     var hospitalCount = TempData.Peek("HospitalCount") ?? "0";
 
-    // Assuming the date-based data for the chart is coming from TempData
-    var policyData = new Dictionary<string, int> {
-        {"2024-08-01", 15},
-        {"2024-08-02", 20},
-        {"2024-08-03", 18},
-        {"2024-08-04", 22},
-        {"2024-08-05", 25}
-    };
-
-    var claimData = new Dictionary<string, int> {
-        {"2024-08-01", 5},
-        {"2024-08-02", 8},
-        {"2024-08-03", 6},
-        {"2024-08-04", 10},
-        {"2024-08-05", 12}
-    };
+    // Assuming TempData contains date-based data for the charts
+    var policyData = TempData["PolicyData"] as Dictionary<string, int> ?? new Dictionary<string, int>();
+    var claimData = TempData["ClaimData"] as Dictionary<string, int> ?? new Dictionary<string, int>();
 }
 
 <div class="container-fluid">
@@ -157,9 +145,9 @@
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
-        // Assuming the data for policies and claims over time is passed via TempData
-        const policyData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(policyData));
-        const claimData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(claimData));
+        // Policy and Claim data retrieved from TempData and passed as JSON
+        const policyData = @Html.Raw(Json.Encode(policyData));
+        const claimData = @Html.Raw(Json.Encode(claimData));
 
         const policyDates = Object.keys(policyData);
         const policyCounts = Object.values(policyData);
