@@ -1,13 +1,11 @@
-[HttpGet("search")]
-public async Task<IActionResult> Search([FromQuery] string term)
+public async Task<List<PolicyHolderDto>> SearchPolicyHoldersAsync(string searchTerm)
 {
-    try
-    {
-        var policyHolders = await _service.SearchPolicyHoldersAsync(term);
-        return Ok(policyHolders);
-    }
-    catch (Exception ex)
-    {
-        return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
-    }
+    string endpoint = $"PolicyHolder/search?term={searchTerm}";
+    var response = await _httpClient.GetAsync(endpoint);
+    response.EnsureSuccessStatusCode();
+
+    var jsonResponse = await response.Content.ReadAsStringAsync();
+    var policyHolders = JsonSerializer.Deserialize<List<PolicyHolderDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+    return policyHolders;
 }
