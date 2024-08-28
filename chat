@@ -1,11 +1,9 @@
-public async Task<List<PolicyHolderDto>> SearchPolicyHoldersAsync(string searchTerm)
+[HttpGet]
+public async Task<IActionResult> ManageCustomers(string searchTerm = "")
 {
-    string endpoint = $"PolicyHolder/search?term={searchTerm}";
-    var response = await _httpClient.GetAsync(endpoint);
-    response.EnsureSuccessStatusCode();
-
-    var jsonResponse = await response.Content.ReadAsStringAsync();
-    var policyHolders = JsonSerializer.Deserialize<List<PolicyHolderDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-
-    return policyHolders;
+    var policyHolders = await _policyHolderService.SearchPolicyHoldersAsync(searchTerm);
+    var customerCount = await _policyHolderService.GetCustomerCountAsync();
+    TempData["CustomerCount"] = customerCount;
+    TempData.Keep("CustomerCount");
+    return View(policyHolders); 
 }
