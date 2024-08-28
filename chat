@@ -1,16 +1,15 @@
 @using System.Text.Json
-
 @{
     Layout = "~/Views/Shared/_Layout.cshtml";
     ViewData["Title"] = "Dashboard";
 
-    // Retrieving counts from TempData
+    // Retrieve counts from TempData
     var policyRequestCount = TempData.Peek("PolicyRequestCount") ?? "0";
     var claimCount = TempData.Peek("ClaimCount") ?? "0"; 
     var customerCount = TempData.Peek("CustomerCount") ?? "0";
     var hospitalCount = TempData.Peek("HospitalCount") ?? "0";
 
-    // Assuming TempData contains date-based data for the charts
+    // Retrieve chart data from TempData
     var policyData = TempData["PolicyData"] as Dictionary<string, int> ?? new Dictionary<string, int>();
     var claimData = TempData["ClaimData"] as Dictionary<string, int> ?? new Dictionary<string, int>();
 
@@ -81,7 +80,6 @@
 </div>
 
 <style>
-    /* Same styling as before */
     .stat-counter {
         display: flex;
         flex-direction: column;
@@ -152,9 +150,10 @@
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         // Policy and Claim data retrieved from TempData and passed as JSON
-        const policyData = @Html.Raw(@policyDataJson);
-        const claimData = @Html.Raw(@claimDataJson);
+        const policyData = @Html.Raw(JsonSerializer.Serialize(policyData));
+        const claimData = @Html.Raw(JsonSerializer.Serialize(claimData));
 
+        // Convert object data to arrays for Chart.js
         const policyDates = Object.keys(policyData);
         const policyCounts = Object.values(policyData);
 
