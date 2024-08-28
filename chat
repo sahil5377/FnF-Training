@@ -1,18 +1,13 @@
-public async Task<List<PolicyHolderDto>> SearchPolicyHoldersAsync(string searchTerm)
+[HttpGet("search")]
+public async Task<IActionResult> Search([FromQuery] string term)
 {
-    var query = context.PolicyHolders.AsQueryable();
-
-    if (int.TryParse(searchTerm, out int id))
+    try
     {
-        // Search by PolicyHolderId
-        query = query.Where(ph => ph.PolicyHolderId == id);
+        var policyHolders = await _service.SearchPolicyHoldersAsync(term);
+        return Ok(policyHolders);
     }
-    else
+    catch (Exception ex)
     {
-        // Search by Name
-        query = query.Where(ph => ph.Name.Contains(searchTerm));
+        return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
     }
-
-    var policyHolders = await query.ToListAsync();
-    return policyHolders.Select(ConvertToDto).ToList();
 }
