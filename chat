@@ -1,33 +1,372 @@
-@inherits LayoutComponentBase
+using InsuranceApi.DTOs;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using WebApplication1.Services;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
-<div class="page">
-    <div class="sidebar">
-        <NavMenu />
-    </div>
-
-    <main>
-        <div class="top-row px-4">
-            <a href="https://learn.microsoft.com/aspnet/core/" target="_blank">About</a>
-        </div>
-
-        <article class="content px-4">
-            @Body
-        </article>
-    </main>
-</div>
-
-<!-- Chat Icon Component -->
-<ChatIcon OnClick="ToggleChatWindow" />
-
-<!-- Chat Window Component -->
-<ChatWindow IsChatOpen="isChatOpen" />
-
-@code {
-    private bool isChatOpen = false;
-
-    private void ToggleChatWindow()
+namespace WebApplication1.Controllers
+{
+    [Authorize]
+    public class HospitalController : Controller
     {
-        isChatOpen = !isChatOpen;
-        Console.WriteLine($"Chat window is now: {isChatOpen}");
+        private readonly IHospitalService _hospitalService;
+
+        public HospitalController(IHospitalService hospitalService)
+        {
+            _hospitalService = hospitalService;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> ManageHospitals(string searchTerm = "")
+        {
+            List<HospitalDto> hospitals;
+
+            if (string.IsNullOrWhiteSpace(searchTerm))
+            {
+                // Fetch all hospitals if no search term is provided
+                hospitals = await _hospitalService.GetAllHospitalsAsync();
+            }
+            else
+            {
+                // Fetch hospitals matching the search term
+                hospitals = await _hospitalService.SearchHospitalsAsync(searchTerm);
+            }
+
+            var hospitalCount = await _hospitalService.GetHospitalCountAsync();
+            TempData["HospitalCount"] = hospitalCount;
+            TempData.Keep("HospitalCount");
+
+            ViewData["SearchTerm"] = searchTerm; // Pass search term to the view
+            return View(hospitals);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddHospital(HospitalDto hospital)
+        {
+            if (ModelState.IsValid)
+            {
+                await _hospitalService.AddHospitalAsync(hospital);
+                return RedirectToAction("ManageHospitals");
+            }
+            return View("ManageHospitals", await _hospitalService.GetAllHospitalsAsync());
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> UpdateHospital(HospitalDto hospital)
+        {
+            if (ModelState.IsValid)
+            {
+                await _hospitalService.UpdateHospitalAsync(hospital);
+                return RedirectToAction("ManageHospitals");
+            }
+            return View("ManageHospitals", await _hospitalService.GetAllHospitalsAsync());
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> DeleteHospital(int hospitalId)
+        {
+            await _hospitalService.DeleteHospitalAsync(hospitalId);
+            return RedirectToAction("ManageHospitals");
+        }
     }
+}
+
+using InsuranceApi.DTOs;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+
+namespace WebApplication1.Services
+{
+    public class HospitalService : IHospitalService
+    {
+        private readonly HttpClient _httpClient;
+
+        public HospitalService(HttpClient httpClient)
+        {
+            _httpClient = httpClient;
+        }
+
+        public async Task<List<HospitalDto>> GetAllHospitalsAsync()
+        {
+            var response = await _httpClient.GetAsync("Hospital");
+            response.EnsureSuccessStatusCode();
+
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            var hospitals = JsonSerializer.Deserialize<List<HospitalDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            return hospitals;
+        }
+
+        public async Task AddHospitalAsync(HospitalDto hospital)
+        {
+            var response = await _httpClient.PostAsJsonAsync("Hospital", hospital);
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task UpdateHospitalAsync(HospitalDto hospital)
+        {
+            var response = await _httpClient.PutAsJsonAsync($"Hospital/{hospital.HospitalId}", hospital);
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task DeleteHospitalAsync(int hospitalId)
+        {
+            var response = await _httpClient.DeleteAsync($"Hospital/{hospitalId}");
+            response.EnsureSuccessStatusCode();
+        }
+
+        public async Task<int> GetHospitalCountAsync()
+        {
+            var response = await _httpClient.GetAsync("Hospital/count");
+            response.EnsureSuccessStatusCode();
+            var count = await response.Content.ReadFromJsonAsync<int>();
+            return count;
+        }
+
+        public async Task<List<HospitalDto>> SearchHospitalsAsync(string searchTerm)
+        {
+            string endpoint = $"Hospital/search?term={searchTerm}";
+            var response = await _httpClient.GetAsync(endpoint);
+            response.EnsureSuccessStatusCode();
+
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            var hospitals = JsonSerializer.Deserialize<List<HospitalDto>>(jsonResponse, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+
+            return hospitals;
+        }
+    }
+
+    public interface IHospitalService
+    {
+        Task<List<HospitalDto>> GetAllHospitalsAsync();
+        Task AddHospitalAsync(HospitalDto hospital);
+        Task UpdateHospitalAsync(HospitalDto hospital);
+        Task DeleteHospitalAsync(int hospitalId);
+        Task<int> GetHospitalCountAsync();
+        Task<List<HospitalDto>> SearchHospitalsAsync(string searchTerm);
+    }
+}
+using InsuranceApi.DTOs;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using WebApplication1.Services;
+
+namespace WebApplication1.Controllers
+{
+    public class PolicyRequestController : Controller
+    {
+        private readonly IPolicyRequestService _policyRequestService;
+        private readonly ILogger<PolicyRequestController> _logger;
+
+        public PolicyRequestController(IPolicyRequestService policyRequestService, ILogger<PolicyRequestController> logger)
+        {
+            _policyRequestService = policyRequestService;
+            _logger = logger;
+        }
+
+        public async Task<IActionResult> Index()
+        {
+            var insuredPolicies = await _policyRequestService.GetInsuredPoliciesAsync();
+            var policyRequests = new List<PolicyRequestViewModel>();
+            var policyRequestCount = await _policyRequestService.GetPolicyCountAsync();
+
+            TempData["PolicyRequestCount"] = policyRequestCount;  
+            TempData.Keep("PolicyRequestCount");
+
+            foreach (var policy in insuredPolicies)
+            {
+                var policyHolder = await _policyRequestService.GetPolicyHolderAsync(policy.InsuredId);
+                if (policyHolder != null)
+                {
+                    policyRequests.Add(new PolicyRequestViewModel
+                    {
+                        InsuredPolicyId = policy.InsuredPolicyId,
+                        InsuredId = policy.InsuredId,
+                        PolicyId = policy.PolicyId,
+                        PolicyHolderId = policyHolder.PolicyHolderId,
+                        Name = policyHolder.Name,
+                        ContactNo = policyHolder.Phone,
+                        ApprovalStatus = policy.ApprovalStatus,
+                        ApprovalDate = policy.ApprovalDate
+                    });
+                }
+                else
+                {
+                    _logger.LogWarning($"PolicyHolder not found for InsuredId: {policy.InsuredId}");
+                }
+            }
+
+            return View(policyRequests);
+        }
+
+        public async Task<IActionResult> Review(int insuredPolicyId)
+        {
+            var insuredPolicy = (await _policyRequestService.GetInsuredPoliciesAsync())
+                .FirstOrDefault(p => p.InsuredPolicyId == insuredPolicyId);
+
+            if (insuredPolicy == null)
+            {
+                _logger.LogWarning($"InsuredPolicy not found for Id: {insuredPolicyId}");
+                return NotFound();
+            }
+
+            var policyHolder = await _policyRequestService.GetPolicyHolderAsync(insuredPolicy.InsuredId);
+            var policy = await _policyRequestService.GetPolicyAsync(insuredPolicy.PolicyId);
+            var payments = await _policyRequestService.GetPaymentsByInsuredPolicyIdAsync(insuredPolicy.InsuredPolicyId);
+            
+
+            var viewModel = new ReviewPolicyRequestViewModel
+            {
+                PolicyHolderName = policyHolder?.Name ?? "N/A",
+                ContactNo = policyHolder?.Phone ??"N/A",
+                InsuredId = insuredPolicy.InsuredId,
+                InsuredPolicyId = insuredPolicy.InsuredPolicyId,
+                PolicyId = insuredPolicy.PolicyId,
+                AdminId = insuredPolicy.AdminId,
+                PremiumAmount = policy?.PremiumAmount ?? 0,
+                PaymentId = payments.FirstOrDefault()?.PaymentId ?? 0,
+                PaymentAmount = payments.FirstOrDefault()?.PaymentAmount ?? 0,
+                PaymentDate = payments.FirstOrDefault()?.PaymentDate ?? null
+            };
+
+            return PartialView("_ReviewPolicyRequest", viewModel);
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> UpdateApprovalStatus(int insuredPolicyId, string approvalStatus)
+        {
+            if (string.IsNullOrWhiteSpace(approvalStatus))
+            {
+                _logger.LogWarning("Approval status is required.");
+                return BadRequest("Approval status is required.");
+            }
+
+            var isValidStatus = new[] { "Approved", "Rejected", "Pending" }.Contains(approvalStatus);
+            if (!isValidStatus)
+            {
+                _logger.LogWarning($"Invalid approval status: {approvalStatus}");
+                return BadRequest("Invalid approval status.");
+            }
+
+            var success = await _policyRequestService.UpdateApprovalStatusAsync(insuredPolicyId, approvalStatus);
+            if (success)
+            {
+                _logger.LogInformation($"Approval status updated to '{approvalStatus}' for InsuredPolicyId: {insuredPolicyId}");
+                return Json(new { success = true });
+            }
+            else
+            {
+                _logger.LogError($"Failed to update approval status for InsuredPolicyId: {insuredPolicyId}");
+                return BadRequest("Failed to update approval status.");
+            }
+        }
+    }
+
+    public class PolicyRequestViewModel
+    {
+        public int InsuredPolicyId { get; set; }
+        public int InsuredId { get; set; }
+        public int PolicyId { get; set; }
+        public int PolicyHolderId { get; set; }
+        public string Name { get; set; }
+        public string ApprovalStatus { get; set; }
+        public DateTime? ApprovalDate { get; set; }
+        public string ContactNo { get;  set; }
+    }
+
+    public class ReviewPolicyRequestViewModel
+    {
+        public string PolicyHolderName { get; set; }
+        public int InsuredId { get; set; }
+        public string InsuredName { get; set; }
+        public int InsuredPolicyId { get; set; }
+        public int PolicyId { get; set; }
+        public int AdminId { get; set; }
+        public decimal PremiumAmount { get; set; }
+        public int PaymentId { get; set; }
+        public decimal PaymentAmount { get; set; }
+        public DateTime? PaymentDate { get; set; }
+        public object? ContactNo { get; internal set; }
+    }
+}
+
+
+using InsuranceApi.DTOs;
+using System.Collections.Generic;
+using System.Net.Http;
+using System.Net.Http.Json;
+using System.Text.Json;
+using System.Threading.Tasks;
+
+namespace WebApplication1.Services
+{
+    public class PolicyRequestService : IPolicyRequestService
+    {
+        private readonly HttpClient _httpClient;
+
+        public PolicyRequestService(HttpClient httpClient)
+        {
+            _httpClient = httpClient;
+        }
+
+        public async Task<List<InsuredPolicyDto>> GetInsuredPoliciesAsync()
+        {
+            var response = await _httpClient.GetAsync("InsuredPolicy");
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<List<InsuredPolicyDto>>();
+        }
+
+        public async Task<PolicyHolderDto> GetPolicyHolderAsync(int policyHolderId)
+        {
+            var response = await _httpClient.GetAsync($"PolicyHolder/{policyHolderId}");
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<PolicyHolderDto>();
+        }
+
+        public async Task<PolicyDto> GetPolicyAsync(int policyId)
+        {
+            var response = await _httpClient.GetAsync($"Policy/{policyId}");
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<PolicyDto>();
+        }
+
+        public async Task<List<PaymentDto>> GetPaymentsByInsuredPolicyIdAsync(int insuredPolicyId)
+        {
+            var response = await _httpClient.GetAsync($"Payment?insuredPolicyId={insuredPolicyId}");
+            response.EnsureSuccessStatusCode();
+            return await response.Content.ReadFromJsonAsync<List<PaymentDto>>();
+        }
+
+        public async Task<bool> UpdateApprovalStatusAsync(int insuredPolicyId, string approvalStatus)
+        {
+            var response = await _httpClient.PutAsJsonAsync($"InsuredPolicy/{insuredPolicyId}/ApprovalStatus", approvalStatus);
+            return response.IsSuccessStatusCode;
+        }
+        public async Task<int> GetPolicyCountAsync()
+        {
+            var response = await _httpClient.GetAsync("InsuredPolicy/count");
+            response.EnsureSuccessStatusCode();
+            var count = await response.Content.ReadFromJsonAsync<int>();
+            return count;
+
+        }
+    }
+}
+
+public interface IPolicyRequestService
+{
+    Task<List<InsuredPolicyDto>> GetInsuredPoliciesAsync();
+    Task<PolicyHolderDto> GetPolicyHolderAsync(int policyHolderId);
+    Task<PolicyDto> GetPolicyAsync(int policyId);
+    Task<List<PaymentDto>> GetPaymentsByInsuredPolicyIdAsync(int insuredPolicyId);
+    Task<int> GetPolicyCountAsync();
+    Task<bool> UpdateApprovalStatusAsync(int insuredPolicyId, string approvalStatus);
 }
